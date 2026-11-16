@@ -287,6 +287,9 @@ importers:
       '@app/export':
         specifier: workspace:*
         version: link:../../packages/modules/export
+      '@app/identity':
+        specifier: workspace:*
+        version: link:../../packages/modules/identity
       '@app/library':
         specifier: workspace:*
         version: link:../../packages/modules/library
@@ -302,9 +305,16 @@ importers:
       graphile-worker:
         specifier: ^0.18.0
         version: 0.18.0(@typescript/typescript6@6.0.2)(supports-color@7.2.0)
+      nodemailer:
+        specifier: ^10.5.0
+        version: 10.5.0
       pg:
         specifier: ^8.23.1
         version: 8.23.1
+    devDependencies:
+      '@types/nodemailer':
+        specifier: ^8.0.2
+        version: 8.0.2
 
   packages/modules/annotation:
     dependencies:
@@ -1647,6 +1657,9 @@ packages:
   '@types/node@26.6.6':
     resolution: {integrity: sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==}
 
+  '@types/nodemailer@8.0.2':
+    resolution: {integrity: sha512-c7M5ox8p0nEOfbJ2E9Qcmt8/QCu/VzsiAhzBiZbvky2PhKZDHpKB3sQHBM5MEZNkCfBOaS6S9//AGPRTNB7IaA==}
+
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
 
@@ -2596,6 +2609,10 @@ packages:
         optional: true
       sass:
         optional: true
+
+  nodemailer@10.5.0:
+    resolution: {integrity: sha512-L/w/HH5MqpzMDuZD7fQdt/+KqymuvrpaApaIjAH2XA3ILePwlcvXCVVvP75xVrXCEt2ggK2marrrHHFB5Qu0kA==}
+    engines: {node: '>=20.0.0'}
 
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
@@ -3869,6 +3886,10 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
+  '@types/nodemailer@8.0.2':
+    dependencies:
+      '@types/node': 26.6.6
+
   '@types/pg@8.23.1':
     dependencies:
       '@types/node': 26.6.6
@@ -4695,6 +4716,8 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
+
+  nodemailer@10.5.0: {}
 
   obug@3.0.0: {}
 

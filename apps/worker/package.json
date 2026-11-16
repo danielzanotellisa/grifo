@@ -10,11 +10,16 @@
   "dependencies": {
     "@app/annotation": "workspace:*",
     "@app/export": "workspace:*",
+    "@app/identity": "workspace:*",
     "@app/library": "workspace:*",
     "@app/outline": "workspace:*",
     "@app/platform": "workspace:*",
     "@app/study": "workspace:*",
     "graphile-worker": "^0.18.0",
+    "nodemailer": "^10.5.0",
     "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2"
   }
 }
