@@ -34,4 +34,4 @@ Closing an item: record the decision in an ADR or spec, set the status, keep the
 | P-010 | Image pinning and production worker build | open |
 | P-011 | .apkg generator and import verification | open |
 | P-012 | Project name | decided → Grifo |
-| P-013 | How a row records direct versus cascaded deletion | open |
+| P-013 | How a row records direct versus cascaded deletion | decided → 0032 |
