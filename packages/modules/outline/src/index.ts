@@ -6,3 +6,5 @@ export { createOutlineSyncHandler } from "./infra/sync-handler";
 export type { OutlineDeps } from "./infra/sync-handler";
 export { createOutlineTrashParticipant } from "./infra/trash";
 export { registerOutlineReactions } from "./infra/reactions";
+export { nodeSource } from "./infra/node-source";
+export type { NodeSource } from "./infra/node-source";

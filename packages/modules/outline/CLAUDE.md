@@ -7,6 +7,7 @@ The hierarchical summary of a document: a tree of nodes. Schema: `outline`. Spec
 
 ## Public API (`src/index.ts`)
 - Types, `effectiveRole`, `assertValidNode`. The study module asks outline for a node's text and effective role.
+- `nodeSource(tx, ownerId, nodeId)`: document, text (own, or the highlight quote) and effective role (own, or the highlight's category) of a live node, or null; it is the study module's port.
 - `createOutlineSyncHandler(deps)`, `createOutlineTrashParticipant(deps)`, `registerOutlineReactions(events)`: the sync handler (entity `outlineNode`), the trash participant and the reactions to `library.documentDeleted` and `annotation.highlightDeleted`. `deps.documentIsLive` is the port to the library module; the composition root provides it.
 - Tree operations on a document's flat node list: `siblings`, `indentNode`, `outdentNode`, `moveNode`, `deleteNode`. Pure and immutable: each returns a new array (the same array when nothing changes) and stamps `updatedAt` on changed nodes only. Persisting the result and appending to the change log is the caller's job.
 
@@ -25,7 +26,7 @@ The hierarchical summary of a document: a tree of nodes. Schema: `outline`. Spec
 - The trash label is the node text, empty for a highlight node: the outline never reads annotation data; the client shows the quote.
 - Nodes of highlights (ADR 0033): `annotation.highlightPlaced` creates the node with the derived id (or restores it if it left because the highlight was ignored), at the end of the root level or before the first root node whose highlight reads later (`loadHighlightOrderKeys` from `@app/annotation`); `highlightIgnored` removes it under the highlight's id as root. A node the client sent first, or the user deleted directly, is left alone.
 - A node restored through a document or highlight whose parent was deleted on its own goes to the end of the root (`fixOrphans`): a live node never sits under a deleted parent.
-- Not done yet: publishing `outline.nodeDeleted` (study will need it to clear `source_node_id`), and restoring a node does not undo the promotion of its children.
+- Not done yet: restoring a node does not undo the promotion of its children. A flashcard keeps its `source_node_id` when its node is deleted, so the outline publishes no event for it.
 
 ## Depends on
 - `@app/platform`, `@app/annotation` (role and quote of a highlight), `@app/library`.
