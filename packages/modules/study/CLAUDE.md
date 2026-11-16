@@ -6,7 +6,7 @@ Flashcards and decks. Schema: `study`. Specs: `docs/specs/flashcard/`, `docs/spe
 - `Flashcard` (table `flashcards`). `Deck` is a projection, not a table.
 
 ## Public API (`src/index.ts`)
-- Types, `assertCanCreateFlashcard`, `newFlashcard`, `ankiGuid`, `deckName`, `DeckScope`.
+- Types, `canCreateFlashcard`, `assertCanCreateFlashcard`, `newFlashcard`, `ankiGuid`, `deckName`, `DeckScope`.
 
 ## Rules
 - A flashcard can only be created from an outline node whose effective role is `DEFINITION` (`FLASHCARD_REQUIRES_DEFINITION`).
