@@ -38,3 +38,4 @@ MADR-style, one decision per file, immutable once accepted (see 0021). Template:
 | 0032 | Persistence foundation: sync cursor, soft-delete marker, database tests | accepted |
 | 0033 | The outline node of a highlight has an id derived from the highlight id | accepted |
 | 0034 | Authentication with Better Auth, a dedicated database role and sessions in Postgres | accepted |
+| 0035 | Authentication emails leave through an outbox in the identity schema | accepted, amends 0034 |
