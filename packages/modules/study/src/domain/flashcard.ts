@@ -25,6 +25,22 @@ export function assertCanCreateFlashcard(nodeEffectiveRole: OutlineRole): void {
   }
 }
 
+const cleanFront = (front: string): string => {
+  const trimmed = front.trim();
+  if (trimmed === "") {
+    throw new DomainError("FLASHCARD_FRONT_REQUIRED", "The front of the card is required", 422);
+  }
+  return trimmed;
+};
+
+const cleanBack = (back: string): string => {
+  const trimmed = back.trim();
+  if (trimmed === "") {
+    throw new DomainError("FLASHCARD_BACK_EMPTY", "The back of the card is empty", 422);
+  }
+  return trimmed;
+};
+
 export function newFlashcard(input: {
   id: string;
   ownerId: string;
@@ -34,23 +50,41 @@ export function newFlashcard(input: {
   nodeText: string;
   now: Date;
 }): Flashcard {
-  const front = input.front.trim();
-  const back = input.nodeText.trim();
-  if (front === "")
-    throw new DomainError("FLASHCARD_FRONT_REQUIRED", "The front of the card is required", 422);
-  if (back === "")
-    throw new DomainError("FLASHCARD_BACK_EMPTY", "The source node has no text", 422);
   return {
     id: input.id,
     ownerId: input.ownerId,
     documentId: input.documentId,
     sourceNodeId: input.sourceNodeId,
-    front,
-    back,
+    front: cleanFront(input.front),
+    back: cleanBack(input.nodeText),
     createdAt: input.now,
     updatedAt: input.now,
     deletedAt: null,
   };
+}
+
+export function editFlashcard(
+  card: Flashcard,
+  edit: { front: string; back: string },
+  now: Date,
+): Flashcard {
+  return { ...card, front: cleanFront(edit.front), back: cleanBack(edit.back), updatedAt: now };
+}
+
+/** Re-copies the node's current text into the back, on the user's request. */
+export function updateFromSource(card: Flashcard, nodeText: string, now: Date): Flashcard {
+  if (card.sourceNodeId === null) {
+    throw new DomainError("FLASHCARD_SOURCE_GONE", "The source node was deleted", 422);
+  }
+  return { ...card, back: cleanBack(nodeText), updatedAt: now };
+}
+
+export function deleteFlashcard(card: Flashcard, now: Date): Flashcard {
+  return card.deletedAt === null ? { ...card, deletedAt: now, updatedAt: now } : card;
+}
+
+export function restoreFlashcard(card: Flashcard, now: Date): Flashcard {
+  return card.deletedAt === null ? card : { ...card, deletedAt: null, updatedAt: now };
 }
 
 /** Stable across exports so Anki updates notes instead of duplicating them (ADR 0027). */
