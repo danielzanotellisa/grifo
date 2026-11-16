@@ -1,0 +1,92 @@
+# Local environment (ADR 0019). Everything runs in Docker. Infra starts by default; the app services use the "app" profile:
+#   docker compose up -d                 -> infra only, run the app with `pnpm dev`
+#   docker compose --profile app up -d   -> everything in containers
+# Image tags are deliberately loose for now; pin them by digest (docs/pending/P-010).
+name: grifo
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: grifo
+    ports: ["5432:5432"]
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d grifo"]
+      interval: 5s
+      retries: 10
+
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json
+    ports: ["8333:8333"]
+    volumes:
+      - s3-data:/data
+      - ./infra/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+  s3-init:
+    image: amazon/aws-cli:latest
+    depends_on: [s3]
+    environment:
+      AWS_ACCESS_KEY_ID: devaccesskey
+      AWS_SECRET_ACCESS_KEY: devsecretkey
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for i in 1 2 3 4 5 6 7 8 9 10; do aws --endpoint-url http://s3:8333 s3 ls >/dev/null 2>&1 && break; sleep 2; done
+        for b in originals derived backups; do aws --endpoint-url http://s3:8333 s3 mb s3://$$b || true; done
+    restart: "no"
+
+  clamav:
+    image: clamav/clamav:stable
+    ports: ["3310:3310"]
+    volumes:
+      - clamav-db:/var/lib/clamav
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025", "1025:1025"]
+
+  # HTML -> PDF for summaries (ADR 0028). Chromium-only variant; JavaScript disabled.
+  # Published on localhost only so `pnpm dev` can reach it; never expose it publicly.
+  gotenberg:
+    image: gotenberg/gotenberg:8-chromium
+    command: ["gotenberg", "--chromium-auto-start=true", "--chromium-disable-javascript=true"]
+    ports: ["127.0.0.1:3100:3000"]
+
+  web:
+    profiles: ["app"]
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://app_user:app_user@postgres:5432/grifo
+      S3_ENDPOINT: http://s3:8333
+      CLAMAV_HOST: clamav
+      SMTP_HOST: mailpit
+      GOTENBERG_URL: http://gotenberg:3000
+    ports: ["3000:3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  worker:
+    profiles: ["app"]
+    build: { context: ., dockerfile: apps/worker/Dockerfile }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://app_user:app_user@postgres:5432/grifo
+      S3_ENDPOINT: http://s3:8333
+      CLAMAV_HOST: clamav
+      SMTP_HOST: mailpit
+      GOTENBERG_URL: http://gotenberg:3000
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pg-data:
+  s3-data:
+  clamav-db:

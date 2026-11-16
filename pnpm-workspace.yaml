@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "packages/platform"
+  - "packages/modules/*"
+
+# Packages allowed to run install scripts (pnpm blocks them by default).
+# Approve new ones with `pnpm approve-builds <pkg>` after checking why they need it.
+allowBuilds:
+  esbuild: true

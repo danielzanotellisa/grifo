@@ -1,0 +1,15 @@
+{
+  "name": "grifo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @app/web --filter @app/worker dev",
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:queue": "pnpm --filter @app/worker exec graphile-worker --schema-only -c \"$DATABASE_MIGRATOR_URL\"",
+    "db:rls": "psql \"$DATABASE_MIGRATOR_URL\" -f db/sql/rls.sql"
+  }
+}
