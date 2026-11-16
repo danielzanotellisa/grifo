@@ -1,4 +1,5 @@
 import {
+  createInProcessEventBus,
   createSyncEngine,
   createTrash,
   newId,
@@ -45,7 +46,10 @@ const highlightReader: SyncHandler = {
   },
 };
 
-const engine = createSyncEngine([createCategorySyncHandler(), highlightReader]);
+const engine = createSyncEngine([
+  createCategorySyncHandler({ events: createInProcessEventBus() }),
+  highlightReader,
+]);
 const trash = createTrash([categoryTrashParticipant]);
 
 type CategoryData = {

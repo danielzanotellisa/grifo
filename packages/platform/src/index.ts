@@ -11,5 +11,6 @@ export * from "./sync/engine";
 export * from "./storage/object-storage";
 export * from "./kernel/outline-role";
 export * from "./kernel/geometry";
+export * from "./kernel/outline-node-id";
 export * from "./events";
 export * from "./queue/enqueue";

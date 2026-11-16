@@ -23,6 +23,8 @@ The hierarchical summary of a document: a tree of nodes. Schema: `outline`. Spec
 - Upserts check the node invariants, that the document and parent are live and in the same document, and cycles. A deleted node or another user's node answers `NOT_FOUND` (an insert that collides with another user's id is also `NOT_FOUND`: it must not reveal that the id exists).
 - `position` is declared with the `"C"` collation (`fractionalIndex`): the database default would sort `Zz` after `a0`. Never `ORDER BY` a fractional-index column under another collation.
 - The trash label is the node text, empty for a highlight node: the outline never reads annotation data; the client shows the quote.
+- Nodes of highlights (ADR 0033): `annotation.highlightPlaced` creates the node with the derived id (or restores it if it left because the highlight was ignored), at the end of the root level or before the first root node whose highlight reads later (`loadHighlightOrderKeys` from `@app/annotation`); `highlightIgnored` removes it under the highlight's id as root. A node the client sent first, or the user deleted directly, is left alone.
+- A node restored through a document or highlight whose parent was deleted on its own goes to the end of the root (`fixOrphans`): a live node never sits under a deleted parent.
 - Not done yet: publishing `outline.nodeDeleted` (study will need it to clear `source_node_id`), and restoring a node does not undo the promotion of its children.
 
 ## Depends on

@@ -26,7 +26,7 @@ An element of a document's outline tree. Either backed by a highlight or free te
 ## Operations
 | Operation | Rules | Errors |
 | --- | --- | --- |
-| Auto-create | On highlight creation: appended in page/vertical order among root nodes. | — |
+| Auto-create | On highlight creation, or when its category stops being `IGNORE`: the node gets the id derived from the highlight id (ADR 0033) and is appended among the root nodes in page and vertical order of the highlights. The server does it in the same transaction; a node the client already sent is not duplicated. | — |
 | Indent / outdent | Tab: becomes last child of previous sibling. Shift+Tab: becomes next sibling of its parent. With no previous sibling (indent) or no parent (outdent) nothing changes. | `OUTLINE_NODE_NOT_FOUND` |
 | Move (drag) | New parent + position between neighbors. | `OUTLINE_CYCLE`, `OUTLINE_NODE_NOT_FOUND` |
 | Add free text | Role + text required. | `OUTLINE_NODE_INVALID` |
@@ -43,7 +43,7 @@ Rules:
 2. A delete promotes the children as in the Delete operation, decided by the server; the client may also send the promotions, which is harmless.
 3. Deleting a highlight deletes its node the same way; deleting a document deletes all its nodes (with the document's deletion root).
 4. A deleted node, or one that belongs to another user, answers `NOT_FOUND` to upsert and delete (`_cross-cutting/soft-delete`).
-5. Restoring a trash item restores the node at its old place; it is rejected with `PARENT_DELETED` if its parent node or its document is not live. Children promoted by the deletion stay where they are. The trash label is the node text, empty for a highlight node.
+5. Restoring a node directly (it is the trash item) puts it back at its old place, and is rejected with `PARENT_DELETED` if its parent node or its document is not live. Restoring through the root of a document or a highlight brings back every node deleted with it, and a node whose parent node is not live is put at the end of the root level instead, so a live node never sits under a deleted parent. Children promoted by the deletion stay where they are. The trash label is the node text, empty for a highlight node.
 
 ## Acceptance criteria
 - [ ] **AC-1** Given nodes A, B, C at root, when B is indented, then B is A's last child and C stays at root after A.
@@ -60,3 +60,7 @@ Rules:
 - [ ] **AC-12** Given an upsert or delete for a deleted node or for a node of another user, then `NOT_FOUND` and nothing changes.
 - [ ] **AC-13** Given a directly deleted node, then the trash lists it with its text, and restoring it makes it live at its old place; if its parent node or document is not live, then `PARENT_DELETED` and nothing is restored.
 - [ ] **AC-14** Given `data` that is malformed, or a free-text node without role or text, or a role `IGNORE`, then `OUTLINE_NODE_INVALID` and nothing is stored.
+- [ ] **AC-15** Given a highlight, then its node has the id derived from the highlight id, and a node with that id sent by the client before or after the highlight leaves a single node.
+- [ ] **AC-16** Given highlights created on pages 3, 1 and 2 in that order, and on the same page from bottom to top, then their root nodes are ordered by page, then top to bottom, then left to right; nodes without a highlight do not take part in the comparison.
+- [ ] **AC-17** Given a node whose parent node was deleted separately, when the node is restored through its document or its highlight, then it is restored at the end of the root level, never as a live node under a deleted parent.
+- [ ] **AC-18** Given a highlight whose node was removed because its category became `IGNORE`, when the category stops being `IGNORE`, then the same node is restored; a node the user deleted directly stays deleted.

@@ -1,6 +1,6 @@
 import { restoreByRoot, type TrashParticipant } from "@app/platform";
 import { and, eq } from "drizzle-orm";
-import { findNode } from "./repository";
+import { findNode, fixOrphans } from "./repository";
 import { nodes } from "./schema";
 import { parentDeleted, type OutlineDeps } from "./sync-handler";
 
@@ -37,6 +37,7 @@ export function createOutlineTrashParticipant(deps: OutlineDeps): TrashParticipa
         }
       }
       const ids = await restoreByRoot(tx, nodes, { ownerId, rootId, now });
+      await fixOrphans(tx, ownerId, ids, now);
       return ids.map((id) => ({
         entity: "outlineNode" as const,
         entityId: id,

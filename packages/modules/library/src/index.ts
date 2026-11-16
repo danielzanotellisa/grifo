@@ -5,5 +5,5 @@ export type { Document, DocumentStatus, RiskFlags } from "./domain/document";
 export { DOCUMENT_STATUSES, canTransition } from "./domain/document";
 export { createSubjectSyncHandler } from "./infra/subject-sync";
 export { createDocumentSyncHandler } from "./infra/document-sync";
-export { documentIsLive } from "./infra/document-liveness";
+export { documentIsLive, documentState } from "./infra/document-liveness";
 export { documentTrashParticipant, subjectTrashParticipant } from "./infra/trash";

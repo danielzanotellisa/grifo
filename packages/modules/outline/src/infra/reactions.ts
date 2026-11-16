@@ -1,6 +1,12 @@
-import { recordChange, softDeleteWhere, type EventBus } from "@app/platform";
+import {
+  outlineNodeIdForHighlight,
+  recordChange,
+  softDeleteWhere,
+  type EventBus,
+} from "@app/platform";
 import { and, eq } from "drizzle-orm";
 import { deleteAndPromote, findNode } from "./repository";
+import { placeHighlightNode } from "./placement";
 import { nodes } from "./schema";
 
 /**
@@ -34,6 +40,25 @@ export function registerOutlineReactions(events: EventBus): void {
     if (!live || live.deletedAt) return;
 
     const changes = await deleteAndPromote(tx, event.ownerId, live, event.rootId, new Date());
+    for (const change of changes) await recordChange(tx, { ownerId: event.ownerId, ...change });
+  });
+
+  events.subscribe("annotation.highlightPlaced", async (tx, event) => {
+    const changes = await placeHighlightNode(
+      tx,
+      event.ownerId,
+      event.highlightId,
+      event.documentId,
+      new Date(),
+    );
+    for (const change of changes) await recordChange(tx, { ownerId: event.ownerId, ...change });
+  });
+
+  events.subscribe("annotation.highlightIgnored", async (tx, event) => {
+    const node = await findNode(tx, event.ownerId, outlineNodeIdForHighlight(event.highlightId));
+    if (!node || node.deletedAt) return;
+
+    const changes = await deleteAndPromote(tx, event.ownerId, node, event.highlightId, new Date());
     for (const change of changes) await recordChange(tx, { ownerId: event.ownerId, ...change });
   });
 }

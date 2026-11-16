@@ -1,5 +1,6 @@
 import { liveOnly, softDelete, type SyncChange, type Tx } from "@app/platform";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
+import { generateKeyBetween } from "fractional-indexing";
 import { deleteNode } from "../domain/tree";
 import type { OutlineNode } from "../domain/outline-node";
 import type { NodeData } from "./payload";
@@ -119,4 +120,44 @@ export async function deleteAndPromote(
     }
   }
   return changes;
+}
+
+/** Live nodes at the root level of a document, in display order. */
+export async function liveRootNodes(
+  tx: Tx,
+  ownerId: string,
+  documentId: string,
+): Promise<NodeRow[]> {
+  const rows = await tx
+    .select()
+    .from(nodes)
+    .where(
+      and(
+        eq(nodes.ownerId, ownerId),
+        eq(nodes.documentId, documentId),
+        isNull(nodes.parentId),
+        liveOnly(nodes),
+      ),
+    );
+  return rows.sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0));
+}
+
+/**
+ * A node restored through a document or a highlight may sit under a parent that was deleted on its
+ * own meanwhile. A live node never stays under a deleted parent: it goes to the end of the root.
+ */
+export async function fixOrphans(tx: Tx, ownerId: string, ids: string[], now: Date): Promise<void> {
+  for (const id of ids) {
+    const row = await findNode(tx, ownerId, id);
+    if (!row || row.deletedAt || row.parentId === null) continue;
+    const parent = await findNode(tx, ownerId, row.parentId);
+    if (parent && !parent.deletedAt) continue;
+
+    const roots = (await liveRootNodes(tx, ownerId, row.documentId)).filter((n) => n.id !== id);
+    const position = generateKeyBetween(roots.at(-1)?.position ?? null, null);
+    await tx
+      .update(nodes)
+      .set({ parentId: null, position, updatedAt: now })
+      .where(and(eq(nodes.ownerId, ownerId), eq(nodes.id, id)));
+  }
 }

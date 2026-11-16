@@ -12,7 +12,7 @@ Shared infrastructure for every module. No business rules here: if it mentions a
 - `storage/`: `ObjectStorage` port (S3 API). Buckets: originals, derived, backups.
 - `queue/enqueue.ts`: `enqueueJob(tx, task, payload)` — Graphile Worker `add_job` inside the caller's transaction (ADR 0029). Payload always has `ownerId`.
 - `entitlements.ts`: single `EntitlementPolicy`; currently allows everything (ADR 0019).
-- `kernel/`: types shared by several modules (`OutlineRole`, `PdfRect`, `TextQuote`).
+- `kernel/`: types shared by several modules (`OutlineRole`, `PdfRect`, `TextQuote`) and `outlineNodeIdForHighlight`, the UUIDv5 id of a highlight's node that client and server both compute (ADR 0033; the namespace never changes).
 
 ## Rules
 - Modules may import from here; this package never imports from modules.
@@ -26,5 +26,6 @@ Shared infrastructure for every module. No business rules here: if it mentions a
 ## Events
 - `events.ts`: in-process bus; handlers run in the publisher's transaction, so a cascade either fully happens or not at all.
 - Handlers are registered at each app's composition root (`apps/*/src/composition.ts`), never inside module code at import time.
+- `annotation.highlightPlaced` and `annotation.highlightIgnored` tell the outline that a highlight needs a node or lost it; they carry no root (the highlight id is the root).
 - Deletion events carry `rootId` (the item the user deleted); a reaction that soft-deletes rows passes it on.
 - Events are for in-process reactions only. Anything the client must learn about goes through `recordChange`.
