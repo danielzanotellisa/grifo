@@ -5,6 +5,7 @@ export * from "./db/client";
 export * from "./db/with-user";
 export * from "./db/columns";
 export * from "./sync/record-change";
+export * from "./sync/engine";
 export * from "./storage/object-storage";
 export * from "./kernel/outline-role";
 export * from "./kernel/geometry";
