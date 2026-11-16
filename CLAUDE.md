@@ -66,6 +66,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Test runner is Vitest (ADR 0031); do not add Jest.
 - Domain rules: unit tests inside the module.
 - Every route: tests for unauthenticated access and for another user's resource (expect 404).
+- Anything that reads or writes the database: integration tests (`*.integration.test.ts`) against real Postgres through `withUser`, isolated by fresh owner ids (RLS), never by truncating.
 - Sync and durability: tests that drop the network or reload mid-sync must not lose data.
 
 ## Commands
@@ -74,4 +75,5 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm format` · `pnpm trace`
 - Do not bump or re-add `typescript`: it is aliased to the TS 6 API for ESLint/Next, and `@typescript/native` provides the TS 7 `tsc` (ADR 0031).
 - `pnpm install` — also installs the git hooks (husky, via `prepare`)
-- `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:queue` · `pnpm db:rls`
+- `pnpm db:setup` — roles, migrations, job queue schema and RLS in one idempotent step (needs `DATABASE_MIGRATOR_URL`); `pnpm db:generate` after changing a schema file, then commit `db/migrations`
+- `pnpm test` runs unit tests only; `pnpm test:integration` needs the compose Postgres and recreates the `grifo_test` database on every run

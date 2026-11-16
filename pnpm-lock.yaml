@@ -187,12 +187,18 @@ importers:
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
       '@typescript/native':
         specifier: npm:typescript@^7.0.2
         version: typescript@7.0.2
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@types/pg@8.23.1)(@types/sql.js@1.4.11)(pg@8.23.1)(sql.js@1.16.0)
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)(supports-color@7.2.0)
@@ -202,12 +208,18 @@ importers:
       globals:
         specifier: ^17.14.0
         version: 17.14.0
+      graphile-worker:
+        specifier: ^0.18.0
+        version: 0.18.0(@typescript/typescript6@6.0.2)(supports-color@7.2.0)
       husky:
         specifier: ^9.1.7
         version: 9.1.7
       lint-staged:
         specifier: ^17.6.0
         version: 17.6.0
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
       prettier:
         specifier: ^3.10.1
         version: 3.10.1
@@ -289,7 +301,7 @@ importers:
         version: link:../../packages/modules/study
       graphile-worker:
         specifier: ^0.18.0
-        version: 0.18.0(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.18.0(@typescript/typescript6@6.0.2)(supports-color@7.2.0)
       pg:
         specifier: ^8.23.1
         version: 8.23.1
@@ -3439,7 +3451,7 @@ snapshots:
 
   '@types/interpret@1.1.4':
     dependencies:
-      '@types/node': 22.20.5
+      '@types/node': 26.6.6
 
   '@types/json-schema@7.0.15': {}
 
@@ -3738,14 +3750,14 @@ snapshots:
       '@simple-libs/stream-utils': 2.0.0
       argue-cli: 3.2.0
 
-  cosmiconfig@8.3.6(typescript@6.0.3):
+  cosmiconfig@8.3.6(@typescript/typescript6@6.0.2):
     dependencies:
       import-fresh: 3.3.1
       js-yaml: 4.3.2
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
-      typescript: 6.0.3
+      typescript: '@typescript/typescript6@6.0.2'
 
   cosmiconfig@9.0.2(@typescript/typescript6@6.0.2):
     dependencies:
@@ -4035,12 +4047,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  graphile-worker@0.18.0(supports-color@7.2.0)(typescript@6.0.3):
+  graphile-worker@0.18.0(@typescript/typescript6@6.0.2)(supports-color@7.2.0):
     dependencies:
       '@graphile/logger': 0.3.0
       '@types/debug': 4.1.13
       '@types/pg': 8.23.1
-      cosmiconfig: 8.3.6(typescript@6.0.3)
+      cosmiconfig: 8.3.6(@typescript/typescript6@6.0.2)
       graphile-config: 0.0.1-beta.18(supports-color@7.2.0)
       json5: 2.2.3
       pg: 8.23.1
