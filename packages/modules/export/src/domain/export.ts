@@ -1,4 +1,9 @@
-export const EXPORT_KINDS = ["SUMMARY_PDF", "ANNOTATED_PDF", "FLASHCARDS_APKG", "FULL_DATA"] as const;
+export const EXPORT_KINDS = [
+  "SUMMARY_PDF",
+  "ANNOTATED_PDF",
+  "FLASHCARDS_APKG",
+  "FULL_DATA",
+] as const;
 export type ExportKind = (typeof EXPORT_KINDS)[number];
 
 export const EXPORT_STATUSES = ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED"] as const;
@@ -33,4 +38,5 @@ const ALLOWED: Record<ExportStatus, readonly ExportStatus[]> = {
   FAILED: ["QUEUED"], // manual "try again"
 };
 
-export const canTransitionExport = (from: ExportStatus, to: ExportStatus): boolean => ALLOWED[from].includes(to);
+export const canTransitionExport = (from: ExportStatus, to: ExportStatus): boolean =>
+  ALLOWED[from].includes(to);

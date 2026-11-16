@@ -33,3 +33,5 @@ MADR-style, one decision per file, immutable once accepted (see 0021). Template:
 | 0027 | Flashcard export as .apkg (own generator) | accepted |
 | 0028 | Summary rendering with Gotenberg | accepted |
 | 0029 | Job queue: Graphile Worker | accepted |
+| 0030 | Traceability between specs, code, commits and PRs | accepted |
+| 0031 | Repository workflow: PR-only main, worktrees, lint and format | accepted |

@@ -1,7 +1,8 @@
 ## Spec e ADR
-<!-- Caminho da spec e número do ADR. Use `n/a` explícito quando não se aplica (ex.: chore, ci). -->
-- Spec: `docs/specs/...`
-- ADR: `ADR-NNNN`
+<!-- Spec: id da spec (caminho sob docs/specs sem README.md), opcionalmente com critério: `highlight#AC-1`. Lista separada por vírgula. -->
+<!-- ADR: `ADR-NNNN`. Use `n/a` explícito quando não se aplica (ex.: chore, ci). O CI valida os dois. -->
+- Spec:
+- ADR:
 
 ## O que muda e por quê
 <!-- 1 a 3 linhas. -->

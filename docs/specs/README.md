@@ -11,6 +11,7 @@ The *what* of the system (the *why* is in `docs/adr`). Spec-driven: behavior is 
 
 ## Rules
 - Status is `draft` until the developer approves it; implement only `approved` specs.
-- Acceptance criteria are Given/When/Then and testable; performance and durability criteria cite ADR 0014 scenarios.
+- Acceptance criteria are Given/When/Then and testable, numbered `**AC-n**`, and never renumbered (ADR 0030). Tests reference them as `<spec-id>#AC-n`; an `approved` spec needs a test for every criterion (`pnpm trace`). The spec id is its path without `README.md` and `.md`.
+- Performance and durability criteria cite ADR 0014 scenarios.
 - Unknowns go to `docs/pending/` and are linked from "Open questions"; do not resolve them inside a spec silently.
 - A spec that contradicts an ADR is blocked until a new ADR exists.

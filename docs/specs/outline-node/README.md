@@ -34,6 +34,6 @@ An element of a document's outline tree. Either backed by a highlight or free te
 | Delete | Children promoted to the deleted node's parent, order kept. Undo available. | — |
 
 ## Acceptance criteria
-- [ ] Given nodes A, B, C at root, when B is indented, then B is A's last child and C stays at root after A.
-- [ ] Given a node with children is deleted, then its children take its place in the same order.
-- [ ] Given a DEFINITION node, then the UI offers "Create flashcard"; for other roles it does not.
+- [ ] **AC-1** Given nodes A, B, C at root, when B is indented, then B is A's last child and C stays at root after A.
+- [ ] **AC-2** Given a node with children is deleted, then its children take its place in the same order.
+- [ ] **AC-3** Given a DEFINITION node, then the UI offers "Create flashcard"; for other roles it does not.

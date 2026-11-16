@@ -29,6 +29,6 @@ A Basic (front/back) study card created from a `DEFINITION` outline node.
 | Delete / restore | Soft delete. | — |
 
 ## Acceptance criteria
-- [ ] Given an ITEM node, when creating a flashcard is attempted via API, then 422 `FLASHCARD_REQUIRES_DEFINITION`.
-- [ ] Given a flashcard, when its node text is edited, then the flashcard back is unchanged.
-- [ ] Creating a card from the reader takes ≤ 3 actions (ADR 0014).
+- [ ] **AC-1** Given an ITEM node, when creating a flashcard is attempted via API, then 422 `FLASHCARD_REQUIRES_DEFINITION`.
+- [ ] **AC-2** Given a flashcard, when its node text is edited, then the flashcard back is unchanged.
+- [ ] **AC-3** Creating a card from the reader takes ≤ 3 actions (ADR 0014).

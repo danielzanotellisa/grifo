@@ -24,10 +24,10 @@ A file generated for the user by a background job.
 3. Every kind passes `EntitlementPolicy`.
 
 ## Acceptance criteria
-- [ ] Given a request, then the API answers 202 with the export id in < 300 ms, regardless of size.
-- [ ] Given the job finishes, then the client receives an `export` SSE event and the file downloads via a presigned URL.
-- [ ] Given a node is edited while a summary renders, then the file reflects the state at request time.
-- [ ] A 500-card .apkg completes in < 5 s; a 300-node summary in < 30 s (ADR 0014).
+- [ ] **AC-1** Given a request, then the API answers 202 with the export id in < 300 ms, regardless of size.
+- [ ] **AC-2** Given the job finishes, then the client receives an `export` SSE event and the file downloads via a presigned URL.
+- [ ] **AC-3** Given a node is edited while a summary renders, then the file reflects the state at request time.
+- [ ] **AC-4** A 500-card .apkg completes in < 5 s; a 300-node summary in < 30 s (ADR 0014).
 
 ## Open questions
 - .apkg generator and Noji re-import behavior: `P-011`.

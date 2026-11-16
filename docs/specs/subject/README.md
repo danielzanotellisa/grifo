@@ -31,4 +31,4 @@ A user's group of documents (e.g. "Redes de Computadores"). Top of the hierarchy
 Entity `subject` in the change log.
 
 ## Acceptance criteria
-- [ ] Given a subject with 3 documents, when it is deleted and then restored within 30 days, then all 3 documents with their highlights, nodes and flashcards are back unchanged.
+- [ ] **AC-1** Given a subject with 3 documents, when it is deleted and then restored within 30 days, then all 3 documents with their highlights, nodes and flashcards are back unchanged.

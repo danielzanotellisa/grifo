@@ -15,7 +15,10 @@ type Handler<E extends DomainEvent> = (tx: Tx, event: E) => Promise<void>;
 
 export interface EventBus {
   publish(tx: Tx, event: DomainEvent): Promise<void>;
-  subscribe<T extends DomainEvent["type"]>(type: T, handler: Handler<Extract<DomainEvent, { type: T }>>): void;
+  subscribe<T extends DomainEvent["type"]>(
+    type: T,
+    handler: Handler<Extract<DomainEvent, { type: T }>>,
+  ): void;
 }
 
 export function createInProcessEventBus(): EventBus {

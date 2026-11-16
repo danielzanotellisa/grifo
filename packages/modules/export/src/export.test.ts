@@ -21,9 +21,13 @@ describe("note type", () => {
 describe("html template", () => {
   it("escapes interpolated user text", () => {
     const quote = '<script>alert("x")</script> & co';
-    expect(html`<p>${quote}</p>`.__html).toBe("<p>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co</p>");
+    expect(html`<p>${quote}</p>`.__html).toBe(
+      "<p>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co</p>",
+    );
   });
   it("embeds already-safe fragments untouched", () => {
-    expect(html`<ul>${[rawHtml("<li>a</li>"), rawHtml("<li>b</li>")]}</ul>`.__html).toBe("<ul><li>a</li><li>b</li></ul>");
+    expect(html`<ul>${[rawHtml("<li>a</li>"), rawHtml("<li>b</li>")]}</ul>`.__html).toBe(
+      "<ul><li>a</li><li>b</li></ul>",
+    );
   });
 });
