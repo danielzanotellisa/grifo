@@ -1,7 +1,14 @@
 import {
+  categoryTrashParticipant,
+  createAnnotationSyncHandlers,
+  createHighlightTrashParticipant,
+  registerAnnotationReactions,
+} from "@app/annotation";
+import {
   createDocumentSyncHandler,
   createSubjectSyncHandler,
   documentIsLive,
+  documentState,
   documentTrashParticipant,
   subjectTrashParticipant,
 } from "@app/library";
@@ -26,16 +33,20 @@ export const db = createDb(process.env.DATABASE_URL ?? "");
 export const events = createInProcessEventBus();
 export const entitlements = allowAll;
 
+registerAnnotationReactions(events);
 registerOutlineReactions(events);
 
 export const syncEngine = createSyncEngine([
   createSubjectSyncHandler({ events }),
   createDocumentSyncHandler({ events }),
+  ...createAnnotationSyncHandlers({ events, documentState }),
   createOutlineSyncHandler({ documentIsLive }),
 ]);
 
 export const trash = createTrash([
   subjectTrashParticipant,
   documentTrashParticipant,
+  createHighlightTrashParticipant({ documentState }),
+  categoryTrashParticipant,
   createOutlineTrashParticipant({ documentIsLive }),
 ]);
