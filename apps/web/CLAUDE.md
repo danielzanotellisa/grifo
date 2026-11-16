@@ -6,15 +6,22 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `src/app/` — routes. `src/app/api/**/route.ts` = HTTP adapters.
 - `src/features/<feature>/` — UI by feature (reader, outline, flashcards, exports).
 - `src/local/` — local-first store (IndexedDB via Dexie) and the outbox (ADR 0006, 0015).
-- `src/lib/http/` — Problem Details mapping, auth guard, request parsing.
+- `src/lib/http/` — Problem Details mapping (`problem.ts`), the auth guard (`auth-guard.ts`), the origin check for our own state-changing routes (`same-origin.ts`) and the mapping of the authentication library's errors (`auth-problem.ts`).
 - `src/composition.ts` — the only place that wires db, event handlers and entitlements.
 
 ## Route Handler rules
 - Every handler: `export const runtime = "nodejs"`; dynamic routes `force-dynamic`.
-- Shape: authenticate → validate input → `withUser(db, userId, tx => module.useCase(tx, …))` → map result. No business rules here.
+- Shape: authenticate (`requireUser`) → validate input → `withUser(db, userId, tx => module.useCase(tx, …))` → map result. No business rules here.
 - Errors leave through `toProblemResponse`. Another user's resource → 404.
 - Long work → enqueue a job and return `202` with the export/job id. Never generate files inside a request.
 - SSE (`/api/events`): one stream per browser (the leader tab shares it via BroadcastChannel); event `id` = sync cursor; heartbeat comment every 25 s.
+
+## Authentication (ADR 0034)
+- `/api/auth/*` is the authentication library, with its failures turned into Problem Details and the stable codes of `docs/specs/user`. `GET /api/me` and `POST /api/account/delete` are ours.
+- A route that changes state with a session cookie and is not served by the library calls `assertSameOrigin` first; the library only protects its own routes.
+- `getAuth()` (composition root) is built at startup by `instrumentation.ts`, so a missing `BETTER_AUTH_SECRET`, `APP_URL`, `DATABASE_AUTH_URL` or email sender stops the app early.
+- `mailer.ts` is a stopgap: outside production it logs the link and keeps it in `outbox`; in production it refuses to be used until the SMTP sender through the job queue exists. The default category names (`lib/i18n/category-names.ts`) are a stopgap until the i18n library is chosen (P-009).
+- Every route is tested for no session (401) and, when it addresses a resource, for another user's resource (404).
 
 ## UI rules
 - Every user mutation: write to IndexedDB and the outbox first, then update UI state. The UI shows "saved on this device" / "synced", never "saved" before IndexedDB commits.

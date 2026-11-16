@@ -1,4 +1,4 @@
-export type ErrorStatus = 400 | 401 | 404 | 409 | 413 | 422;
+export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 413 | 422;
 
 /**
  * Business error with a stable machine-readable code.
