@@ -12,8 +12,11 @@ export type Flashcard = {
   deletedAt: Date | null;
 };
 
+export const canCreateFlashcard = (nodeEffectiveRole: OutlineRole): boolean =>
+  nodeEffectiveRole === "DEFINITION";
+
 export function assertCanCreateFlashcard(nodeEffectiveRole: OutlineRole): void {
-  if (nodeEffectiveRole !== "DEFINITION") {
+  if (!canCreateFlashcard(nodeEffectiveRole)) {
     throw new DomainError(
       "FLASHCARD_REQUIRES_DEFINITION",
       "Only DEFINITION nodes can become flashcards",
