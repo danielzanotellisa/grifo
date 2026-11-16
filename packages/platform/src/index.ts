@@ -4,6 +4,8 @@ export * from "./entitlements";
 export * from "./db/client";
 export * from "./db/with-user";
 export * from "./db/columns";
+export * from "./db/soft-delete";
+export * from "./trash";
 export * from "./sync/record-change";
 export * from "./sync/engine";
 export * from "./storage/object-storage";
