@@ -2,6 +2,7 @@
   "name": "grifo",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.21.0",
   "scripts": {
     "dev": "pnpm --parallel --filter @app/web --filter @app/worker dev",
     "build": "pnpm -r build",
@@ -10,6 +11,17 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:queue": "pnpm --filter @app/worker exec graphile-worker --schema-only -c \"$DATABASE_MIGRATOR_URL\"",
-    "db:rls": "psql \"$DATABASE_MIGRATOR_URL\" -f db/sql/rls.sql"
+    "db:rls": "psql \"$DATABASE_MIGRATOR_URL\" -f db/sql/rls.sql",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@types/node": "^26.6.6",
+    "drizzle-kit": "^0.31.11",
+    "husky": "^9.1.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   }
 }

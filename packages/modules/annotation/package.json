@@ -2,7 +2,15 @@
   "name": "@app/annotation",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc -p tsconfig.json" },
-  "dependencies": { "@app/platform": "workspace:*", "@app/library": "workspace:*" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@app/library": "workspace:*",
+    "@app/platform": "workspace:*",
+    "drizzle-orm": "^0.45.4"
+  }
 }
