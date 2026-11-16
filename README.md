@@ -14,6 +14,9 @@ pnpm dev                      # http://localhost:3000
 
 Mailpit UI: http://localhost:8025 · S3 endpoint: http://localhost:8333
 
+## Contributing
+Commits follow Conventional Commits (`feat(annotation): add highlight shortcut`); a husky hook rejects anything else. PRs use the template in `.github/` and must name the spec and ADR they implement. See "Commits and PRs" in `CLAUDE.md`.
+
 ## Docs
 - `docs/adr` — architecture decisions (MADR)
 - `docs/specs` — specs per entity + glossary
