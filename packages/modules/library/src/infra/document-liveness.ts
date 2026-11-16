@@ -1,0 +1,16 @@
+import { liveOnly, type Tx } from "@app/platform";
+import { and, eq } from "drizzle-orm";
+import { documents } from "./schema";
+
+/** The question other modules ask: does this document exist for this owner and is it not deleted? */
+export async function documentIsLive(
+  tx: Tx,
+  ownerId: string,
+  documentId: string,
+): Promise<boolean> {
+  const rows = await tx
+    .select({ id: documents.id })
+    .from(documents)
+    .where(and(eq(documents.ownerId, ownerId), eq(documents.id, documentId), liveOnly(documents)));
+  return rows.length === 1;
+}
