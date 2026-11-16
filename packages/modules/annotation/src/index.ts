@@ -13,6 +13,7 @@ export { registerAnnotationReactions } from "./infra/reactions";
 export { compareHighlightOrder, loadHighlightOrderKeys } from "./infra/order-key";
 export type { HighlightOrderKey } from "./infra/order-key";
 export { categoryTrashParticipant } from "./infra/category-trash";
+export { highlightSource } from "./infra/highlight-source";
 export { seedDefaultCategories } from "./infra/seed";
 
 /** The category and highlight sync handlers, which share the event bus and the library port. */
