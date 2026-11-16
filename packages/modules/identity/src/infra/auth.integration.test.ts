@@ -204,7 +204,7 @@ describe("sessions", () => {
     const cookie = cookieOf(await signIn(address));
     const [user] = await rows(`select id from identity.users where email = $1`, [address]);
 
-    expect(await resolve(cookie)).toEqual({ userId: user.id });
+    expect(await resolve(cookie)).toEqual({ userId: user.id, email: address });
     expect(await authenticate(auth, new Headers())).toBeNull();
 
     await post("/sign-out", {}, { cookie });

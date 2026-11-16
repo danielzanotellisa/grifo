@@ -2,20 +2,26 @@ import { hash, verify } from "@node-rs/argon2";
 import { newId } from "@app/platform";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
+import type { AuthDb } from "./db";
 import { accounts, rateLimits, sessions, users, verifications } from "./schema";
 
 export type AuthMail = { to: string; url: string; token: string };
 
 export type AuthConfig = {
   /** Connection of the authentication role: the only one that can read the identity schema (ADR 0034). */
-  db: NodePgDatabase;
+  db: AuthDb;
   /** At least 32 characters; one per environment. */
   secret: string;
   /** Public origin of the app. Under https the cookies are `Secure`. */
   baseURL: string;
   sendVerificationEmail(mail: AuthMail): Promise<void>;
   sendResetPassword(mail: AuthMail): Promise<void>;
+  /**
+   * Called after every session is created, with the user id (the app seeds the default categories here).
+   * A failure is logged and never blocks the sign-in.
+   */
+  onSignIn?(userId: string): Promise<void>;
 };
 
 // 64 MiB, 3 iterations, parallelism 4. The library's `Algorithm.Argon2id` is a const enum: 2.
@@ -44,7 +50,11 @@ export function createAuth(config: AuthConfig) {
       provider: "pg",
       schema: { users, sessions, accounts, verifications, rateLimits },
     }),
-    user: { modelName: "users", fields: { name: "displayName" } },
+    user: {
+      modelName: "users",
+      fields: { name: "displayName" },
+      additionalFields: { deletedAt: { type: "date", required: false, input: false } },
+    },
     session: { modelName: "sessions" },
     account: { modelName: "accounts" },
     verification: { modelName: "verifications" },
@@ -55,6 +65,25 @@ export function createAuth(config: AuthConfig) {
       disableOriginCheck: false,
       disableCSRFCheck: false,
       useSecureCookies: config.baseURL.startsWith("https://"),
+    },
+    databaseHooks: {
+      session: {
+        create: {
+          // A deleted account never gets a new session (its open ones are removed when it is deleted).
+          before: async (session) => {
+            const [row] = await config.db
+              .select({ deletedAt: users.deletedAt })
+              .from(users)
+              .where(eq(users.id, session.userId));
+            if (row?.deletedAt) return false;
+          },
+          after: async (session) => {
+            await config.onSignIn?.(session.userId).catch((error: unknown) => {
+              console.error("onSignIn failed", error);
+            });
+          },
+        },
+      },
     },
     emailAndPassword: {
       enabled: true,
@@ -78,11 +107,15 @@ export function createAuth(config: AuthConfig) {
 
 export type Auth = ReturnType<typeof createAuth>;
 
-/** Turns the headers of a request into the verified user id, or null when there is no valid session. */
+/**
+ * Turns the headers of a request into the verified user, or null when there is no valid session or
+ * the account was deleted (a session that was open at the time must stop working).
+ */
 export async function authenticate(
   auth: Auth,
   headers: Headers,
-): Promise<{ userId: string } | null> {
+): Promise<{ userId: string; email: string } | null> {
   const session = await auth.api.getSession({ headers });
-  return session ? { userId: session.user.id } : null;
+  if (!session || session.user.deletedAt) return null;
+  return { userId: session.user.id, email: session.user.email };
 }
