@@ -14,4 +14,4 @@ Node process running background jobs with Graphile Worker on Postgres (ADR 0007,
 - On finish or final failure, update the entity status and `recordChange`, so the client learns through sync/SSE. Throwing makes Graphile retry (max 4 attempts in total); after the last attempt mark the entity FAILED with a user-facing code.
 - Scheduled jobs live in the crontab in `src/index.ts`, nowhere else.
 - Never execute content from PDFs. Summary rendering goes to Gotenberg with JavaScript disabled; HTML is built only from escaped user text.
-- The Graphile schema is installed by `pnpm db:queue` with the migrator role; the worker itself runs as `app_user`.
+- The Graphile schema is installed by `pnpm db:setup` (or `pnpm db:queue` alone) with the migrator role; the worker itself runs as `app_user`.

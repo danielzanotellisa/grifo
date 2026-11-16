@@ -8,7 +8,7 @@ Grifo: read PDFs, highlight, build structured summaries and flashcards. See `CLA
 cp .env.example .env
 docker compose up -d          # Postgres, S3 (SeaweedFS), ClamAV, Mailpit, Gotenberg
 ./scripts/bootstrap.sh        # installs dependencies at current versions
-pnpm db:generate && pnpm db:migrate && pnpm db:queue && pnpm db:rls
+pnpm db:setup                 # roles, migrations, job queue schema, RLS (idempotent)
 pnpm dev                      # http://localhost:3000
 ```
 
