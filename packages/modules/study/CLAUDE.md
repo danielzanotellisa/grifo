@@ -6,7 +6,7 @@ Flashcards and decks. Schema: `study`. Specs: `docs/specs/flashcard/`, `docs/spe
 - `Flashcard` (table `flashcards`). `Deck` is a projection, not a table.
 
 ## Public API (`src/index.ts`)
-- Types, `canCreateFlashcard`, `assertCanCreateFlashcard`, `newFlashcard`, `ankiGuid`, `deckName`, `DeckScope`.
+- Types, `canCreateFlashcard`, `assertCanCreateFlashcard`, `newFlashcard`, `editFlashcard`, `updateFromSource`, `deleteFlashcard`, `restoreFlashcard`, `ankiGuid`, `deckName`, `DeckScope`.
 
 ## Rules
 - A flashcard can only be created from an outline node whose effective role is `DEFINITION` (`FLASHCARD_REQUIRES_DEFINITION`).
@@ -14,6 +14,7 @@ Flashcards and decks. Schema: `study`. Specs: `docs/specs/flashcard/`, `docs/spe
 - `document_id` is always set (filtering). `source_node_id` is nullable: deleting the node keeps the card.
 - A flashcard id never changes after creation: it derives the Anki GUID (`grifo-<id>`) used to update instead of duplicate on re-import. Never change the prefix.
 - Deck = all live flashcards of a document, or of every document in a subject. Deck name is `Subject::Document`; `::` inside user names is replaced so it cannot create fake sub-decks.
+- Flashcard operations are pure and immutable: each returns a new card (the same one when nothing changes). Persisting and the change log are the caller's job. Operations on a soft-deleted card are not specified; callers load live cards only.
 - MVP card type is Basic (front/back). Cloze is out of scope until a spec says otherwise.
 
 ## Depends on
