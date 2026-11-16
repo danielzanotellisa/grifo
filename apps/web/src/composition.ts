@@ -5,7 +5,14 @@ import {
   registerAnnotationReactions,
   seedDefaultCategories,
 } from "@app/annotation";
-import { createAuth, createAuthDb, type Auth } from "@app/identity";
+import {
+  createAuth,
+  createAuthDb,
+  createMailOutbox,
+  type Auth,
+  type AuthMail,
+  type MailKind,
+} from "@app/identity";
 import {
   createDocumentSyncHandler,
   createSubjectSyncHandler,
@@ -31,10 +38,10 @@ import {
   createInProcessEventBus,
   createSyncEngine,
   createTrash,
+  enqueueJob,
   withUser,
 } from "@app/platform";
 import { categoryName } from "./lib/i18n/category-names";
-import { assertMailerReady, authMailer } from "./mailer";
 
 /**
  * Composition root: the only place that wires infrastructure to modules.
@@ -78,16 +85,29 @@ export const appUrl = (): string => requiredEnv("APP_URL");
 
 let auth: Auth | undefined;
 
-/** Built on first use and at startup (`instrumentation.ts`), so a missing secret or sender stops the app early. */
+/**
+ * Writes the message to the outbox of the identity schema, then enqueues the job that sends it. The
+ * job holds only ids: the link carries a token and must not be readable by the application role (ADR 0035).
+ */
+const deliver =
+  (kind: MailKind, outbox: ReturnType<typeof createMailOutbox>) => async (mail: AuthMail) => {
+    const mailId = await outbox.add({ to: mail.to, kind, url: mail.url });
+    await withUser(db, mail.userId, (tx) =>
+      enqueueJob(tx, "auth.sendEmail", { ownerId: mail.userId, mailId }),
+    );
+  };
+
+/** Built on first use and at startup (`instrumentation.ts`), so a missing secret or database stops the app early. */
 export function getAuth(): Auth {
   if (!auth) {
-    assertMailerReady();
+    requiredEnv("DATABASE_AUTH_URL");
+    const outbox = createMailOutbox(authDb);
     auth = createAuth({
       db: authDb,
       secret: requiredEnv("BETTER_AUTH_SECRET"),
       baseURL: appUrl(),
-      sendVerificationEmail: authMailer.sendVerificationEmail,
-      sendResetPassword: authMailer.sendResetPassword,
+      sendVerificationEmail: deliver("verification", outbox),
+      sendResetPassword: deliver("reset", outbox),
       onSignIn: async (userId) => {
         await withUser(db, userId, (tx) => seedDefaultCategories(tx, userId, categoryName));
       },
