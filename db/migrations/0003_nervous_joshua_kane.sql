@@ -1,0 +1,2 @@
+ALTER TABLE "annotation"."categories" ALTER COLUMN "position" SET DATA TYPE text collate "C";--> statement-breakpoint
+ALTER TABLE "outline"."nodes" ALTER COLUMN "position" SET DATA TYPE text collate "C";
