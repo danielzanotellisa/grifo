@@ -3,6 +3,7 @@ import {
   liveOnly,
   notFound,
   softDelete,
+  type EventBus,
   type SyncChange,
   type SyncHandler,
   type Tx,
@@ -29,7 +30,12 @@ async function assertUnique(tx: Tx, ownerId: string, data: CategoryData): Promis
   }
 }
 
-async function upsert(tx: Tx, ownerId: string, raw: unknown): Promise<SyncChange[]> {
+async function upsert(
+  tx: Tx,
+  ownerId: string,
+  raw: unknown,
+  events: EventBus,
+): Promise<SyncChange[]> {
   const data = parseCategoryData(raw);
   const now = new Date();
   const existing = await findCategory(tx, ownerId, data.id);
@@ -56,10 +62,36 @@ async function upsert(tx: Tx, ownerId: string, raw: unknown): Promise<SyncChange
       .returning({ id: categories.id });
     if (inserted.length === 0) throw notFound("category");
   }
+
+  if (existing && (existing.role === "IGNORE") !== (data.role === "IGNORE")) {
+    const used = await tx
+      .select({ id: highlights.id, documentId: highlights.documentId })
+      .from(highlights)
+      .where(
+        and(
+          eq(highlights.ownerId, ownerId),
+          eq(highlights.categoryId, data.id),
+          liveOnly(highlights),
+        ),
+      );
+    for (const row of used) {
+      await events.publish(tx, {
+        type: data.role === "IGNORE" ? "annotation.highlightIgnored" : "annotation.highlightPlaced",
+        ownerId,
+        highlightId: row.id,
+        documentId: row.documentId,
+      });
+    }
+  }
   return [{ entity: "category", entityId: data.id, op: "upsert" }];
 }
 
-async function remove(tx: Tx, ownerId: string, raw: unknown): Promise<SyncChange[]> {
+async function remove(
+  tx: Tx,
+  ownerId: string,
+  raw: unknown,
+  events: EventBus,
+): Promise<SyncChange[]> {
   const { id, moveHighlightsTo } = parseCategoryDelete(raw);
   const now = new Date();
   const target = await findCategory(tx, ownerId, id);
@@ -88,19 +120,34 @@ async function remove(tx: Tx, ownerId: string, raw: unknown): Promise<SyncChange
       .where(
         and(eq(highlights.ownerId, ownerId), eq(highlights.categoryId, id), liveOnly(highlights)),
       )
-      .returning({ id: highlights.id });
+      .returning({ id: highlights.id, documentId: highlights.documentId });
     for (const row of moved) changes.push({ entity: "highlight", entityId: row.id, op: "upsert" });
+    if ((target.role === "IGNORE") !== (destination.role === "IGNORE")) {
+      for (const row of moved) {
+        await events.publish(tx, {
+          type:
+            destination.role === "IGNORE"
+              ? "annotation.highlightIgnored"
+              : "annotation.highlightPlaced",
+          ownerId,
+          highlightId: row.id,
+          documentId: row.documentId,
+        });
+      }
+    }
   }
 
   await softDelete(tx, categories, { ownerId, id, rootId: id, now });
   return [{ entity: "category", entityId: id, op: "delete" }, ...changes];
 }
 
-export function createCategorySyncHandler(): SyncHandler {
+export function createCategorySyncHandler(deps: { events: EventBus }): SyncHandler {
   return {
     entity: "category",
     apply: (tx, ownerId, { op, data }) =>
-      op === "upsert" ? upsert(tx, ownerId, data) : remove(tx, ownerId, data),
+      op === "upsert"
+        ? upsert(tx, ownerId, data, deps.events)
+        : remove(tx, ownerId, data, deps.events),
     async read(tx, ownerId, ids) {
       if (ids.length === 0) return new Map();
       const rows = await tx
