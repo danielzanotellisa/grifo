@@ -8,7 +8,7 @@ Subjects, documents and the stored PDF files. Schema: `library`. Specs: `docs/sp
 ## Public API (`src/index.ts`)
 - Types, `DocumentStatus`, `canTransition`, `isSha256Hex`.
 - `createSubjectSyncHandler({ events })`, `createDocumentSyncHandler({ events })`, `subjectTrashParticipant`, `documentTrashParticipant`: registered at the composition root.
-- `documentIsLive(tx, ownerId, documentId)`: the question other modules ask (the outline's `documentIsLive` port); they never query library's tables.
+- `documentIsLive(tx, ownerId, documentId)` and `documentState(tx, ownerId, documentId)` (status and page count): the questions other modules ask (the outline's and annotation's ports); they never query library's tables.
 
 ## Rules
 - A document belongs to exactly one subject; moving it changes `subject_id` only.

@@ -1,4 +1,5 @@
 import { liveOnly, type Tx } from "@app/platform";
+import type { DocumentStatus } from "../domain/document";
 import { and, eq } from "drizzle-orm";
 import { documents } from "./schema";
 
@@ -13,4 +14,17 @@ export async function documentIsLive(
     .from(documents)
     .where(and(eq(documents.ownerId, ownerId), eq(documents.id, documentId), liveOnly(documents)));
   return rows.length === 1;
+}
+
+/** Status and page count of a live document of the owner, or null when there is none. */
+export async function documentState(
+  tx: Tx,
+  ownerId: string,
+  documentId: string,
+): Promise<{ status: DocumentStatus; pageCount: number | null } | null> {
+  const [row] = await tx
+    .select({ status: documents.status, pageCount: documents.pageCount })
+    .from(documents)
+    .where(and(eq(documents.ownerId, ownerId), eq(documents.id, documentId), liveOnly(documents)));
+  return row ?? null;
 }
