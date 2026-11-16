@@ -1,4 +1,10 @@
-import { OUTLINE_ROLES, ownedColumns, type PdfRect, type TextQuote } from "@app/platform";
+import {
+  OUTLINE_ROLES,
+  ownedColumns,
+  softDeleteCheck,
+  type PdfRect,
+  type TextQuote,
+} from "@app/platform";
 import { char, index, integer, jsonb, pgSchema, smallint, text, uuid } from "drizzle-orm/pg-core";
 
 export const annotation = pgSchema("annotation");
@@ -15,7 +21,7 @@ export const categories = annotation.table(
     shortcut: smallint("shortcut"),
     position: text("position").notNull(),
   },
-  (t) => [index("categories_owner_idx").on(t.ownerId)],
+  (t) => [index("categories_owner_idx").on(t.ownerId), softDeleteCheck("categories", t)],
 );
 
 export const highlights = annotation.table(
@@ -31,5 +37,8 @@ export const highlights = annotation.table(
     quote: jsonb("quote").$type<TextQuote>().notNull(),
     note: text("note"),
   },
-  (t) => [index("highlights_owner_document_idx").on(t.ownerId, t.documentId, t.pageIndex)],
+  (t) => [
+    index("highlights_owner_document_idx").on(t.ownerId, t.documentId, t.pageIndex),
+    softDeleteCheck("highlights", t),
+  ],
 );

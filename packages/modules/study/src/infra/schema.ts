@@ -1,4 +1,4 @@
-import { ownedColumns } from "@app/platform";
+import { ownedColumns, softDeleteCheck } from "@app/platform";
 import { index, pgSchema, text, uuid } from "drizzle-orm/pg-core";
 
 export const study = pgSchema("study");
@@ -12,5 +12,8 @@ export const flashcards = study.table(
     front: text("front").notNull(),
     back: text("back").notNull(),
   },
-  (t) => [index("flashcards_owner_document_idx").on(t.ownerId, t.documentId)],
+  (t) => [
+    index("flashcards_owner_document_idx").on(t.ownerId, t.documentId),
+    softDeleteCheck("flashcards", t),
+  ],
 );

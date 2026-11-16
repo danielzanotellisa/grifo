@@ -1,4 +1,4 @@
-import { OUTLINE_ROLES, ownedColumns } from "@app/platform";
+import { OUTLINE_ROLES, ownedColumns, softDeleteCheck } from "@app/platform";
 import { sql } from "drizzle-orm";
 import { check, index, pgSchema, text, uuid } from "drizzle-orm/pg-core";
 
@@ -20,6 +20,7 @@ export const nodes = outline.table(
   },
   (t) => [
     index("nodes_owner_document_idx").on(t.ownerId, t.documentId),
+    softDeleteCheck("nodes", t),
     check(
       "nodes_shape_chk",
       sql`${t.highlightId} is not null or (${t.role} is not null and ${t.text} is not null)`,
