@@ -16,10 +16,17 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - A change is done when it has code + tests + updated spec (+ an ADR if it changes architecture).
 
 ## Commits and PRs
-- Work on a branch, never directly on `main`; changes reach `main` through a PR.
+- `main` accepts changes only through a merged PR (GitHub ruleset, ADR 0031). Never push to it.
+- Work in a git worktree, not in the main checkout: `git worktree add ../grifo-worktrees/<slug> -b <type>/<slug> origin/main`, then `pnpm install` inside it (installs the husky hooks). Keep the main checkout on `main`, clean. Remove with `git worktree remove` after the PR merges.
 - Commit format `<type>(<scope>): <description>`, enforced by commitlint in the husky `commit-msg` hook and again in CI. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Scope is optional and must be one of those in `commitlint.config.js` (module, app, `db`, `infra`, `docs`, `ci`, `deps`). Lowercase subject.
-- Every PR fills `.github/pull_request_template.md`: `Spec:` (path under `docs/specs`) and `ADR:` (`ADR-NNNN`), or an explicit `n/a`.
-- CI (`.github/workflows/ci.yml`) runs typecheck, tests, the husky wiring check and commitlint over the PR's commits. A red CI blocks merge.
+- `feat` and `fix` commits end with a footer `Spec: <spec-id>[#AC-n], …` or `Spec: n/a`.
+- Every PR fills `.github/pull_request_template.md`: `Spec:` (spec id, optionally `#AC-n`) and `ADR:` (`ADR-NNNN`), or an explicit `n/a`. CI validates both against the repo.
+- CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, `pnpm trace`, tests, the husky wiring check, commitlint over the PR's commits and the PR-body check. A red CI blocks merge. A new required check must also be added to the ruleset.
+
+## Traceability (ADR 0030)
+- Spec id = path under `docs/specs` without `README.md`/`.md` (`highlight`, `_cross-cutting/sync`). Acceptance criteria are `**AC-n**`, numbered once, never renumbered.
+- Reference a criterion as `<spec-id>#AC-n`: in the test name (`it("[highlight#AC-1] creates a highlight", …)`), and in a short comment in code when it helps.
+- `pnpm trace` fails on unknown references and on any `approved` criterion without a test. Implement only `approved` specs, so every criterion gets a test before the PR merges.
 
 ## Repo map
 - `apps/web` — Next.js: React UI and Route Handlers (thin HTTP adapters, SSE).
@@ -56,6 +63,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Secrets only through environment variables.
 
 ## Testing
+- Test runner is Vitest (ADR 0031); do not add Jest.
 - Domain rules: unit tests inside the module.
 - Every route: tests for unauthenticated access and for another user's resource (expect 404).
 - Sync and durability: tests that drop the network or reload mid-sync must not lose data.
@@ -63,6 +71,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 ## Commands
 - `docker compose up -d` — infra (Postgres, S3, ClamAV, Mailpit, Gotenberg)
 - `pnpm dev` — web + worker
-- `pnpm test` · `pnpm typecheck`
+- `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm format` · `pnpm trace`
+- Do not bump or re-add `typescript`: it is aliased to the TS 6 API for ESLint/Next, and `@typescript/native` provides the TS 7 `tsc` (ADR 0031).
 - `pnpm install` — also installs the git hooks (husky, via `prepare`)
 - `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:queue` · `pnpm db:rls`
