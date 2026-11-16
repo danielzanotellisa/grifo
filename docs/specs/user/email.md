@@ -21,3 +21,4 @@ How the verification and reset emails are produced and delivered without a token
 - [ ] **AC-4** Given a send that fails, then the job throws so it is retried, and the row is kept.
 - [ ] **AC-5** Given rows older than 24 hours and newer ones, when the expiry task runs, then only the old ones are deleted.
 - [ ] **AC-6** Given the application role, then it cannot read `outgoing_mail`.
+- [ ] **AC-7** Given a sign-up whose job was enqueued by the web, when the worker runs it with the application role, then the message reaches the SMTP transport and neither the row nor the job is left.
