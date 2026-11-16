@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
@@ -29,7 +30,11 @@ jobs:
         run: |
           test "$(git config core.hooksPath)" = ".husky/_"
           test -x .husky/commit-msg
+          test -x .husky/pre-commit
       - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm trace
       - run: pnpm test
 
   commits:
@@ -49,3 +54,21 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Lint PR commits
         run: pnpm exec commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
+
+  pr-trace:
+    name: Spec and ADR in PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check Spec and ADR lines of the PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: pnpm trace:pr
