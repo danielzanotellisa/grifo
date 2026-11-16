@@ -6,7 +6,6 @@ import type { Tx } from "./db/client";
  * without importing them. Handlers are registered once, at the app composition root.
  */
 export type DomainEvent =
-  | { type: "library.subjectDeleted"; ownerId: string; subjectId: string; rootId: string }
   | { type: "library.documentDeleted"; ownerId: string; documentId: string; rootId: string }
   | { type: "annotation.highlightPlaced"; ownerId: string; highlightId: string; documentId: string }
   | {
@@ -15,8 +14,7 @@ export type DomainEvent =
       highlightId: string;
       documentId: string;
     }
-  | { type: "annotation.highlightDeleted"; ownerId: string; highlightId: string; rootId: string }
-  | { type: "outline.nodeDeleted"; ownerId: string; nodeId: string; rootId: string };
+  | { type: "annotation.highlightDeleted"; ownerId: string; highlightId: string; rootId: string };
 
 /**
  * `highlightPlaced` (a highlight now needs an outline node) and `highlightIgnored` (its category became

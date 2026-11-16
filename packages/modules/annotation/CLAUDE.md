@@ -8,6 +8,7 @@ Highlights on PDFs and the user's categories. Schema: `annotation`. Specs: `docs
 ## Public API (`src/index.ts`)
 - Types, `normalizeQuoteText`, `isHexColor`, `DEFAULT_CATEGORIES`.
 - `createAnnotationSyncHandlers({ events, documentState })` (category and highlight handlers), `createCategorySyncHandler`, `createHighlightSyncHandler`, `createHighlightTrashParticipant`, `categoryTrashParticipant`, `registerAnnotationReactions(events)`, `seedDefaultCategories(tx, ownerId, translate)`. All but the seed are registered at the composition root; the seed is called when the account is created (needs the auth decision, P-005).
+- `highlightSource(tx, ownerId, highlightId)`: the role of a live highlight's category and its quote (the outline's `nodeSource` uses it).
 - `loadHighlightOrderKeys` and `compareHighlightOrder`: reading order of live highlights (page, top to bottom, left to right), used by the outline to place a new node.
 - Exposes "role of a highlight" to the outline module; outline never reads these tables.
 
