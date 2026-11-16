@@ -25,7 +25,7 @@ States and allowed transitions, if any.
 How changes reach other devices (entity name in the change log, conflict notes).
 
 ## Acceptance criteria
-- [ ] Given … when … then …
+- [ ] **AC-1** Given … when … then …
 
 ## Open questions
 - Link to `docs/pending/P-XXX`.

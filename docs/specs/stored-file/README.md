@@ -20,5 +20,5 @@ The immutable bytes of an uploaded PDF in the `originals` bucket, addressed by o
 3. Physically deleted only by the purge job when no live or trashed document references it.
 
 ## Acceptance criteria
-- [ ] Given two users upload the same PDF, then two objects exist, one per owner.
-- [ ] The integrity job reports any object whose recomputed SHA-256 differs from the record.
+- [ ] **AC-1** Given two users upload the same PDF, then two objects exist, one per owner.
+- [ ] **AC-2** The integrity job reports any object whose recomputed SHA-256 differs from the record.

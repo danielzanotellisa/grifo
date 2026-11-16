@@ -14,5 +14,5 @@ The set of live flashcards in a scope: one document, or all documents of a subje
 4. Tags on export: subject, document, `page_<n>` of the source highlight when known.
 
 ## Acceptance criteria
-- [ ] Given a subject with 2 documents and 5 + 3 cards, then the subject .apkg has 8 notes in 2 sub-decks.
-- [ ] Given the same deck is exported again after editing 2 cards, then importing it into Anki updates those 2 notes and creates none.
+- [ ] **AC-1** Given a subject with 2 documents and 5 + 3 cards, then the subject .apkg has 8 notes in 2 sub-decks.
+- [ ] **AC-2** Given the same deck is exported again after editing 2 cards, then importing it into Anki updates those 2 notes and creates none.
