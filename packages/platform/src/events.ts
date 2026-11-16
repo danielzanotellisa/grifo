@@ -6,11 +6,15 @@ import type { Tx } from "./db/client";
  * without importing them. Handlers are registered once, at the app composition root.
  */
 export type DomainEvent =
-  | { type: "library.subjectDeleted"; ownerId: string; subjectId: string }
-  | { type: "library.documentDeleted"; ownerId: string; documentId: string }
-  | { type: "annotation.highlightDeleted"; ownerId: string; highlightId: string }
-  | { type: "outline.nodeDeleted"; ownerId: string; nodeId: string };
+  | { type: "library.subjectDeleted"; ownerId: string; subjectId: string; rootId: string }
+  | { type: "library.documentDeleted"; ownerId: string; documentId: string; rootId: string }
+  | { type: "annotation.highlightDeleted"; ownerId: string; highlightId: string; rootId: string }
+  | { type: "outline.nodeDeleted"; ownerId: string; nodeId: string; rootId: string };
 
+/**
+ * Deletion events carry `rootId`, the item the user deleted, so the rows a reaction soft-deletes get
+ * the same `deleted_root_id` and come back together on restore.
+ */
 type Handler<E extends DomainEvent> = (tx: Tx, event: E) => Promise<void>;
 
 export interface EventBus {

@@ -1,4 +1,4 @@
-import { ownedColumns } from "@app/platform";
+import { ownedColumns, softDeleteCheck } from "@app/platform";
 import {
   bigint,
   index,
@@ -33,5 +33,8 @@ export const exports = exportSchema.table(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
-  (t) => [index("exports_owner_created_idx").on(t.ownerId, t.createdAt)],
+  (t) => [
+    index("exports_owner_created_idx").on(t.ownerId, t.createdAt),
+    softDeleteCheck("exports", t),
+  ],
 );

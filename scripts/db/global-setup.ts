@@ -27,4 +27,18 @@ export default async function setup(): Promise<void> {
   process.env.DATABASE_MIGRATOR_URL = withDatabase(migratorUrl, TEST_DATABASE);
   process.env.DATABASE_URL = withDatabase(appUrl, TEST_DATABASE);
   await setupDatabase(process.env.DATABASE_MIGRATOR_URL);
+
+  // Tables that tests create for themselves live here, outside the module schemas.
+  const testDb = new pg.Client({ connectionString: process.env.DATABASE_MIGRATOR_URL });
+  await testDb.connect();
+  try {
+    await testDb.query(`
+      CREATE SCHEMA test_support;
+      GRANT USAGE ON SCHEMA test_support TO app_user;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA test_support
+        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
+    `);
+  } finally {
+    await testDb.end();
+  }
 }

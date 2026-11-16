@@ -15,8 +15,6 @@ const db: Db = drizzle(appPool);
 
 beforeAll(async () => {
   await admin.query(`
-    create schema if not exists test_support;
-    grant usage on schema test_support to app_user;
     create table if not exists test_support.items (
       id uuid primary key,
       owner_id uuid not null,
@@ -24,7 +22,6 @@ beforeAll(async () => {
       text text not null,
       deleted_at timestamptz
     );
-    grant select, insert, update, delete on test_support.items to app_user;
   `);
 });
 
@@ -221,7 +218,7 @@ describe("pull", () => {
     expect(received).toEqual(ids);
   });
 
-  it("[_cross-cutting/sync#AC-9] delivers a tombstone for a deleted entity, without row content", async () => {
+  it("[_cross-cutting/sync#AC-9][_cross-cutting/soft-delete#AC-6] delivers a tombstone for a deleted entity, without row content", async () => {
     const owner = newId();
     const id = newId();
 

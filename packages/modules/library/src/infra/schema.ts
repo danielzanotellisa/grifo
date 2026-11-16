@@ -1,4 +1,4 @@
-import { ownedColumns } from "@app/platform";
+import { ownedColumns, softDeleteCheck } from "@app/platform";
 import {
   bigint,
   char,
@@ -23,7 +23,7 @@ export const subjects = library.table(
     ...ownedColumns(),
     name: text("name").notNull(),
   },
-  (t) => [index("subjects_owner_idx").on(t.ownerId)],
+  (t) => [index("subjects_owner_idx").on(t.ownerId), softDeleteCheck("subjects", t)],
 );
 
 export const storedFiles = library.table(
@@ -54,5 +54,8 @@ export const documents = library.table(
     pageCount: integer("page_count"),
     riskFlags: jsonb("risk_flags").$type<RiskFlags>().notNull().default({}),
   },
-  (t) => [index("documents_owner_subject_idx").on(t.ownerId, t.subjectId)],
+  (t) => [
+    index("documents_owner_subject_idx").on(t.ownerId, t.subjectId),
+    softDeleteCheck("documents", t),
+  ],
 );
