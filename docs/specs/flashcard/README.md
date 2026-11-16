@@ -24,9 +24,9 @@ A Basic (front/back) study card created from a `DEFINITION` outline node.
 | Operation | Rules | Errors |
 | --- | --- | --- |
 | Create from node | From the reader (right-click on a DEFINITION highlight) or the outline. User writes the front. | `FLASHCARD_REQUIRES_DEFINITION`, `FLASHCARD_FRONT_REQUIRED`, `FLASHCARD_BACK_EMPTY` |
-| Edit | Front and back, both trimmed and non-empty. | `FLASHCARD_FRONT_REQUIRED`, `FLASHCARD_BACK_EMPTY` |
-| Update from source | Re-copies the current node text into the back, on request. Fails once the node was deleted. | `FLASHCARD_SOURCE_GONE`, `FLASHCARD_BACK_EMPTY` |
-| Delete / restore | Soft delete. Deleting a deleted card or restoring a live one changes nothing. | — |
+| Edit | Front and back, both trimmed and non-empty. | `FLASHCARD_FRONT_REQUIRED`, `FLASHCARD_BACK_EMPTY`, `NOT_FOUND` |
+| Update from source | Re-copies the current node text into the back, on request. Fails once the node was deleted. | `FLASHCARD_SOURCE_GONE`, `FLASHCARD_BACK_EMPTY`, `NOT_FOUND` |
+| Delete / restore | Soft delete. A deleted card is invisible and read-only (`_cross-cutting/soft-delete`): edit, update from source and delete answer `NOT_FOUND`. Restoring a live card changes nothing. | `NOT_FOUND` |
 
 ## Acceptance criteria
 - [ ] **AC-1** Given an ITEM node, when creating a flashcard is attempted via API, then 422 `FLASHCARD_REQUIRES_DEFINITION`.
@@ -36,6 +36,7 @@ A Basic (front/back) study card created from a `DEFINITION` outline node.
 - [ ] **AC-6** Given a flashcard, when its front and back are edited, then it shows the new trimmed text and keeps its id.
 - [ ] **AC-7** Given a flashcard whose node text changed, when it is updated from source, then its back is the new trimmed node text and its front is unchanged.
 - [ ] **AC-8** Given a flashcard whose node was deleted, when it is updated from source, then 422 `FLASHCARD_SOURCE_GONE`.
-- [ ] **AC-9** Given a flashcard, when it is deleted then restored, then it is hidden then live again; deleting a deleted card or restoring a live one changes nothing.
+- [ ] **AC-9** Given a flashcard, when it is deleted then restored, then it is hidden then live again; restoring a live card changes nothing.
+- [ ] **AC-10** Given a deleted flashcard, when it is edited, updated from source or deleted again, then 404 `NOT_FOUND` and the card is unchanged.
 
 AC-3 (three actions to create a card from the reader, ADR 0014) moved to `flashcard/create-from-reader`; a retired criterion keeps its number.

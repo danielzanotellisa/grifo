@@ -1,4 +1,4 @@
-import { DomainError, type OutlineRole } from "@app/platform";
+import { DomainError, notFound, type OutlineRole } from "@app/platform";
 
 export type Flashcard = {
   id: string;
@@ -23,6 +23,11 @@ export function assertCanCreateFlashcard(nodeEffectiveRole: OutlineRole): void {
       422,
     );
   }
+}
+
+/** A soft-deleted card is invisible and read-only (`_cross-cutting/soft-delete`). */
+function assertLive(card: Flashcard): void {
+  if (card.deletedAt !== null) throw notFound("flashcard");
 }
 
 const cleanFront = (front: string): string => {
@@ -68,11 +73,13 @@ export function editFlashcard(
   edit: { front: string; back: string },
   now: Date,
 ): Flashcard {
+  assertLive(card);
   return { ...card, front: cleanFront(edit.front), back: cleanBack(edit.back), updatedAt: now };
 }
 
 /** Re-copies the node's current text into the back, on the user's request. */
 export function updateFromSource(card: Flashcard, nodeText: string, now: Date): Flashcard {
+  assertLive(card);
   if (card.sourceNodeId === null) {
     throw new DomainError("FLASHCARD_SOURCE_GONE", "The source node was deleted", 422);
   }
@@ -80,7 +87,8 @@ export function updateFromSource(card: Flashcard, nodeText: string, now: Date): 
 }
 
 export function deleteFlashcard(card: Flashcard, now: Date): Flashcard {
-  return card.deletedAt === null ? { ...card, deletedAt: now, updatedAt: now } : card;
+  assertLive(card);
+  return { ...card, deletedAt: now, updatedAt: now };
 }
 
 export function restoreFlashcard(card: Flashcard, now: Date): Flashcard {
