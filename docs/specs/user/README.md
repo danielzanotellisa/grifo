@@ -44,5 +44,6 @@ The error codes above are those of the API; the route adapter maps the answers o
 - [ ] **AC-9** Given repeated sign-in attempts from one client IP, then they are refused with 429 after a few tries, and changing `X-Forwarded-For` does not avoid the limit; the counters are stored in the database.
 - [ ] **AC-10** Given a request from another origin, or a request with a session cookie and no `Origin`, then 403 and nothing changes.
 - [ ] **AC-11** Given the application role, then it cannot read users, sessions, accounts or verifications.
+- [ ] **AC-12** Given an authentication route that fails, then it answers a Problem Details body with the stable code: `INVALID_CREDENTIALS` (401), `EMAIL_NOT_VERIFIED` (403), `PASSWORD_INVALID` (400), `INVALID_TOKEN` (400), `RATE_LIMITED` (429, keeping `Retry-After`) or `FORBIDDEN_ORIGIN` (403).
 
 AC-1 (another user's resources answer 404) moved to `user/access`; a retired criterion keeps its number.

@@ -7,7 +7,7 @@ Accounts and sessions. Schema: `identity`. Spec: `docs/specs/user/`.
 
 ## Public API (`src/index.ts`)
 - `User` type, `normalizeEmail`.
-- `createAuth(config)`, `authenticate(auth, headers)` (the verified `userId` of a request, or null), `Auth`, `AuthConfig`, `AuthMail`. The app builds the instance in the composition root with the auth pool and the secret.
+- `createAuth(config)`, `createAuthDb(url)` (the pool of the auth role, built here because the library pulls its own copy of drizzle-orm and the types of the two are not interchangeable), `authenticate(auth, headers)` (the verified `{ userId, email }` of a request, or null), `deleteAccount({ db, auth, headers, password })`, and the types. The app builds the instance in the composition root with the auth pool, the secret and the `onSignIn` hook.
 
 ## Rules
 - Emails are stored normalized (trimmed, lowercased); uniqueness is on the normalized value.
@@ -15,6 +15,8 @@ Accounts and sessions. Schema: `identity`. Spec: `docs/specs/user/`.
 - The `identity` schema belongs to the `auth_user` role (own pool, `DATABASE_AUTH_URL`). The application role has no access to it, and the tables have no RLS: grants protect them. Request code never queries them; it gets a `userId` from `authenticate` and then uses `withUser`.
 - Every security-relevant setting is explicit in `createAuth` (origin and CSRF checks, rate limit in the database, `x-real-ip` as the client IP, `Secure` cookies under https, telemetry off). The library's defaults depend on the environment (its origin and CSRF checks are off under a test environment), so never rely on them, and never configure it elsewhere.
 - Emails are never awaited inside a request: an awaited send would tell a known address from an unknown one. The version of the library is pinned exactly; read its security advisories before upgrading.
+- Deleting an account needs the current password, sets `deleted_at` and removes every session in one transaction. A hook refuses new sessions for a deleted account, and `authenticate` returns null for it, so a session that was open stops working. The email stays reserved until the purge (ADR 0018).
+- `onSignIn` runs after every session is created (the app seeds the default categories there); a failure is logged and never blocks the sign-in.
 - An email with surrounding spaces is refused (400); the client trims. The library stores addresses in lowercase.
 - Account deletion = soft delete + purge job after the trash window (ADR 0018); the purge must also remove every object in storage owned by the user.
 
