@@ -92,6 +92,7 @@ jobs:
     env:
       DATABASE_MIGRATOR_URL: postgres://postgres:postgres@localhost:5432/grifo
       DATABASE_URL: postgres://app_user:app_user@localhost:5432/grifo
+      DATABASE_AUTH_URL: postgres://auth_user:auth_user@localhost:5432/grifo
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

@@ -15,7 +15,8 @@ afterAll(async () => {
   await Promise.all([appPool.end(), admin.end()]);
 });
 
-const SCHEMAS = ["platform", "identity", "library", "annotation", "outline", "study", "export"];
+// identity is protected by grants for the authentication role, not by RLS (ADR 0034).
+const SCHEMAS = ["platform", "library", "annotation", "outline", "study", "export"];
 
 const changeCount = (tx: Parameters<Parameters<typeof withUser>[2]>[0]) =>
   tx
@@ -39,9 +40,8 @@ describe("row level security", () => {
          from pg_class c
          join pg_namespace n on n.oid = c.relnamespace
         where c.relkind = 'r' and n.nspname = any($1)
-          and (c.relname = 'users' and n.nspname = 'identity'
-               or exists (select 1 from pg_attribute a
-                           where a.attrelid = c.oid and a.attname = 'owner_id' and not a.attisdropped))
+          and exists (select 1 from pg_attribute a
+                       where a.attrelid = c.oid and a.attname = 'owner_id' and not a.attisdropped)
         order by 1`,
       [SCHEMAS],
     );
