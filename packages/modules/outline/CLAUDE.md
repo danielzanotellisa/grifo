@@ -7,6 +7,7 @@ The hierarchical summary of a document: a tree of nodes. Schema: `outline`. Spec
 
 ## Public API (`src/index.ts`)
 - Types, `effectiveRole`, `assertValidNode`. The study module asks outline for a node's text and effective role.
+- Tree operations on a document's flat node list: `siblings`, `indentNode`, `outdentNode`, `moveNode`, `deleteNode`. Pure and immutable: each returns a new array (the same array when nothing changes) and stamps `updatedAt` on changed nodes only. Persisting the result and appending to the change log is the caller's job.
 
 ## Rules
 - The tree is an adjacency list (`parent_id`) ordered by a fractional index (`position`). Insert between siblings by generating a key between their positions; never renumber siblings. Use the `fractional-indexing` package, do not hand-roll it.
