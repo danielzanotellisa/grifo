@@ -154,11 +154,28 @@ describe("deleteFlashcard and restoreFlashcard", () => {
     expect(restored).toMatchObject({ deletedAt: null, updatedAt: LATER });
   });
 
-  it("[flashcard#AC-9] changes nothing when deleting a deleted card or restoring a live one", () => {
+  it("[flashcard#AC-9] changes nothing when restoring a live card", () => {
     const live = card();
-    const deleted = deleteFlashcard(live, LATER);
 
-    expect(deleteFlashcard(deleted, new Date("2026-02-01T00:00:00Z"))).toBe(deleted);
     expect(restoreFlashcard(live, LATER)).toBe(live);
+  });
+
+  it("[flashcard#AC-10] rejects edit, update from source and delete on a deleted card", () => {
+    const deleted = deleteFlashcard(card(), LATER);
+    const snapshot = { ...deleted };
+    const notFound = expect.objectContaining({ code: "NOT_FOUND", status: 404 });
+
+    expect(() => editFlashcard(deleted, { front: "x", back: "y" }, LATER)).toThrow(notFound);
+    expect(() => updateFromSource(deleted, "texto novo", LATER)).toThrow(notFound);
+    expect(() => deleteFlashcard(deleted, LATER)).toThrow(notFound);
+    expect(deleted).toEqual(snapshot);
+  });
+
+  it("[flashcard#AC-10] reports a deleted card as not found even when its node is gone", () => {
+    const deletedOrphan = deleteFlashcard({ ...card(), sourceNodeId: null }, LATER);
+
+    expect(() => updateFromSource(deletedOrphan, "texto novo", LATER)).toThrow(
+      expect.objectContaining({ code: "NOT_FOUND" }),
+    );
   });
 });
