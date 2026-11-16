@@ -38,6 +38,7 @@ Entity `highlight`.
 - [ ] **AC-2** Given the browser closes 1 s after a highlight, then it is present on reopen (ADR 0014).
 - [ ] **AC-3** Given zoom changes, then the highlight stays aligned with the text.
 - [ ] **AC-4** Given "orien-\ntado" is selected, then `quote.exact` contains "orientado".
+- [ ] **AC-5** Given a category's role changes from `ITEM` to `IGNORE`, then the nodes of its highlights leave the outline and their flashcards remain.
 
 ## Open questions
 - Re-anchoring strategy and engine capabilities: `docs/pending/P-003`.
