@@ -36,3 +36,4 @@ MADR-style, one decision per file, immutable once accepted (see 0021). Template:
 | 0030 | Traceability between specs, code, commits and PRs | accepted |
 | 0031 | Repository workflow: PR-only main, worktrees, lint and format | accepted |
 | 0032 | Persistence foundation: sync cursor, soft-delete marker, database tests | accepted |
+| 0033 | The outline node of a highlight has an id derived from the highlight id | accepted |
