@@ -3,14 +3,26 @@
 -- After a transaction-local set_config the setting reads '' (not NULL) on a reused connection, hence nullif.
 -- A new owned table must be added to the owner-isolation list below; the integration test fails otherwise.
 
-GRANT USAGE ON SCHEMA platform, identity, library, annotation, outline, study, export TO app_user;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA platform, identity, library, annotation, outline, study, export TO app_user;
+GRANT USAGE ON SCHEMA platform, library, annotation, outline, study, export TO app_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA platform, library, annotation, outline, study, export TO app_user;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA platform TO app_user;
 
 -- Tables created by later migrations (run by the migrator role) are granted without rerunning this file.
-ALTER DEFAULT PRIVILEGES IN SCHEMA platform, identity, library, annotation, outline, study, export
+ALTER DEFAULT PRIVILEGES IN SCHEMA platform, library, annotation, outline, study, export
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA platform GRANT USAGE, SELECT ON SEQUENCES TO app_user;
+
+-- Authentication (ADR 0034): the identity schema belongs to auth_user alone. Credentials and sessions
+-- are protected by grants, not by RLS: the library looks a user up by email before it knows who it is.
+REVOKE ALL ON ALL TABLES IN SCHEMA identity FROM app_user;
+REVOKE ALL ON SCHEMA identity FROM app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA identity REVOKE ALL ON TABLES FROM app_user;
+GRANT USAGE ON SCHEMA identity TO auth_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA identity TO auth_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA identity GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO auth_user;
+ALTER TABLE identity.users NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE identity.users DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS self_only ON identity.users;
 
 -- Graphile Worker (ADR 0029): its schema is installed by `pnpm db:queue` (migrator role).
 -- app_user enqueues (web) and processes (worker) jobs. Job tables hold no owner_id; payloads carry it.
@@ -25,14 +37,6 @@ BEGIN
     RAISE NOTICE 'graphile_worker schema missing: run pnpm db:queue first';
   END IF;
 END $$;
-
--- identity.users: a user sees only their own row.
-ALTER TABLE identity.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE identity.users FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS self_only ON identity.users;
-CREATE POLICY self_only ON identity.users
-  USING (id = nullif(current_setting('app.user_id', true), '')::uuid)
-  WITH CHECK (id = nullif(current_setting('app.user_id', true), '')::uuid);
 
 -- Owner isolation for every owned table.
 DO $$

@@ -1,6 +1,6 @@
 # P-005. Authentication library and sessions
 
-- Status: open
+- Status: decided (→ ADR 0034)
 - Blocks: identity module tables, all authenticated routes
 - Related: ADR 0003, 0016, spec `user`
 

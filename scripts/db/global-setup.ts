@@ -14,6 +14,8 @@ export default async function setup(): Promise<void> {
   const migratorUrl =
     process.env.DATABASE_MIGRATOR_URL ?? "postgres://postgres:postgres@localhost:5432/grifo";
   const appUrl = process.env.DATABASE_URL ?? "postgres://app_user:app_user@localhost:5432/grifo";
+  const authUrl =
+    process.env.DATABASE_AUTH_URL ?? "postgres://auth_user:auth_user@localhost:5432/grifo";
 
   const admin = new pg.Client({ connectionString: withDatabase(migratorUrl, "postgres") });
   await admin.connect();
@@ -26,6 +28,7 @@ export default async function setup(): Promise<void> {
 
   process.env.DATABASE_MIGRATOR_URL = withDatabase(migratorUrl, TEST_DATABASE);
   process.env.DATABASE_URL = withDatabase(appUrl, TEST_DATABASE);
+  process.env.DATABASE_AUTH_URL = withDatabase(authUrl, TEST_DATABASE);
   await setupDatabase(process.env.DATABASE_MIGRATOR_URL);
 
   // Tables that tests create for themselves live here, outside the module schemas.

@@ -40,7 +40,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Modular monolith. Import another module only from its package root (`@app/<module>`), never from its internals.
 - Each module owns one Postgres schema. No queries, joins or foreign keys across schemas; cross-module references are plain UUID columns.
 - Business rules live in modules. React components and Route Handlers only parse input, call a module, and map the result.
-- Every user-owned row has `owner_id`. Request and job code reaches the database only through `withUser(db, userId, tx => …)`. The migrator connection is for migrations and admin jobs only.
+- Every user-owned row has `owner_id`. Request and job code reaches the database only through `withUser(db, userId, tx => …)`. The migrator connection is for migrations and admin jobs only. The one exception is the authentication library, which uses its own role `auth_user` and pool on the `identity` schema alone (ADR 0034); the application role cannot read that schema.
 - Original PDFs (`StoredFile`) are never modified. Generated files go to the derived bucket.
 - Deletes are soft (`deleted_at`); only the purge job deletes physically. A soft-deleted row is invisible (no read returns it) and read-only (any write answers 404); only restore, the trash listing and purge touch it. Rows deleted by cascade come back only with the item that cascaded them (`docs/specs/_cross-cutting/soft-delete`).
 - Every write the client must see appends to the change log in the same transaction. Mutations are idempotent by `mutationId`.
