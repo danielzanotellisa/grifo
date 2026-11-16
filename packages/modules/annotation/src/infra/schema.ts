@@ -1,4 +1,5 @@
 import {
+  fractionalIndex,
   OUTLINE_ROLES,
   ownedColumns,
   softDeleteCheck,
@@ -19,7 +20,7 @@ export const categories = annotation.table(
     color: char("color", { length: 7 }).notNull(),
     role: outlineRole("role").notNull(),
     shortcut: smallint("shortcut"),
-    position: text("position").notNull(),
+    position: fractionalIndex("position").notNull(),
   },
   (t) => [index("categories_owner_idx").on(t.ownerId), softDeleteCheck("categories", t)],
 );

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, timestamp, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { check, customType, timestamp, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 /** Columns every user-owned table has. Call it (don't share builder instances between tables). */
 export const ownedColumns = () => ({
@@ -21,3 +21,11 @@ export const softDeleteCheck = (
     `${tableName}_soft_delete_chk`,
     sql`(${t.deletedAt} is null) = (${t.deletedRootId} is null)`,
   );
+
+/**
+ * A fractional-index key (ADR 0009). Keys sort as bytes; the database default collation would put
+ * "Zz" after "a0", so the column is declared with the "C" collation.
+ */
+export const fractionalIndex = customType<{ data: string }>({
+  dataType: () => 'text collate "C"',
+});

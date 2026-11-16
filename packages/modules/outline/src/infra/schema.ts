@@ -1,4 +1,4 @@
-import { OUTLINE_ROLES, ownedColumns, softDeleteCheck } from "@app/platform";
+import { fractionalIndex, OUTLINE_ROLES, ownedColumns, softDeleteCheck } from "@app/platform";
 import { sql } from "drizzle-orm";
 import { check, index, pgSchema, text, uuid } from "drizzle-orm/pg-core";
 
@@ -13,7 +13,7 @@ export const nodes = outline.table(
     ...ownedColumns(),
     documentId: uuid("document_id").notNull(), // library.documents (cross-module: no FK)
     parentId: uuid("parent_id"), // same table; integrity enforced by use cases (soft deletes)
-    position: text("position").notNull(),
+    position: fractionalIndex("position").notNull(),
     highlightId: uuid("highlight_id"), // annotation.highlights (cross-module: no FK)
     role: outlineRole("role"),
     text: text("text"),
