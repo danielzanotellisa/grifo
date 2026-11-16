@@ -1,8 +1,8 @@
 # Document — spec
 
-- Status: draft
+- Status: approved
 - Module: library
-- ADRs: 0004, 0005, 0017
+- ADRs: 0004, 0005, 0015, 0017, 0032
 
 ## Definition
 A PDF the user imported into a subject. The original file never changes; highlights, outline and flashcards hang off the document.
@@ -13,7 +13,7 @@ A PDF the user imported into a subject. The original file never changes; highlig
 | id | uuid v7 | Client-generated. |
 | subjectId | uuid | Required. |
 | storedFileId | uuid | The bytes. |
-| title | text | Defaults to the PDF title metadata, else the file name. Editable. |
+| title | text | Defaults to the PDF title metadata, else the file name. Editable; 1–200 chars after trim. |
 | status | enum | See lifecycle. |
 | pageCount | int? | Set by validation. |
 | riskFlags | json | Counts of active-content keys (informational). |
@@ -29,17 +29,20 @@ A PDF the user imported into a subject. The original file never changes; highlig
 ## Operations
 | Operation | Rules | Errors |
 | --- | --- | --- |
-| Start upload | Client sends sha256, size, subject; server returns presigned PUT, or reuses the owner's existing `StoredFile` with the same hash. | `UPLOAD_TOO_LARGE` |
-| Confirm upload | Server checks object exists, size and hash; runs fast validation; enqueues deep scan. | `UPLOAD_HASH_MISMATCH`, `PDF_INVALID` |
-| Open | Returns a short-lived presigned GET for the original. | `NOT_FOUND`, `DOCUMENT_NOT_READY` |
-| Rename / move | | `NOT_FOUND` |
-| Delete / restore | Cascades to highlights, nodes, flashcards (same transaction). | `NOT_FOUND` |
+| Rename / move | Only `title` and `subjectId` change. The target subject must be live. | `DOCUMENT_TITLE_INVALID`, `PARENT_DELETED`, `NOT_FOUND` |
+| Delete | Soft delete under its own root; publishes `library.documentDeleted`, so highlights, nodes and flashcards follow in the same transaction. | `NOT_FOUND` |
+| Restore | Only a trash item; rejected while its subject is deleted. | `PARENT_DELETED`, `NOT_FOUND` |
+| Start upload, Confirm upload, Open | See `document/upload`. | |
+
+## Sync
+Entity `document`. A document is not created through sync: it is created by the upload (`document/upload`) and reaches the client by pull. `data` of an upsert: `{ id, subjectId, title }` and nothing else, because `storedFileId`, `status`, `pageCount` and `riskFlags` are stated by the server. A pull delivers the full document.
 
 ## Acceptance criteria
-- [ ] **AC-1** Given a file that is not a PDF renamed to .pdf, when upload is confirmed, then status is `REJECTED` with `PDF_INVALID`.
-- [ ] **AC-2** Given the user re-imports a PDF with the same hash, then no new bytes are uploaded and the new document can reuse the previous highlights (see open question).
-- [ ] **AC-3** Given a PDF with `/OpenAction`, then it becomes `READY` and `riskFlags.openAction > 0`.
+- [ ] **AC-4** Given an upsert with a title of 1 to 200 characters after trim, then the document is renamed with the trimmed title; a blank or longer title answers `DOCUMENT_TITLE_INVALID` and nothing changes.
+- [ ] **AC-5** Given an upsert with another `subjectId`, then only the subject changes and the other fields are untouched; if the target subject is deleted or missing, then `PARENT_DELETED` and nothing changes.
+- [ ] **AC-6** Given an upsert for an id that does not exist, a deleted document or one of another user, then `NOT_FOUND`; given `data` with fields other than `id`, `subjectId` and `title`, then `DOCUMENT_INVALID`; in every case nothing changes.
+- [ ] **AC-7** Given a document is deleted, then it is soft-deleted under its own root and `library.documentDeleted` is published with that root; deleting it again answers `NOT_FOUND`.
+- [ ] **AC-8** Given a deleted document, then the trash lists it with its title, restoring it makes it live again, and restoring it while its subject is deleted answers `PARENT_DELETED` and restores nothing.
+- [ ] **AC-9** Given a document id, then the liveness check used by other modules is true only for a live document of that owner.
 
-## Open questions
-- Re-import of the same file: create a new document with copied highlights, or reopen the old one? Decide in the spec before implementing.
-- Encrypted/password-protected PDFs: accept with password prompt or reject? Undecided.
+AC-1 to AC-3 (upload) moved to `document/upload`; a retired criterion keeps its number.
