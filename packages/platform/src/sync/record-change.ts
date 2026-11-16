@@ -3,7 +3,7 @@ import type { Tx } from "../db/client";
 import { changeLog } from "./schema";
 
 export type SyncEntity =
-  | "subject" | "document" | "category" | "highlight" | "outlineNode" | "flashcard" | "export";
+  "subject" | "document" | "category" | "highlight" | "outlineNode" | "flashcard" | "export";
 
 /**
  * Call inside the same transaction as the write. The NOTIFY is delivered on commit,

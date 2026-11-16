@@ -15,7 +15,10 @@ export function escapeHtml(text: string): string {
 export type SafeHtml = { readonly __html: string };
 export const rawHtml = (fragment: string): SafeHtml => ({ __html: fragment });
 
-export function html(strings: TemplateStringsArray, ...values: Array<string | number | SafeHtml | SafeHtml[]>): SafeHtml {
+export function html(
+  strings: TemplateStringsArray,
+  ...values: Array<string | number | SafeHtml | SafeHtml[]>
+): SafeHtml {
   let out = strings[0] ?? "";
   values.forEach((value, i) => {
     const piece = Array.isArray(value)

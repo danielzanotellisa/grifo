@@ -1,5 +1,6 @@
 /** Capabilities are named by what they allow, never by plan (ADR 0019). */
-export type BooleanCapability = "export.summaryPdf" | "export.flashcardsCsv" | "export.annotatedPdf";
+export type BooleanCapability =
+  "export.summaryPdf" | "export.flashcardsCsv" | "export.annotatedPdf";
 export type LimitCapability = "upload.maxFileSizeBytes" | "storage.maxBytes";
 
 export interface EntitlementPolicy {
