@@ -35,3 +35,4 @@ MADR-style, one decision per file, immutable once accepted (see 0021). Template:
 | 0029 | Job queue: Graphile Worker | accepted |
 | 0030 | Traceability between specs, code, commits and PRs | accepted |
 | 0031 | Repository workflow: PR-only main, worktrees, lint and format | accepted |
+| 0032 | Persistence foundation: sync cursor, soft-delete marker, database tests | accepted |

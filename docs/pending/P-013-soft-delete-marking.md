@@ -1,6 +1,6 @@
 # P-013. How a row records direct versus cascaded deletion
 
-- Status: open
+- Status: decided (→ ADR 0032)
 - Blocks: persistence of any entity with children (restore, trash listing), `_cross-cutting/soft-delete` approval
 - Related: ADR 0013, ADR 0018, `docs/specs/_cross-cutting/soft-delete`, `docs/specs/subject`, `docs/specs/document`
 

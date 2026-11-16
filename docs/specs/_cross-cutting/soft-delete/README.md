@@ -2,7 +2,7 @@
 
 - Status: draft
 - Module: platform
-- ADRs: 0013, 0016, 0018
+- ADRs: 0013, 0016, 0018, 0032
 
 ## Definition
 Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisible and read-only; it can only be restored from the trash or physically removed by the purge job.
@@ -15,6 +15,7 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 5. The trash lists only trash items still inside the 30-day window (ADR 0018); after the purge job runs they are gone.
 6. Sync delivers a deletion as a tombstone (entity and id), never as row content.
 7. The rule is enforced where data is read and written, not only in the UI.
+8. Every owned row has `deleted_root_id`: null while live; on delete, the id of the item the user deleted (its own id for a direct delete, the root's id for a cascade). Trash items are rows with `deleted_root_id = id`; restore clears every row with that root; a child deleted earlier on its own keeps its own root and stays deleted (ADR 0032).
 
 ## Operations
 | Operation | Rules | Errors |
@@ -31,6 +32,3 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 - [ ] **AC-4** Given a row deleted by cascade, when it is restored on its own, then 404 `NOT_FOUND`.
 - [ ] **AC-5** Given items deleted directly and by cascade, when the trash is listed, then only the directly deleted ones appear.
 - [ ] **AC-6** Given a deletion, when a client pulls changes, then it receives the entity and id without row content.
-
-## Open questions
-- How a row records whether it was deleted directly or by cascade, and which item cascaded it: `docs/pending/P-013`.
