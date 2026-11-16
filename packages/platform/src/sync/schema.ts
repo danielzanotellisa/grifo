@@ -1,4 +1,13 @@
-import { bigserial, index, jsonb, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigserial,
+  index,
+  jsonb,
+  pgSchema,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const platform = pgSchema("platform");
 
@@ -16,10 +25,14 @@ export const changeLog = platform.table(
   (t) => [index("change_log_owner_seq_idx").on(t.ownerId, t.seq)],
 );
 
-/** Makes push idempotent: a mutationId is applied at most once. */
-export const processedMutations = platform.table("processed_mutations", {
-  mutationId: uuid("mutation_id").primaryKey(),
-  ownerId: uuid("owner_id").notNull(),
-  outcome: jsonb("outcome").notNull(),
-  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
-});
+/** Makes push idempotent: a mutationId is applied at most once per owner (ADR 0032). */
+export const processedMutations = platform.table(
+  "processed_mutations",
+  {
+    mutationId: uuid("mutation_id").notNull(),
+    ownerId: uuid("owner_id").notNull(),
+    outcome: jsonb("outcome").notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.ownerId, t.mutationId] })],
+);
