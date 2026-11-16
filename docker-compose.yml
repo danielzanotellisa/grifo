@@ -14,7 +14,6 @@ services:
     ports: ["5432:5432"]
     volumes:
       - pg-data:/var/lib/postgresql/data
-      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d grifo"]
       interval: 5s
