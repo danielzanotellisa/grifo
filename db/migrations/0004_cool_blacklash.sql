@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "categories_owner_name_uq" ON "annotation"."categories" USING btree ("owner_id",lower("name")) WHERE "annotation"."categories"."deleted_at" is null;--> statement-breakpoint
+CREATE UNIQUE INDEX "categories_owner_shortcut_uq" ON "annotation"."categories" USING btree ("owner_id","shortcut") WHERE "annotation"."categories"."deleted_at" is null and "annotation"."categories"."shortcut" is not null;

@@ -6,7 +6,18 @@ import {
   type PdfRect,
   type TextQuote,
 } from "@app/platform";
-import { char, index, integer, jsonb, pgSchema, smallint, text, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  char,
+  index,
+  integer,
+  jsonb,
+  pgSchema,
+  smallint,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const annotation = pgSchema("annotation");
 
@@ -22,7 +33,16 @@ export const categories = annotation.table(
     shortcut: smallint("shortcut"),
     position: fractionalIndex("position").notNull(),
   },
-  (t) => [index("categories_owner_idx").on(t.ownerId), softDeleteCheck("categories", t)],
+  (t) => [
+    index("categories_owner_idx").on(t.ownerId),
+    uniqueIndex("categories_owner_name_uq")
+      .on(t.ownerId, sql`lower(${t.name})`)
+      .where(sql`${t.deletedAt} is null`),
+    uniqueIndex("categories_owner_shortcut_uq")
+      .on(t.ownerId, t.shortcut)
+      .where(sql`${t.deletedAt} is null and ${t.shortcut} is not null`),
+    softDeleteCheck("categories", t),
+  ],
 );
 
 export const highlights = annotation.table(
