@@ -284,3 +284,28 @@ describe("protection", () => {
     ).toThrow(/32/);
   });
 });
+
+describe("email delivery", () => {
+  it("[user/email#AC-2] does not make the response wait for a slow email sink", async () => {
+    const slow = () => new Promise<void>((resolve) => setTimeout(resolve, 700));
+    const slowAuth = createAuth({
+      db: drizzle(authPool),
+      secret: SECRET,
+      baseURL: "http://localhost:3000",
+      sendVerificationEmail: slow,
+      sendResetPassword: slow,
+    });
+    const address = email();
+
+    const started = performance.now();
+    const res = await call(slowAuth, "http://localhost:3000", "/sign-up/email", {
+      name: "Ana",
+      email: address,
+      password: PASSWORD,
+    });
+    const elapsed = performance.now() - started;
+
+    expect(res.status).toBe(200);
+    expect(elapsed).toBeLessThan(500);
+  });
+});

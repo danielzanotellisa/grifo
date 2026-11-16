@@ -1,6 +1,8 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  check,
   index,
   integer,
   pgSchema,
@@ -89,3 +91,22 @@ export const rateLimits = identity.table("rate_limits", {
   count: integer("count").notNull(),
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
+
+/**
+ * Verification and reset emails waiting to be sent (ADR 0035). The link carries a token, so the row
+ * is readable only by the authentication role; the job that sends it holds just its id.
+ */
+export const outgoingMail = identity.table(
+  "outgoing_mail",
+  {
+    id: uuid("id").primaryKey(),
+    toEmail: text("to_email").notNull(),
+    kind: text("kind").notNull(),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("outgoing_mail_created_idx").on(t.createdAt),
+    check("outgoing_mail_kind_chk", sql`${t.kind} in ('verification', 'reset')`),
+  ],
+);
