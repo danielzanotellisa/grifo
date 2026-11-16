@@ -17,7 +17,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 
 ## Commits and PRs
 - `main` accepts changes only through a merged PR (GitHub ruleset, ADR 0031). Never push to it.
-- Work in a git worktree, not in the main checkout: `git worktree add ../grifo-worktrees/<slug> -b <type>/<slug> origin/main`, then `pnpm install` inside it (installs the husky hooks). Keep the main checkout on `main`, clean. Remove with `git worktree remove` after the PR merges.
+- Work in a git worktree, not in the main checkout: `pnpm wt <type>/<slug>` creates `../grifo-worktrees/<slug>` on a new branch off `origin/main` and runs `pnpm install` there, which installs the husky hooks (run it from any checkout). Keep the main checkout on `main`, clean. Remove a worktree with `git worktree remove` after its PR merges.
 - Commit format `<type>(<scope>): <description>`, enforced by commitlint in the husky `commit-msg` hook and again in CI. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Scope is optional and must be one of those in `commitlint.config.js` (module, app, `db`, `infra`, `docs`, `ci`, `deps`). Lowercase subject.
 - `feat` and `fix` commits end with a footer `Spec: <spec-id>[#AC-n], …` or `Spec: n/a`.
 - Every PR fills `.github/pull_request_template.md`: `Spec:` (spec id, optionally `#AC-n`) and `ADR:` (`ADR-NNNN`), or an explicit `n/a`. CI validates both against the repo.

@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "trace": "tsx scripts/trace/cli.ts check",
     "trace:pr": "tsx scripts/trace/cli.ts pr-body",
+    "wt": "sh scripts/worktree.sh",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:queue": "pnpm --filter @app/worker exec graphile-worker --schema-only -c \"$DATABASE_MIGRATOR_URL\"",
