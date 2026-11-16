@@ -9,8 +9,13 @@ describe("flashcards", () => {
   });
   it("copies and trims the node text into the back", () => {
     const card = newFlashcard({
-      id: "c1", ownerId: "u1", documentId: "d1", sourceNodeId: "n1",
-      front: " TCP ", nodeText: " protocolo orientado a conexão ", now: new Date(0),
+      id: "c1",
+      ownerId: "u1",
+      documentId: "d1",
+      sourceNodeId: "n1",
+      front: " TCP ",
+      nodeText: " protocolo orientado a conexão ",
+      now: new Date(0),
     });
     expect(card.front).toBe("TCP");
     expect(card.back).toBe("protocolo orientado a conexão");

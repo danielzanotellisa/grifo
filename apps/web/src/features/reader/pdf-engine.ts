@@ -16,7 +16,10 @@ export interface PdfDocumentHandle {
   /** Current user selection, with one rect per line segment and the surrounding text for the quote. */
   getSelection(): Promise<EngineSelection | null>;
   /** Text around a position, used to re-anchor a highlight by its quote. */
-  findText(exact: string, near?: { pageIndex: number }): Promise<{ pageIndex: number; rects: PdfRect[] }[]>;
+  findText(
+    exact: string,
+    near?: { pageIndex: number },
+  ): Promise<{ pageIndex: number; rects: PdfRect[] }[]>;
   close(): Promise<void>;
 }
 

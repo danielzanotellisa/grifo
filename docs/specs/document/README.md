@@ -36,9 +36,9 @@ A PDF the user imported into a subject. The original file never changes; highlig
 | Delete / restore | Cascades to highlights, nodes, flashcards (same transaction). | `NOT_FOUND` |
 
 ## Acceptance criteria
-- [ ] Given a file that is not a PDF renamed to .pdf, when upload is confirmed, then status is `REJECTED` with `PDF_INVALID`.
-- [ ] Given the user re-imports a PDF with the same hash, then no new bytes are uploaded and the new document can reuse the previous highlights (see open question).
-- [ ] Given a PDF with `/OpenAction`, then it becomes `READY` and `riskFlags.openAction > 0`.
+- [ ] **AC-1** Given a file that is not a PDF renamed to .pdf, when upload is confirmed, then status is `REJECTED` with `PDF_INVALID`.
+- [ ] **AC-2** Given the user re-imports a PDF with the same hash, then no new bytes are uploaded and the new document can reuse the previous highlights (see open question).
+- [ ] **AC-3** Given a PDF with `/OpenAction`, then it becomes `READY` and `riskFlags.openAction > 0`.
 
 ## Open questions
 - Re-import of the same file: create a new document with copied highlights, or reopen the old one? Decide in the spec before implementing.

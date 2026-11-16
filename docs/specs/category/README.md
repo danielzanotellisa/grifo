@@ -28,5 +28,5 @@ A user-defined kind of highlight: name + color, linked to a fixed `OutlineRole` 
 | Delete | If in use, requires `moveHighlightsTo`. Cannot delete the last one. | `CATEGORY_IN_USE`, `CATEGORY_LAST` |
 
 ## Acceptance criteria
-- [ ] Given a category used by 10 highlights, when its color changes, then all 10 render with the new color without editing them.
-- [ ] Given a category's role changes from `ITEM` to `IGNORE`, then its nodes leave the outline and its flashcards remain.
+- [ ] **AC-1** Given a category used by 10 highlights, when its color changes, then all 10 render with the new color without editing them.
+- [ ] **AC-2** Given a category's role changes from `ITEM` to `IGNORE`, then its nodes leave the outline and its flashcards remain.

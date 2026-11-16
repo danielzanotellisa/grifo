@@ -14,7 +14,8 @@ export async function renderPdf(
 ): Promise<Uint8Array> {
   const form = new FormData();
   form.append("files", new Blob([document.__html], { type: "text/html" }), "index.html");
-  for (const asset of assets) form.append("files", new Blob([asset.data], { type: asset.type }), asset.name);
+  for (const asset of assets)
+    form.append("files", new Blob([asset.data], { type: asset.type }), asset.name);
   form.append("preferCssPageSize", "true"); // honor @page size/margins from the template
   form.append("printBackground", "true"); // keep category colors
 

@@ -31,8 +31,8 @@ A person with an account. Owns every other entity.
 | Export all my data | Creates a `FULL_DATA` export (originals, JSON, .apkg) (export spec). | — |
 
 ## Acceptance criteria
-- [ ] Given an account, when another user requests any of its resources, then the API answers 404.
-- [ ] Given a password reset request for an unknown email, then the response is identical to a known email.
+- [ ] **AC-1** Given an account, when another user requests any of its resources, then the API answers 404.
+- [ ] **AC-2** Given a password reset request for an unknown email, then the response is identical to a known email.
 
 ## Open questions
 - Auth library and session model: `docs/pending/P-005`.

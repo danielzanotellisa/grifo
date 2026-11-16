@@ -26,9 +26,9 @@ How client changes reach the server and other devices without loss.
 5. One SSE connection per browser (leader tab + BroadcastChannel).
 
 ## Acceptance criteria
-- [ ] Given the network drops after 10 highlights, when it returns, then all 10 reach the server exactly once.
-- [ ] Given the same batch is pushed twice, then the second push changes nothing and returns `duplicate`.
-- [ ] Given two open browsers, then a highlight made in one appears in the other in < 2 s.
+- [ ] **AC-1** Given the network drops after 10 highlights, when it returns, then all 10 reach the server exactly once.
+- [ ] **AC-2** Given the same batch is pushed twice, then the second push changes nothing and returns `duplicate`.
+- [ ] **AC-3** Given two open browsers, then a highlight made in one appears in the other in < 2 s.
 
 ## Open questions
 - Edge cases, compaction horizon, leader election details: `docs/pending/P-007`.
