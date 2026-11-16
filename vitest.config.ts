@@ -13,7 +13,11 @@ export default defineConfig({
       {
         test: {
           name: "integration",
-          include: ["packages/**/*.integration.test.ts", "scripts/**/*.integration.test.ts"],
+          include: [
+            "packages/**/*.integration.test.ts",
+            "apps/**/*.integration.test.ts",
+            "scripts/**/*.integration.test.ts",
+          ],
           exclude: ["**/node_modules/**"],
           globalSetup: ["./scripts/db/global-setup.ts"],
         },

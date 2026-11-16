@@ -15,8 +15,14 @@ import {
 import {
   createOutlineSyncHandler,
   createOutlineTrashParticipant,
+  nodeSource,
   registerOutlineReactions,
 } from "@app/outline";
+import {
+  createFlashcardSyncHandler,
+  createFlashcardTrashParticipant,
+  registerStudyReactions,
+} from "@app/study";
 import {
   allowAll,
   createDb,
@@ -35,12 +41,14 @@ export const entitlements = allowAll;
 
 registerAnnotationReactions(events);
 registerOutlineReactions(events);
+registerStudyReactions(events);
 
 export const syncEngine = createSyncEngine([
   createSubjectSyncHandler({ events }),
   createDocumentSyncHandler({ events }),
   ...createAnnotationSyncHandlers({ events, documentState }),
   createOutlineSyncHandler({ documentIsLive }),
+  createFlashcardSyncHandler({ nodeSource }),
 ]);
 
 export const trash = createTrash([
@@ -49,4 +57,5 @@ export const trash = createTrash([
   createHighlightTrashParticipant({ documentState }),
   categoryTrashParticipant,
   createOutlineTrashParticipant({ documentIsLive }),
+  createFlashcardTrashParticipant({ documentIsLive }),
 ]);
