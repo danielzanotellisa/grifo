@@ -12,6 +12,7 @@
     "@app/library": "workspace:*",
     "@app/outline": "workspace:*",
     "@app/platform": "workspace:*",
-    "drizzle-orm": "^0.45.4"
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
   }
 }
