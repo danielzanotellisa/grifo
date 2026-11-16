@@ -1,6 +1,6 @@
 # Soft delete — spec
 
-- Status: draft
+- Status: approved
 - Module: platform
 - ADRs: 0013, 0016, 0018, 0032
 
@@ -16,12 +16,13 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 6. Sync delivers a deletion as a tombstone (entity and id), never as row content.
 7. The rule is enforced where data is read and written, not only in the UI.
 8. Every owned row has `deleted_root_id`: null while live; on delete, the id of the item the user deleted (its own id for a direct delete, the root's id for a cascade). Trash items are rows with `deleted_root_id = id`; restore clears every row with that root; a child deleted earlier on its own keeps its own root and stays deleted (ADR 0032).
+9. Restoring a trash item whose parent (subject or document) is not live is rejected with `PARENT_DELETED`; the parent is restored first. Nothing is restored in that case.
 
 ## Operations
 | Operation | Rules | Errors |
 | --- | --- | --- |
 | Delete | Marks the row, and its cascade, deleted in one transaction. | `NOT_FOUND` if already deleted |
-| Restore | Only a trash item. Restores it and everything deleted with it, in one transaction. | `NOT_FOUND` if not a trash item |
+| Restore | Only a trash item. Restores it and everything deleted with it, in one transaction. | `NOT_FOUND` if not a trash item; `PARENT_DELETED` |
 | List trash | Trash items of the owner, newest first. | — |
 | Purge | Physical delete of trash items past the window. | — |
 
@@ -32,3 +33,4 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 - [ ] **AC-4** Given a row deleted by cascade, when it is restored on its own, then 404 `NOT_FOUND`.
 - [ ] **AC-5** Given items deleted directly and by cascade, when the trash is listed, then only the directly deleted ones appear.
 - [ ] **AC-6** Given a deletion, when a client pulls changes, then it receives the entity and id without row content.
+- [ ] **AC-7** Given a trash item whose parent was deleted afterwards, when it is restored, then `PARENT_DELETED` and nothing is restored.
