@@ -2,3 +2,7 @@ export type { OutlineNode } from "./domain/outline-node";
 export { assertValidNode, effectiveRole } from "./domain/outline-node";
 export type { Placement } from "./domain/tree";
 export { deleteNode, indentNode, moveNode, outdentNode, siblings } from "./domain/tree";
+export { createOutlineSyncHandler } from "./infra/sync-handler";
+export type { OutlineDeps } from "./infra/sync-handler";
+export { createOutlineTrashParticipant } from "./infra/trash";
+export { registerOutlineReactions } from "./infra/reactions";
