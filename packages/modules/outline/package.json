@@ -2,7 +2,17 @@
   "name": "@app/outline",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc -p tsconfig.json" },
-  "dependencies": { "@app/platform": "workspace:*", "@app/annotation": "workspace:*", "@app/library": "workspace:*" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@app/annotation": "workspace:*",
+    "@app/library": "workspace:*",
+    "@app/platform": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "fractional-indexing": "^4.0.0"
+  }
 }

@@ -2,7 +2,23 @@
   "name": "@app/export",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc -p tsconfig.json" },
-  "dependencies": { "@app/platform": "workspace:*", "@app/library": "workspace:*", "@app/annotation": "workspace:*", "@app/outline": "workspace:*", "@app/study": "workspace:*" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@app/annotation": "workspace:*",
+    "@app/library": "workspace:*",
+    "@app/outline": "workspace:*",
+    "@app/platform": "workspace:*",
+    "@app/study": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "fflate": "^0.8.3",
+    "sql.js": "^1.16.0"
+  },
+  "devDependencies": {
+    "@types/sql.js": "^1.4.11"
+  }
 }

@@ -15,6 +15,12 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Unknowns, gaps and deferred decisions go to `docs/pending/` (template inside). Never silently guess on an open pending item; say it is blocked.
 - A change is done when it has code + tests + updated spec (+ an ADR if it changes architecture).
 
+## Commits and PRs
+- Work on a branch, never directly on `main`; changes reach `main` through a PR.
+- Commit format `<type>(<scope>): <description>`, enforced by commitlint in the husky `commit-msg` hook and again in CI. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Scope is optional and must be one of those in `commitlint.config.js` (module, app, `db`, `infra`, `docs`, `ci`, `deps`). Lowercase subject.
+- Every PR fills `.github/pull_request_template.md`: `Spec:` (path under `docs/specs`) and `ADR:` (`ADR-NNNN`), or an explicit `n/a`.
+- CI (`.github/workflows/ci.yml`) runs typecheck, tests, the husky wiring check and commitlint over the PR's commits. A red CI blocks merge.
+
 ## Repo map
 - `apps/web` — Next.js: React UI and Route Handlers (thin HTTP adapters, SSE).
 - `apps/worker` — Node process that runs background jobs (scans, exports, purge).
@@ -58,4 +64,5 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - `docker compose up -d` — infra (Postgres, S3, ClamAV, Mailpit, Gotenberg)
 - `pnpm dev` — web + worker
 - `pnpm test` · `pnpm typecheck`
+- `pnpm install` — also installs the git hooks (husky, via `prepare`)
 - `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:queue` · `pnpm db:rls`
