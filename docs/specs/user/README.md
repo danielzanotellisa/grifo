@@ -11,7 +11,7 @@ A person with an account. Owns every other entity.
 | Field | Type | Rules |
 | --- | --- | --- |
 | id | uuid v7 | Server-generated. |
-| email | text | Normalized (trim + lowercase); unique. |
+| email | text | Stored in lowercase; unique. An address with surrounding spaces is refused (400): the client trims before sending. |
 | emailVerified | boolean | False until the link of the verification email is used. |
 | displayName | text | Empty when not set. |
 | createdAt / updatedAt / deletedAt | timestamptz | `deletedAt` set = account in deletion window (`user/lifecycle`). |
@@ -36,7 +36,7 @@ The error codes above are those of the API; the route adapter maps the answers o
 ## Acceptance criteria
 - [ ] **AC-2** Given a password reset request for an unknown email, then the response is identical to a known email.
 - [ ] **AC-3** Given a new email and a password of 10 to 128 characters, when signing up, then an unverified account exists with the normalized email and a UUIDv7 id, the password is stored as an Argon2id hash, no session is created and a verification email is requested; a shorter or longer password answers 400 and creates nothing.
-- [ ] **AC-4** Given an email that already has an account (even written with other case or surrounding spaces), when signing up with it, then the answer is the same as for a new email and no second account is created.
+- [ ] **AC-4** Given an email that already has an account (even written with other case), when signing up with it, then the answer is the same as for a new email and no second account is created.
 - [ ] **AC-5** Given an account whose email is not verified, when signing in with the right password, then 403 and no session; once the verification link is used, then sign-in answers 200 with a session cookie that is `HttpOnly` and `SameSite=Lax`, and `Secure` when the base URL is https.
 - [ ] **AC-6** Given a wrong password or an unknown email, when signing in, then 401 with the same answer for both.
 - [ ] **AC-7** Given a valid reset token, when the password is reset, then the old password stops working, the new one works and every open session of the account is ended.
