@@ -42,7 +42,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Business rules live in modules. React components and Route Handlers only parse input, call a module, and map the result.
 - Every user-owned row has `owner_id`. Request and job code reaches the database only through `withUser(db, userId, tx => …)`. The migrator connection is for migrations and admin jobs only.
 - Original PDFs (`StoredFile`) are never modified. Generated files go to the derived bucket.
-- Deletes are soft (`deleted_at`); only the purge job deletes physically.
+- Deletes are soft (`deleted_at`); only the purge job deletes physically. A soft-deleted row is invisible (no read returns it) and read-only (any write answers 404); only restore, the trash listing and purge touch it. Rows deleted by cascade come back only with the item that cascaded them (`docs/specs/_cross-cutting/soft-delete`).
 - Every write the client must see appends to the change log in the same transaction. Mutations are idempotent by `mutationId`.
 - IDs are UUIDv7; user-created entities get their id on the client.
 - Anything slow (scan, export, OCR, purge) is a Graphile Worker job, enqueued with `enqueueJob` inside the transaction that caused it. Never work inside a request.
