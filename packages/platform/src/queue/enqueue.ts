@@ -6,7 +6,9 @@ export type TaskName =
   | "export.render"
   | "trash.purge"
   | "backup.restoreTest"
-  | "storage.integrityCheck";
+  | "storage.integrityCheck"
+  | "auth.sendEmail"
+  | "auth.expireMail";
 
 /** Every job payload carries its owner, so the worker can run it inside withUser (ADR 0016). */
 export type JobPayload = { ownerId: string } & Record<string, unknown>;

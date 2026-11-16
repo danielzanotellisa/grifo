@@ -27,12 +27,20 @@ DROP POLICY IF EXISTS self_only ON identity.users;
 -- Graphile Worker (ADR 0029): its schema is installed by `pnpm db:queue` (migrator role).
 -- app_user enqueues (web) and processes (worker) jobs. Job tables hold no owner_id; payloads carry it.
 DO $$
+DECLARE t text;
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'graphile_worker') THEN
     GRANT USAGE ON SCHEMA graphile_worker TO app_user;
     GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA graphile_worker TO app_user;
     GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA graphile_worker TO app_user;
     GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA graphile_worker TO app_user;
+    -- Graphile Worker turns RLS on for its private tables and ships no policy, so a role that does not
+    -- own them (app_user) could neither enqueue nor run a job. These tables hold ids and payloads, no
+    -- owner data: the application role gets an explicit policy on each.
+    FOREACH t IN ARRAY ARRAY['_private_jobs', '_private_tasks', '_private_job_queues', '_private_known_crontabs'] LOOP
+      EXECUTE format('DROP POLICY IF EXISTS app_user_queue ON graphile_worker.%I', t);
+      EXECUTE format('CREATE POLICY app_user_queue ON graphile_worker.%I FOR ALL TO app_user USING (true) WITH CHECK (true)', t);
+    END LOOP;
   ELSE
     RAISE NOTICE 'graphile_worker schema missing: run pnpm db:queue first';
   END IF;
