@@ -1,9 +1,11 @@
 import { createAuthDb, createMailOutbox } from "@app/identity";
-import { createDocumentValidation } from "@app/library";
+import { createDeepScan, createDocumentValidation } from "@app/library";
 import { createDb, createS3Storage, s3ConfigFromEnv } from "@app/platform";
 import { run, type Task, type TaskList } from "graphile-worker";
 import nodemailer from "nodemailer";
 import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
+import { createClamavScanner } from "./tasks/clamav";
+import { createDeepScanTask } from "./tasks/document-deep-scan";
 import { createValidateDocumentTask } from "./tasks/document-validate";
 import { inspectPdf } from "./tasks/pdf-inspect";
 
@@ -38,17 +40,25 @@ const sendEmail = createSendEmailTask({
 });
 const expireMail = createExpireMailTask({ outbox });
 
+const db = createDb(requiredEnv("DATABASE_URL"));
+const storage = createS3Storage(s3ConfigFromEnv(process.env));
 const validateDocument = createValidateDocumentTask({
-  validation: createDocumentValidation({
-    db: createDb(requiredEnv("DATABASE_URL")),
-    storage: createS3Storage(s3ConfigFromEnv(process.env)),
-    inspect: inspectPdf,
+  validation: createDocumentValidation({ db, storage, inspect: inspectPdf }),
+});
+const deepScan = createDeepScanTask({
+  scan: createDeepScan({
+    db,
+    storage,
+    scan: createClamavScanner({
+      host: requiredEnv("CLAMAV_HOST"),
+      port: Number(process.env.CLAMAV_PORT ?? 3310),
+    }),
   }),
 });
 
 const taskList: TaskList = {
   "document.validate": async (payload, helpers) => validateDocument(payload, helpers),
-  "document.deepScan": notImplemented("document.deepScan"),
+  "document.deepScan": async (payload, helpers) => deepScan(payload, helpers),
   "export.render": notImplemented("export.render"),
   "trash.purge": notImplemented("trash.purge"),
   "backup.restoreTest": notImplemented("backup.restoreTest"),

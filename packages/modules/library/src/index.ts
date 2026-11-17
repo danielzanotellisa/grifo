@@ -11,3 +11,5 @@ export { createUploads, MAX_UPLOAD_BYTES } from "./infra/upload";
 export type { StartUpload, UploadTicket } from "./infra/upload";
 export { createDocumentValidation } from "./infra/document-validation";
 export type { InspectResult, PdfInspector, RejectCode } from "./infra/document-validation";
+export { createDeepScan } from "./infra/deep-scan";
+export type { ScanResult, Scanner } from "./infra/deep-scan";
