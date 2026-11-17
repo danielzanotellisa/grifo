@@ -277,11 +277,18 @@ describe("the first sign-in", () => {
   });
 });
 
-const jobsFor = async (mailId: string) =>
-  rows(
-    `select j.payload from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail' and j.payload->>'mailId' = $1`,
-    [mailId],
-  );
+/** The job is enqueued after the row is written and the request does not wait for it, so poll for it. */
+const jobsFor = async (mailId: string) => {
+  for (let i = 0; i < 120; i++) {
+    const found = await rows(
+      `select j.payload from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail' and j.payload->>'mailId' = $1`,
+      [mailId],
+    );
+    if (found.length > 0) return found;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  return [];
+};
 /** Jobs of one user only: other test files enqueue jobs at the same time. */
 const jobCountOf = async (address: string) =>
   (
