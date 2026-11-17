@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import type { AuthDb } from "./db";
 import { accounts, rateLimits, sessions, users, verifications } from "./schema";
 
-export type AuthMail = { to: string; url: string; token: string };
+export type AuthMail = { userId: string; to: string; url: string; token: string };
 
 export type AuthConfig = {
   /** Connection of the authentication role: the only one that can read the identity schema (ADR 0034). */
@@ -96,11 +96,11 @@ export function createAuth(config: AuthConfig) {
         verify: ({ hash: stored, password }) => verify(stored, password),
       },
       sendResetPassword: async ({ user, url, token }) =>
-        dispatch(config.sendResetPassword, { to: user.email, url, token }),
+        dispatch(config.sendResetPassword, { userId: user.id, to: user.email, url, token }),
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url, token }) =>
-        dispatch(config.sendVerificationEmail, { to: user.email, url, token }),
+        dispatch(config.sendVerificationEmail, { userId: user.id, to: user.email, url, token }),
     },
   });
 }

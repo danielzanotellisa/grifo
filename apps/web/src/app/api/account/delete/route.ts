@@ -1,4 +1,5 @@
-import { deleteAccount } from "@app/identity";
+import { consumeRateLimit, deleteAccount } from "@app/identity";
+import { DomainError } from "@app/platform";
 import { appUrl, authDb, getAuth } from "../../../../composition";
 import { requireUser } from "../../../../lib/http/auth-guard";
 import { toProblemResponse } from "../../../../lib/http/problem";
@@ -19,7 +20,17 @@ const readPassword = async (request: Request): Promise<string> => {
 export async function POST(request: Request): Promise<Response> {
   try {
     assertSameOrigin(request, appUrl());
-    await requireUser(request);
+    const { userId } = await requireUser(request);
+    const attempt = await consumeRateLimit(authDb, {
+      key: `account-delete:${userId}`,
+      max: 5,
+      windowSeconds: 15 * 60,
+    });
+    if (!attempt.allowed) {
+      throw new DomainError("RATE_LIMITED", "Too many attempts, try again later", 429, {
+        retryAfterSeconds: attempt.retryAfterSeconds,
+      });
+    }
     await deleteAccount({
       db: authDb,
       auth: getAuth(),

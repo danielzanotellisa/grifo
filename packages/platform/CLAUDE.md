@@ -7,7 +7,7 @@ Shared infrastructure for every module. No business rules here: if it mentions a
 - `db/`: connection, `withUser` (sets `app.user_id` for RLS), column helpers.
 - `sync/`: `recordChange` (takes the per-owner advisory lock, appends to the change log and `pg_notify('sync', ownerId)` in the same transaction) and `createSyncEngine` (`push`/`pull` as functions, no HTTP; `docs/specs/_cross-cutting/sync`).
 - `db/soft-delete.ts` and `trash.ts`: `liveOnly`, `softDelete`, `softDeleteWhere`, `restoreByRoot` and `createTrash` (list and restore). Every owned table has `deleted_root_id` and `softDeleteCheck` (`docs/specs/_cross-cutting/soft-delete`, ADR 0032). `fractionalIndex` declares fractional-index columns with the `"C"` collation (ADR 0009).
-- `errors.ts`: `DomainError` with stable `code`, mapped to Problem Details by apps/web.
+- `errors.ts`: `DomainError` with stable `code` (statuses 400, 401, 403, 404, 409, 413, 422, 429; resources of another user are always 404), mapped to Problem Details by apps/web.
 - `ids.ts`: UUIDv7.
 - `storage/`: `ObjectStorage` port (S3 API). Buckets: originals, derived, backups.
 - `queue/enqueue.ts`: `enqueueJob(tx, task, payload)` — Graphile Worker `add_job` inside the caller's transaction (ADR 0029). Payload always has `ownerId`.

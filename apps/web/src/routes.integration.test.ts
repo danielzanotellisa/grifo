@@ -4,7 +4,6 @@ import { GET as accountGet } from "./app/api/auth/[...all]/route";
 import { POST as authPost } from "./app/api/auth/[...all]/route";
 import { POST as deleteRoute } from "./app/api/account/delete/route";
 import { GET as meRoute } from "./app/api/me/route";
-import { outbox } from "./mailer";
 
 const ORIGIN = "http://localhost:3000";
 const admin = new pg.Pool({ connectionString: process.env.DATABASE_MIGRATOR_URL });
@@ -48,10 +47,22 @@ const signUp = (address: string, password = PASSWORD) =>
   authCall("/sign-up/email", { name: "Caio", email: address, password });
 const signIn = (address: string, password = PASSWORD, headers: Record<string, string> = {}) =>
   authCall("/sign-in/email", { email: address, password }, headers);
+/** The delivery is not awaited by the request, so the row of the outbox shows up a moment later. */
+const mailFor = async (address: string, kind = "verification") => {
+  for (let i = 0; i < 120; i++) {
+    const [mail] = await rows(
+      `select id, kind, url, to_email from identity.outgoing_mail where to_email = $1 and kind = $2 order by created_at desc limit 1`,
+      [address, kind],
+    );
+    if (mail) return mail as { id: string; kind: string; url: string; to_email: string };
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error(`no ${kind} mail for ${address}`);
+};
 const verifiedAccount = async () => {
   const address = email();
   await signUp(address);
-  await accountGet(new Request(outbox.filter((m) => m.to === address).at(-1)!.url));
+  await accountGet(new Request((await mailFor(address)).url));
   return address;
 };
 const signedIn = async () => {
@@ -263,5 +274,82 @@ describe("the first sign-in", () => {
       { name: "Exemplo", role: "ITEM", shortcut: 3 },
       { name: "Importante", role: "ITEM", shortcut: 4 },
     ]);
+  });
+});
+
+const jobsFor = async (mailId: string) =>
+  rows(
+    `select j.payload from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail' and j.payload->>'mailId' = $1`,
+    [mailId],
+  );
+const jobCount = async () =>
+  (
+    await rows(
+      `select count(*)::int as n from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail'`,
+    )
+  )[0].n as number;
+
+describe("the authentication emails", () => {
+  it("[user/email#AC-1] leaves a row for the address and a job that holds only ids", async () => {
+    const address = email();
+    await signUp(address);
+    const [user] = await rows(`select id from identity.users where email = $1`, [address]);
+
+    const mail = await mailFor(address);
+    const token = new URL(mail.url).searchParams.get("token")!;
+    const jobs = await jobsFor(mail.id);
+
+    expect(jobs).toHaveLength(1);
+    expect(Object.keys(jobs[0].payload).sort()).toEqual(["mailId", "ownerId"]);
+    expect(jobs[0].payload.ownerId).toBe(user.id);
+    expect(JSON.stringify(jobs[0].payload)).not.toContain(token);
+    expect(
+      JSON.stringify(
+        await rows(
+          `select payload from graphile_worker._private_jobs where payload::text like $1`,
+          [`%${token}%`],
+        ),
+      ),
+    ).toBe("[]");
+  });
+
+  it("[user/email#AC-1] does the same for a reset of a known address, and nothing for an unknown one", async () => {
+    const known = await verifiedAccount();
+    const unknown = email();
+    const before = await jobCount();
+
+    await authCall("/request-password-reset", { email: known, redirectTo: `${ORIGIN}/reset` });
+    await authCall("/request-password-reset", { email: unknown, redirectTo: `${ORIGIN}/reset` });
+    const reset = await mailFor(known, "reset");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    expect((await jobsFor(reset.id)).length).toBe(1);
+    expect(
+      await rows(`select 1 from identity.outgoing_mail where to_email = $1`, [unknown]),
+    ).toHaveLength(0);
+    expect(await jobCount()).toBe(before + 1);
+  });
+});
+
+describe("deleting the account many times", () => {
+  it("[user/lifecycle#AC-4] refuses the sixth attempt of a user even with the right password", async () => {
+    const { address, cookie } = await signedIn();
+    const other = await signedIn();
+
+    for (let i = 0; i < 5; i++)
+      expect((await remove(cookie, { password: "senha-errada-123" })).status).toBe(401);
+    const sixth = await remove(cookie, { password: PASSWORD });
+
+    expect(await problem(sixth)).toEqual({
+      status: 429,
+      type: "application/problem+json",
+      code: "RATE_LIMITED",
+    });
+    expect(sixth.headers.get("retry-after")).not.toBeNull();
+    expect(
+      (await rows(`select deleted_at from identity.users where email = $1`, [address]))[0]
+        .deleted_at,
+    ).toBeNull();
+    expect((await remove(other.cookie, { password: PASSWORD })).status).toBe(204);
   });
 });

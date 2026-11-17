@@ -19,8 +19,11 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 ## Authentication (ADR 0034)
 - `/api/auth/*` is the authentication library, with its failures turned into Problem Details and the stable codes of `docs/specs/user`. `GET /api/me` and `POST /api/account/delete` are ours.
 - A route that changes state with a session cookie and is not served by the library calls `assertSameOrigin` first; the library only protects its own routes.
-- `getAuth()` (composition root) is built at startup by `instrumentation.ts`, so a missing `BETTER_AUTH_SECRET`, `APP_URL`, `DATABASE_AUTH_URL` or email sender stops the app early.
-- `mailer.ts` is a stopgap: outside production it logs the link and keeps it in `outbox`; in production it refuses to be used until the SMTP sender through the job queue exists. The default category names (`lib/i18n/category-names.ts`) are a stopgap until the i18n library is chosen (P-009).
+- `getAuth()` (composition root) is built at startup by `instrumentation.ts`, so a missing `BETTER_AUTH_SECRET`, `APP_URL` or `DATABASE_AUTH_URL` stops the app early.
+- Verification and reset emails are not sent by the web process: the callbacks write a row to the `identity` outbox and enqueue `auth.sendEmail` with only ids (ADR 0035). The job table is readable by the application role, so a link or token must never go into a payload. The worker sends the message.
+- `POST /api/account/delete` is limited to 5 attempts per user in 15 minutes (`consumeRateLimit`, 429 `RATE_LIMITED` with `Retry-After`); the library limits only its own routes.
+- The client IP for rate limiting is read from `x-real-ip`. The reverse proxy must set it and overwrite any value the client sent; never trust `X-Forwarded-For`.
+- The default category names (`lib/i18n/category-names.ts`) are a stopgap until the i18n library is chosen (P-009).
 - Every route is tested for no session (401) and, when it addresses a resource, for another user's resource (404).
 
 ## UI rules

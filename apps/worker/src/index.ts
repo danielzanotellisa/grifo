@@ -1,4 +1,7 @@
+import { createAuthDb, createMailOutbox } from "@app/identity";
 import { run, type Task, type TaskList } from "graphile-worker";
+import nodemailer from "nodemailer";
+import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
 
 /**
  * Worker entry point (ADR 0029). Task names must match `TaskName` in @app/platform.
@@ -10,12 +13,35 @@ const notImplemented =
     helpers.logger.warn(`${name}: not implemented yet (see its spec)`);
   };
 
+const requiredEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set (see .env.example)`);
+  return value;
+};
+
+// The authentication tasks read the identity schema, which only the authentication role can (ADR 0035).
+const outbox = createMailOutbox(createAuthDb(requiredEnv("DATABASE_AUTH_URL")));
+const sendEmail = createSendEmailTask({
+  outbox,
+  from: requiredEnv("MAIL_FROM"),
+  transport: nodemailer.createTransport({
+    host: requiredEnv("SMTP_HOST"),
+    port: Number(process.env.SMTP_PORT ?? 1025),
+    ...(process.env.SMTP_USER
+      ? { auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD ?? "" } }
+      : {}),
+  }),
+});
+const expireMail = createExpireMailTask({ outbox });
+
 const taskList: TaskList = {
   "document.deepScan": notImplemented("document.deepScan"),
   "export.render": notImplemented("export.render"),
   "trash.purge": notImplemented("trash.purge"),
   "backup.restoreTest": notImplemented("backup.restoreTest"),
   "storage.integrityCheck": notImplemented("storage.integrityCheck"),
+  "auth.sendEmail": async (payload) => sendEmail(payload),
+  "auth.expireMail": async () => expireMail(),
 };
 
 // minute hour day-of-month month day-of-week task
@@ -23,6 +49,7 @@ const crontab = [
   "0 4 * * * trash.purge",
   "0 5 * * 0 storage.integrityCheck",
   "0 6 1 * * backup.restoreTest",
+  "0 * * * * auth.expireMail",
 ].join("\n");
 
 const runner = await run({

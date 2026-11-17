@@ -79,6 +79,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://app_user:app_user@postgres:5432/grifo
+      DATABASE_AUTH_URL: postgres://auth_user:auth_user@postgres:5432/grifo
       S3_ENDPOINT: http://s3:8333
       CLAMAV_HOST: clamav
       SMTP_HOST: mailpit
