@@ -1,4 +1,4 @@
-import { recordChange, withUser, type Db, type ObjectStorage } from "@app/platform";
+import { enqueueJob, recordChange, withUser, type Db, type ObjectStorage } from "@app/platform";
 import { and, eq } from "drizzle-orm";
 import type { RiskFlags } from "../domain/document";
 import { findDocument } from "./repository";
@@ -54,6 +54,14 @@ export function createDocumentValidation(deps: {
         .returning({ id: documents.id });
       if (changed.length > 0) {
         await recordChange(tx, { ownerId, entity: "document", entityId: documentId, op: "upsert" });
+        if (outcome.status === "READY") {
+          await enqueueJob(
+            tx,
+            "document.deepScan",
+            { ownerId, documentId },
+            { jobKey: `document.deepScan:${documentId}` },
+          );
+        }
       }
     });
 

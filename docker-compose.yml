@@ -42,7 +42,10 @@ services:
     restart: "no"
 
   clamav:
-    image: clamav/clamav:stable
+    image: clamav/clamav:stable-debian
+    environment:
+      # Matches the upload limit (ADR 0038); the daemon default is 25 MB.
+      CLAMD_CONF_StreamMaxLength: 100M
     ports: ["3310:3310"]
     volumes:
       - clamav-db:/var/lib/clamav

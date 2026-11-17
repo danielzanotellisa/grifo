@@ -19,7 +19,8 @@ Subjects, documents and the stored PDF files. Schema: `library`. Specs: `docs/sp
 - Deleting a subject soft-deletes its live documents under the subject's root; every deleted document (directly or by cascade) publishes `library.documentDeleted` with `rootId`, so annotation/outline/study soft-delete their rows in the same transaction. A document deleted earlier keeps its own root and publishes nothing.
 - A document is never created through sync: the upload creates it (`docs/specs/document/upload.md`). The sync handler accepts only `{ id, subjectId, title }` (strict) because `storedFileId`, `status`, `pageCount`, `riskFlags` and `rejectCode` are stated by the server. Zod validates the payloads.
 - The subject list with document counts is derived on the client; there is no server query.
-- Not built yet: the `QUARANTINED` transition (deep scan) and the purge of `StoredFile` objects. The subject deletion publishes only per-document events. A deleted row is invisible and read-only (`docs/specs/_cross-cutting/soft-delete`).
+- Deep scan (`createDeepScan({ db, storage, scan })`, spec `document/deep-scan`, ADR 0038): `document.validate` enqueues `document.deepScan` when a document ends `READY`; the job quarantines (`MALWARE_DETECTED`) every live `READY` document of the owner that uses the infected `StoredFile`. The scanner is injected (`Scanner`, provided by the worker). After the last failed attempt the document stays `READY` and the failure is logged.
+- Not built yet: the purge of `StoredFile` objects. The subject deletion publishes only per-document events. A deleted row is invisible and read-only (`docs/specs/_cross-cutting/soft-delete`).
 
 ## Depends on
 - `@app/platform`. Must not import any other module (it is at the bottom of the graph).
