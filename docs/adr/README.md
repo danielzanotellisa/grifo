@@ -41,3 +41,4 @@ MADR-style, one decision per file, immutable once accepted (see 0021). Template:
 | 0035 | Authentication emails leave through an outbox in the identity schema | accepted, amends 0034 |
 | 0036 | API contract: Zod schemas are the source, the OpenAPI document comes later | accepted, partly closes P-006 |
 | 0037 | Upload: the storage checks the hash, a job validates the PDF | accepted, amends 0017 |
+| 0038 | Deep scan: our own clamd client, and what happens when the scanner is down | accepted |

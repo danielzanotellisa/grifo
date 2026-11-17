@@ -2,7 +2,7 @@
 
 - Status: approved
 - Module: library
-- ADRs: 0004, 0005, 0015, 0017, 0032, 0037
+- ADRs: 0004, 0005, 0015, 0017, 0032, 0037, 0038
 
 ## Definition
 A PDF the user imported into a subject. The original file never changes; highlights, outline and flashcards hang off the document.
@@ -17,7 +17,7 @@ A PDF the user imported into a subject. The original file never changes; highlig
 | status | enum | See lifecycle. |
 | pageCount | int? | Set by validation. |
 | riskFlags | json | Counts of active-content keys, a lower bound (informational, ADR 0037). |
-| rejectCode | text? | Why the document is `REJECTED` (`PDF_INVALID`, `PDF_ENCRYPTED`, `VALIDATION_FAILED`); null otherwise. |
+| rejectCode | text? | Why the document is `REJECTED` (`PDF_INVALID`, `PDF_ENCRYPTED`, `VALIDATION_FAILED`) or `QUARANTINED` (`MALWARE_DETECTED`); null otherwise. |
 
 ## Invariants
 1. Belongs to exactly one subject; moving changes only `subjectId`.
@@ -25,7 +25,7 @@ A PDF the user imported into a subject. The original file never changes; highlig
 3. Highlights, nodes and flashcards can be filtered by document.
 
 ## Lifecycle
-`UPLOADED → VALIDATING → READY | REJECTED`; `READY → QUARANTINED` (deep scan found malware).
+`UPLOADED → VALIDATING → READY | REJECTED`; `READY → QUARANTINED` (deep scan found malware, `document/deep-scan`).
 
 ## Operations
 | Operation | Rules | Errors |
