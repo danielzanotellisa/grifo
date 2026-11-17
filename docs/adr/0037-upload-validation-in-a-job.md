@@ -16,7 +16,7 @@ ADR 0017 point 1 puts the fast validation (signature, hash, size, structure) syn
 2. **`document.validate` is a worker job.** It reads the object and answers `REJECTED` (with a stable `rejectCode`: `PDF_INVALID`, `PDF_ENCRYPTED`, `VALIDATION_FAILED` after the last attempt) or `READY` with `pageCount` and `riskFlags`. It never enqueues anything else in this decision; the deep scan (ClamAV, `READY → QUARANTINED`) is a separate job.
 3. **Encrypted PDFs are rejected** when a password is needed to open them (`PDF_ENCRYPTED`). A PDF protected only by an owner password opens without one and is accepted.
 4. **`riskFlags` are a lower bound, informational.** `javascript` and `embeddedFiles` come from the parser; `openAction`, `additionalActions`, `launch` and `xfa` come from a scan of the raw bytes and miss keys inside compressed object streams. They are not a security boundary: the boundary is the hardened reader, the malware scan and the sanitized exports (ADR 0017 points 2 to 4).
-5. **Parser settings.** `pdfjs-dist` runs with `isEvalSupported: false` and XFA off, only in the worker.
+5. **Parser settings.** `pdfjs-dist` (version 6, which has no option to enable eval) runs with XFA off, only in the worker, and renders nothing.
 6. **Limits.** A PDF is at most 100 MiB (`UPLOAD_TOO_LARGE`). Presigned URLs last 15 minutes for upload and 5 minutes for download.
 
 ## Considered options

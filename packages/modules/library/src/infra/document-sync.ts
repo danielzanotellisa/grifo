@@ -69,6 +69,7 @@ export function createDocumentSyncHandler(deps: { events: EventBus }): SyncHandl
             status: row.status,
             pageCount: row.pageCount,
             riskFlags: row.riskFlags,
+            rejectCode: row.rejectCode,
           },
         ]),
       );

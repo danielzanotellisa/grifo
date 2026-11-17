@@ -9,6 +9,7 @@ export * from "./trash";
 export * from "./sync/record-change";
 export * from "./sync/engine";
 export * from "./storage/object-storage";
+export * from "./storage/s3-storage";
 export * from "./kernel/outline-role";
 export * from "./kernel/geometry";
 export * from "./kernel/outline-node-id";

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
 
 export type TaskName =
+  | "document.validate"
   | "document.deepScan"
   | "export.render"
   | "trash.purge"

@@ -15,6 +15,7 @@ import {
 } from "@app/identity";
 import {
   createDocumentSyncHandler,
+  createUploads,
   createSubjectSyncHandler,
   documentIsLive,
   documentState,
@@ -36,9 +37,11 @@ import {
   allowAll,
   createDb,
   createInProcessEventBus,
+  createS3Storage,
   createSyncEngine,
   createTrash,
   enqueueJob,
+  s3ConfigFromEnv,
   withUser,
 } from "@app/platform";
 import { categoryName } from "./lib/i18n/category-names";
@@ -82,6 +85,14 @@ const requiredEnv = (name: string): string => {
 };
 
 export const appUrl = (): string => requiredEnv("APP_URL");
+
+let uploads: ReturnType<typeof createUploads> | undefined;
+
+/** Built on first use: the storage settings are only needed once someone uploads or opens a PDF. */
+export function getUploads(): ReturnType<typeof createUploads> {
+  uploads ??= createUploads({ db, storage: createS3Storage(s3ConfigFromEnv(process.env)) });
+  return uploads;
+}
 
 let auth: Auth | undefined;
 

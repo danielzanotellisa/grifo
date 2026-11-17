@@ -53,6 +53,7 @@ export const documents = library.table(
     status: documentStatus("status").notNull().default("UPLOADED"),
     pageCount: integer("page_count"),
     riskFlags: jsonb("risk_flags").$type<RiskFlags>().notNull().default({}),
+    rejectCode: text("reject_code"),
   },
   (t) => [
     index("documents_owner_subject_idx").on(t.ownerId, t.subjectId),

@@ -1,4 +1,5 @@
 import pg from "pg";
+import { ensureS3Buckets, s3ConfigFromEnv } from "../../packages/platform/src/storage/s3-storage";
 import { setupDatabase } from "./setup";
 
 const TEST_DATABASE = "grifo_test";
@@ -32,6 +33,11 @@ export default async function setup(): Promise<void> {
   process.env.BETTER_AUTH_SECRET ??= "test-secret-test-secret-test-secret-1234";
   process.env.APP_URL ??= "http://localhost:3000";
   await setupDatabase(process.env.DATABASE_MIGRATOR_URL);
+
+  process.env.S3_ENDPOINT ??= "http://localhost:8333";
+  process.env.S3_ACCESS_KEY_ID ??= "devaccesskey";
+  process.env.S3_SECRET_ACCESS_KEY ??= "devsecretkey";
+  await ensureS3Buckets(s3ConfigFromEnv(process.env));
 
   // Tables that tests create for themselves live here, outside the module schemas.
   const testDb = new pg.Client({ connectionString: process.env.DATABASE_MIGRATOR_URL });
