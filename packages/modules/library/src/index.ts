@@ -7,3 +7,7 @@ export { createSubjectSyncHandler } from "./infra/subject-sync";
 export { createDocumentSyncHandler } from "./infra/document-sync";
 export { documentIsLive, documentState } from "./infra/document-liveness";
 export { documentTrashParticipant, subjectTrashParticipant } from "./infra/trash";
+export { createUploads, MAX_UPLOAD_BYTES } from "./infra/upload";
+export type { StartUpload, UploadTicket } from "./infra/upload";
+export { createDocumentValidation } from "./infra/document-validation";
+export type { InspectResult, PdfInspector, RejectCode } from "./infra/document-validation";

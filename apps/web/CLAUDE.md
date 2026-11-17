@@ -31,6 +31,11 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - Push and restore check the `Origin`; a push is 1 to 100 mutations and at most 1 MiB, read through `readJsonBody` so an oversized body is never fully buffered. The `data` of a mutation is validated by the module that owns the entity, not here.
 - Documents are created by the upload, not by sync: a test that needs one inserts it directly.
 
+## Document routes (ADR 0037)
+- `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
+- The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.
+- Start and confirm check the `Origin`; a path id that is not a UUID answers 404.
+
 ## UI rules
 - Every user mutation: write to IndexedDB and the outbox first, then update UI state. The UI shows "saved on this device" / "synced", never "saved" before IndexedDB commits.
 - The reader talks to the PDF engine only through `features/reader/pdf-engine.ts`. Engine-specific code stays behind that port.

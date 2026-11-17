@@ -101,4 +101,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Start the S3-compatible storage
+        run: |
+          docker run -d --name s3 -p 8333:8333 \
+            -v "$PWD/infra/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro" \
+            chrislusf/seaweedfs server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json
+          timeout 90 bash -c 'until curl -s -o /dev/null http://localhost:8333; do sleep 1; done'
       - run: pnpm test:integration

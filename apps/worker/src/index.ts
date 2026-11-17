@@ -1,7 +1,11 @@
 import { createAuthDb, createMailOutbox } from "@app/identity";
+import { createDocumentValidation } from "@app/library";
+import { createDb, createS3Storage, s3ConfigFromEnv } from "@app/platform";
 import { run, type Task, type TaskList } from "graphile-worker";
 import nodemailer from "nodemailer";
 import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
+import { createValidateDocumentTask } from "./tasks/document-validate";
+import { inspectPdf } from "./tasks/pdf-inspect";
 
 /**
  * Worker entry point (ADR 0029). Task names must match `TaskName` in @app/platform.
@@ -34,7 +38,16 @@ const sendEmail = createSendEmailTask({
 });
 const expireMail = createExpireMailTask({ outbox });
 
+const validateDocument = createValidateDocumentTask({
+  validation: createDocumentValidation({
+    db: createDb(requiredEnv("DATABASE_URL")),
+    storage: createS3Storage(s3ConfigFromEnv(process.env)),
+    inspect: inspectPdf,
+  }),
+});
+
 const taskList: TaskList = {
+  "document.validate": async (payload, helpers) => validateDocument(payload, helpers),
   "document.deepScan": notImplemented("document.deepScan"),
   "export.render": notImplemented("export.render"),
   "trash.purge": notImplemented("trash.purge"),
