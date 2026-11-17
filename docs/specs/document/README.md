@@ -2,7 +2,7 @@
 
 - Status: approved
 - Module: library
-- ADRs: 0004, 0005, 0015, 0017, 0032
+- ADRs: 0004, 0005, 0015, 0017, 0032, 0037
 
 ## Definition
 A PDF the user imported into a subject. The original file never changes; highlights, outline and flashcards hang off the document.
@@ -16,7 +16,8 @@ A PDF the user imported into a subject. The original file never changes; highlig
 | title | text | Defaults to the PDF title metadata, else the file name. Editable; 1–200 chars after trim. |
 | status | enum | See lifecycle. |
 | pageCount | int? | Set by validation. |
-| riskFlags | json | Counts of active-content keys (informational). |
+| riskFlags | json | Counts of active-content keys, a lower bound (informational, ADR 0037). |
+| rejectCode | text? | Why the document is `REJECTED` (`PDF_INVALID`, `PDF_ENCRYPTED`, `VALIDATION_FAILED`); null otherwise. |
 
 ## Invariants
 1. Belongs to exactly one subject; moving changes only `subjectId`.
@@ -35,7 +36,7 @@ A PDF the user imported into a subject. The original file never changes; highlig
 | Start upload, Confirm upload, Open | See `document/upload`. | |
 
 ## Sync
-Entity `document`. A document is not created through sync: it is created by the upload (`document/upload`) and reaches the client by pull. `data` of an upsert: `{ id, subjectId, title }` and nothing else, because `storedFileId`, `status`, `pageCount` and `riskFlags` are stated by the server. A pull delivers the full document.
+Entity `document`. A document is not created through sync: it is created by the upload (`document/upload`) and reaches the client by pull. `data` of an upsert: `{ id, subjectId, title }` and nothing else, because `storedFileId`, `status`, `pageCount`, `riskFlags` and `rejectCode` are stated by the server. A pull delivers the full document.
 
 ## Acceptance criteria
 - [ ] **AC-4** Given an upsert with a title of 1 to 200 characters after trim, then the document is renamed with the trimmed title; a blank or longer title answers `DOCUMENT_TITLE_INVALID` and nothing changes.
