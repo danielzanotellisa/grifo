@@ -6,7 +6,7 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `src/app/` — routes. `src/app/api/**/route.ts` = HTTP adapters.
 - `src/features/<feature>/` — UI by feature (reader, outline, flashcards, exports).
 - `src/local/` — local-first store (IndexedDB via Dexie) and the outbox (ADR 0006, 0015).
-- `src/lib/http/` — Problem Details mapping (`problem.ts`), the auth guard (`auth-guard.ts`), the origin check for our own state-changing routes (`same-origin.ts`) and the mapping of the authentication library's errors (`auth-problem.ts`).
+- `src/lib/http/` — Problem Details mapping (`problem.ts`), the bounded JSON body reader (`body.ts`), the Zod schemas of the request envelopes (`schemas.ts`, ADR 0036), the auth guard (`auth-guard.ts`), the origin check for our own state-changing routes (`same-origin.ts`) and the mapping of the authentication library's errors (`auth-problem.ts`).
 - `src/composition.ts` — the only place that wires db, event handlers and entitlements.
 
 ## Route Handler rules
@@ -25,6 +25,11 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - The client IP for rate limiting is read from `x-real-ip`. The reverse proxy must set it and overwrite any value the client sent; never trust `X-Forwarded-For`.
 - The default category names (`lib/i18n/category-names.ts`) are a stopgap until the i18n library is chosen (P-009).
 - Every route is tested for no session (401) and, when it addresses a resource, for another user's resource (404).
+
+## Sync and trash routes (ADR 0036)
+- `POST /api/sync/push` and `GET /api/sync/pull` call the sync engine; `GET /api/trash` and `POST /api/trash/{id}/restore` call the trash. Specs: `_cross-cutting/sync`, `_cross-cutting/soft-delete`.
+- Push and restore check the `Origin`; a push is 1 to 100 mutations and at most 1 MiB, read through `readJsonBody` so an oversized body is never fully buffered. The `data` of a mutation is validated by the module that owns the entity, not here.
+- Documents are created by the upload, not by sync: a test that needs one inserts it directly.
 
 ## UI rules
 - Every user mutation: write to IndexedDB and the outbox first, then update UI state. The UI shows "saved on this device" / "synced", never "saved" before IndexedDB commits.

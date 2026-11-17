@@ -1,8 +1,8 @@
 # P-006. API contract tooling
 
 - Status: open
-- Blocks: first Route Handlers
-- Related: ADR 0014, 0021
+- Blocks: the web client (generation of the OpenAPI document and schema sharing)
+- Related: ADR 0014, 0021, 0036
 
 ## Problem
 ADR 0014 wants the OpenAPI contract written before implementation; the client and server should share types and runtime validation.
@@ -12,7 +12,7 @@ ADR 0014 wants the OpenAPI contract written before implementation; the client an
 - **Schema-first in code**: Zod schemas shared by client and server, OpenAPI generated from them (spec still reviewed before implementation).
 
 ## Partly decided
-Zod validates the `data` of sync mutations inside each module (outline first, outline persistence slice). That leans to the second option, but no ADR was written: it does not yet say where client-shared schemas live or how the OpenAPI document is produced.
+ADR 0036: Zod schemas are the source, route envelopes live in `apps/web/src/lib/http/schemas.ts`, and the route specs are the reviewed contract meanwhile.
 
 ## Still open
 - Producing the OpenAPI document from the Zod schemas (ADR 0014 wants it reviewed before the Route Handlers).

@@ -2,7 +2,7 @@
 
 - Status: approved
 - Module: platform
-- ADRs: 0013, 0016, 0018, 0032
+- ADRs: 0013, 0016, 0018, 0032, 0036
 
 ## Definition
 Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisible and read-only; it can only be restored from the trash or physically removed by the purge job.
@@ -26,6 +26,10 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 | List trash | Trash items of the owner, newest first. | — |
 | Purge | Physical delete of trash items past the window. | — |
 
+## API
+- `GET /api/trash` → `{ items: [{ entity, id, label, deletedAt }] }`, newest first.
+- `POST /api/trash/{id}/restore` → 204; `{id}` is the id of a trash item. The restored rows reach the client through the next pull. Errors: 401 `UNAUTHENTICATED`; 403 `FORBIDDEN_ORIGIN`; 404 `NOT_FOUND` (not a trash item, cascaded, another user's, or not a UUID); 422 `PARENT_DELETED`.
+
 ## Acceptance criteria
 - [ ] **AC-1** Given a deleted row, when it is listed, counted or fetched by id, then it is absent (404 by id).
 - [ ] **AC-2** Given a deleted row, when it is edited, deleted again, or chosen as the parent of another row, then 404 `NOT_FOUND` and nothing changes.
@@ -34,3 +38,6 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 - [ ] **AC-5** Given items deleted directly and by cascade, when the trash is listed, then only the directly deleted ones appear.
 - [ ] **AC-6** Given a deletion, when a client pulls changes, then it receives the entity and id without row content.
 - [ ] **AC-7** Given a trash item whose parent was deleted afterwards, when it is restored, then `PARENT_DELETED` and nothing is restored.
+- [ ] **AC-8** Given no session, when the trash is listed or restored, then 401 `UNAUTHENTICATED`; given a restore with a foreign or missing `Origin`, then 403 `FORBIDDEN_ORIGIN` and nothing is restored.
+- [ ] **AC-9** Given two users with deleted items, when one lists the trash over HTTP, then only their own trash items appear, newest first.
+- [ ] **AC-10** Given a trash item, when it is restored over HTTP, then 204 and the next pull delivers it and its children; given another user's item id, a cascaded row or a non-UUID, then 404; given a parent deleted afterwards, then 422 `PARENT_DELETED`.

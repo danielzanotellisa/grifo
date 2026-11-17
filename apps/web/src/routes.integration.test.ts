@@ -277,15 +277,24 @@ describe("the first sign-in", () => {
   });
 });
 
-const jobsFor = async (mailId: string) =>
-  rows(
-    `select j.payload from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail' and j.payload->>'mailId' = $1`,
-    [mailId],
-  );
-const jobCount = async () =>
+/** The job is enqueued after the row is written and the request does not wait for it, so poll for it. */
+const jobsFor = async (mailId: string) => {
+  for (let i = 0; i < 120; i++) {
+    const found = await rows(
+      `select j.payload from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail' and j.payload->>'mailId' = $1`,
+      [mailId],
+    );
+    if (found.length > 0) return found;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  return [];
+};
+/** Jobs of one user only: other test files enqueue jobs at the same time. */
+const jobCountOf = async (address: string) =>
   (
     await rows(
-      `select count(*)::int as n from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id where t.identifier = 'auth.sendEmail'`,
+      `select count(*)::int as n from graphile_worker._private_jobs j join graphile_worker._private_tasks t on t.id = j.task_id join identity.users u on u.id::text = j.payload->>'ownerId' where t.identifier = 'auth.sendEmail' and u.email = $1`,
+      [address],
     )
   )[0].n as number;
 
@@ -316,7 +325,7 @@ describe("the authentication emails", () => {
   it("[user/email#AC-1] does the same for a reset of a known address, and nothing for an unknown one", async () => {
     const known = await verifiedAccount();
     const unknown = email();
-    const before = await jobCount();
+    const before = await jobCountOf(known);
 
     await authCall("/request-password-reset", { email: known, redirectTo: `${ORIGIN}/reset` });
     await authCall("/request-password-reset", { email: unknown, redirectTo: `${ORIGIN}/reset` });
@@ -327,7 +336,7 @@ describe("the authentication emails", () => {
     expect(
       await rows(`select 1 from identity.outgoing_mail where to_email = $1`, [unknown]),
     ).toHaveLength(0);
-    expect(await jobCount()).toBe(before + 1);
+    expect(await jobCountOf(known)).toBe(before + 1);
   });
 });
 
