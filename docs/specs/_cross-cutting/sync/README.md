@@ -2,7 +2,7 @@
 
 - Status: approved
 - Modules: platform + every module with synced entities
-- ADRs: 0006, 0014, 0015, 0016, 0032
+- ADRs: 0006, 0014, 0015, 0016, 0032, 0036
 
 ## Definition
 The server side of sync: how client mutations are applied exactly once and in order, and how any device catches up from a cursor. The client flow and SSE are in `sync/events`; the compaction horizon is in `sync/compaction`.
@@ -23,6 +23,10 @@ The server side of sync: how client mutations are applied exactly once and in or
 7. Pull collapses the changes after the cursor per entity: the last one wins. A deletion, or an entity that is no longer live, is delivered as a tombstone (entity and id, no row content); otherwise the current state is delivered.
 8. A pull page holds at most 500 changes; `more` is true when there are further changes after the returned `cursor`.
 9. An owner never receives or affects another owner's changes or processed mutations (ADR 0016).
+10. Both routes answer 401 `UNAUTHENTICATED` without a session; push also checks the `Origin` (403 `FORBIDDEN_ORIGIN`), since it changes state with a cookie.
+11. Push takes 1 to 100 mutations; `mutationId` is a UUID, `entity` a non-empty string, `op` is `upsert` or `delete`, `data` an object. The body is at most 1 MiB. Anything else answers 400 `VALIDATION_FAILED` (413 `PAYLOAD_TOO_LARGE` for the size) and applies nothing; a client with more than 100 pending mutations sends several pushes.
+12. `since` on pull is a non-negative integer; absent means 0 (first sync). Anything else answers 400 `VALIDATION_FAILED`.
+13. A mutation on an entity of another owner is `rejected` with `NOT_FOUND`, like a missing one (ADR 0016).
 
 ## Acceptance criteria
 - [ ] **AC-1** Given a batch of 10 highlight mutations whose response was lost, when the same batch is pushed again, then each highlight exists once on the server.
@@ -36,6 +40,12 @@ The server side of sync: how client mutations are applied exactly once and in or
 - [ ] **AC-10** Given a handler that reports an entity and a cascaded child, then both appear in the next pull.
 - [ ] **AC-11** Given a mutation for an entity without a handler, then it is `rejected` with `SYNC_ENTITY_UNKNOWN`.
 - [ ] **AC-12** Given two owners using the same `mutationId`, then both are applied, and neither sees the other's changes in a pull.
+- [ ] **AC-13** Given no session, when push or pull is called, then 401 `UNAUTHENTICATED` and nothing is applied.
+- [ ] **AC-14** Given a push whose `Origin` is foreign or missing, then 403 `FORBIDDEN_ORIGIN` and nothing is applied.
+- [ ] **AC-15** Given a push that is not JSON, has a malformed mutation, an empty batch, 101 mutations or a body over 1 MiB, then 400 `VALIDATION_FAILED` (413 for the size) and nothing is applied.
+- [ ] **AC-16** Given a signed-in user, when they push mutations and pull from cursor 0 and push the same batch again, then the pull returns the entities with the cursor of the push, and the second push answers `duplicate`.
+- [ ] **AC-17** Given a `since` that is negative, fractional or not a number, then 400 `VALIDATION_FAILED`; given no `since`, then the pull starts at 0.
+- [ ] **AC-18** Given a mutation on an entity id that belongs to another user, then it is `rejected` with `NOT_FOUND`, the other user's data is unchanged, and the other user's pull does not show it.
 
 AC-3 (two browsers, < 2 s) moved to `sync/events`; a retired criterion keeps its number.
 
