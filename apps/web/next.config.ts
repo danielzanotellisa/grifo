@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   // Self-hosted container (ADR 0019, 0022). Not built for serverless: SSE and LISTEN/NOTIFY need long-lived processes.
@@ -16,4 +17,6 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(nextConfig);

@@ -7,6 +7,7 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `src/features/<feature>/` — UI by feature (reader, outline, flashcards, exports).
 - `src/local/` — local-first store (IndexedDB via Dexie) and the outbox (ADR 0006, 0015).
 - `src/lib/http/` — Problem Details mapping (`problem.ts`), the bounded JSON body reader (`body.ts`), the Zod schemas of the request envelopes (`schemas.ts`, ADR 0036), the auth guard (`auth-guard.ts`), the origin check for our own state-changing routes (`same-origin.ts`) and the mapping of the authentication library's errors (`auth-problem.ts`).
+- `src/i18n/request.ts` and `messages/pt-BR.json` — the one locale and every UI string (next-intl, ADR 0041). `src/app/globals.css` imports Tailwind.
 - `src/composition.ts` — the only place that wires db, event handlers and entitlements.
 
 ## Route Handler rules
@@ -23,7 +24,7 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - Verification and reset emails are not sent by the web process: the callbacks write a row to the `identity` outbox and enqueue `auth.sendEmail` with only ids (ADR 0035). The job table is readable by the application role, so a link or token must never go into a payload. The worker sends the message.
 - `POST /api/account/delete` is limited to 5 attempts per user in 15 minutes (`consumeRateLimit`, 429 `RATE_LIMITED` with `Retry-After`); the library limits only its own routes.
 - The client IP for rate limiting is read from `x-real-ip`. The reverse proxy must set it and overwrite any value the client sent; never trust `X-Forwarded-For`.
-- The default category names (`lib/i18n/category-names.ts`) are a stopgap until the i18n library is chosen (P-009).
+- The default category names (`lib/i18n/category-names.ts`) are a stopgap that moves to `messages/pt-BR.json` now that next-intl is chosen (ADR 0041).
 - Every route is tested for no session (401) and, when it addresses a resource, for another user's resource (404).
 
 ## Sync and trash routes (ADR 0036)
@@ -42,6 +43,6 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - PDF rendering runs in a Web Worker; never enable eval or PDF JavaScript in the engine.
 - Highlight geometry is converted between screen and PDF points only at the engine boundary.
 - Keyboard first: category shortcuts 1–9, right-click menu on selections and highlights.
-- No hard-coded UI strings; use i18n keys (pt-BR is the default locale).
+- No hard-coded UI strings: add a key to `messages/pt-BR.json` and read it with `getTranslations` (server) or `useTranslations` (client). Style with Tailwind utility classes (ADR 0041).
 - No `localStorage` for user data: IndexedDB only.
 - No Server Actions for domain mutations: every mutation goes through the sync push endpoint (ADR 0022).

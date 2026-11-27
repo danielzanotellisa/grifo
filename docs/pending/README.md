@@ -30,7 +30,7 @@ Closing an item: record the decision in an ADR or spec, set the status, keep the
 | P-006 | API contract tooling | open |
 | P-007 | Sync edge cases | open |
 | P-008 | Backup tooling and local versioning | open |
-| P-009 | UI kit, styling and i18n library | open |
+| P-009 | UI kit, styling and i18n library | partly decided → 0041 |
 | P-010 | Image pinning and production worker build | open |
 | P-011 | .apkg generator and import verification | open |
 | P-012 | Project name | decided → Grifo |
