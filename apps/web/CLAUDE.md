@@ -42,6 +42,12 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `features/subjects/subjects-client.ts` is the only code that calls those routes: the list is a full pull where the last change of each entity wins; every change is one push of one mutation; a new subject id is a UUIDv7 made in the browser (`uuid`). Failures become stable codes, and `use-failure-message.ts` turns a code into a pt-BR message (a lost session goes to `/login`).
 - `src/test/fake-api.ts` is an in-memory sync and trash API for the component tests, with `fail`, `rejectNext` and `holdNextPush` to force failures.
 
+## Documents (spec `document/screens`)
+- `/subjects/{id}` is the page of one subject: its documents, importing PDFs, rename and delete. Each subject name on `/` links to it. It talks straight to the API like the subject screens; there is no SSE, so the page pulls again every 2 seconds only while a document is `VALIDATING` (or `UPLOADED` and still being sent by this page) and stops when none is.
+- `features/documents/documents-client.ts` does the import: SHA-256 in the browser (`crypto.subtle`), `POST /api/documents/uploads`, a `PUT` straight to the storage with the URL and headers returned (skipped when the server already has the bytes), then confirm. A failed `PUT` is the client code `UPLOAD_PUT_FAILED`. `lib/api.ts` holds what the subject and document clients share (`request`, `pullAll`, `pushMutation`, the `Result` and `Failure` types).
+- The title of a document is the file name without `.pdf`, cut to 200 characters; a document `UPLOADED` that this page is not sending shows as "Envio incompleto".
+- `FakeApi` also serves the upload routes and a fake storage host (`storage.test`); `finish(id, change)` plays the validation job, `holdNextPut()` holds a storage upload.
+
 ## Document routes (ADR 0037)
 - `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
 - The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.

@@ -2,7 +2,14 @@ import { vi } from "vitest";
 import { problem } from "./render";
 
 type Subject = { id: string; name: string };
-type Doc = { id: string; subjectId: string };
+type Doc = {
+  id: string;
+  subjectId: string;
+  title?: string;
+  status?: string;
+  pageCount?: number | null;
+  rejectCode?: string | null;
+};
 type TrashItem = {
   id: string;
   entity: string;
@@ -20,6 +27,12 @@ export class FakeApi {
   others: { entity: string; entityId: string; data: unknown }[] = [];
   pageSize = 500;
   pushes: { mutationId: string; entity: string; op: string; data: Record<string, unknown> }[] = [];
+  /** What the upload routes and the storage received, in order. */
+  starts: Record<string, unknown>[] = [];
+  puts: { url: string; headers: Record<string, string>; bytes: number }[] = [];
+  confirms: string[] = [];
+  /** Hashes the storage already has: a start for one of them answers `upload: null`. */
+  storedHashes = new Set<string>();
   restores: string[] = [];
   pulls = 0;
   /** The next request to this path prefix fails with this answer; `network` makes it throw. */
@@ -59,6 +72,11 @@ export class FakeApi {
       return this.push(JSON.parse(String(init?.body)));
     }
     if (url.pathname === "/api/trash") return Response.json({ items: this.trash });
+    if (url.pathname === "/api/documents/uploads")
+      return this.start(JSON.parse(String(init?.body)));
+    if (url.hostname === "storage.test") return this.put(url, init);
+    const confirm = /^\/api\/documents\/([^/]+)\/confirm$/.exec(url.pathname);
+    if (confirm) return this.confirm(confirm[1]!);
     const restore = /^\/api\/trash\/([^/]+)\/restore$/.exec(url.pathname);
     if (restore) return this.restore(restore[1]!);
     return problem(404, "NOT_FOUND");
@@ -82,7 +100,14 @@ export class FakeApi {
         entity: "document",
         entityId: d.id,
         op: "upsert",
-        data: { id: d.id, subjectId: d.subjectId },
+        data: {
+          id: d.id,
+          subjectId: d.subjectId,
+          title: d.title ?? d.id,
+          status: d.status ?? "READY",
+          pageCount: d.pageCount === undefined ? 1 : d.pageCount,
+          rejectCode: d.rejectCode ?? null,
+        },
       })),
       ...this.trash.map((t) => ({ entity: t.entity, entityId: t.id, op: "delete" })),
     ];
@@ -115,6 +140,7 @@ export class FakeApi {
       return { ...base, status: "rejected", code };
     }
     const id = String(m.data.id);
+    if (m.entity === "document") return { ...base, ...this.applyDocument(m, id) };
     if (m.op === "upsert") {
       const name = String(m.data.name ?? "").trim();
       if (name.length < 1 || name.length > 120)
@@ -135,6 +161,88 @@ export class FakeApi {
       deletedAt: new Date().toISOString(),
     });
     return { ...base, status: "applied" };
+  }
+
+  private applyDocument(m: FakeApi["pushes"][number], id: string) {
+    const index = this.documents.findIndex((d) => d.id === id);
+    if (index < 0) return { status: "rejected", code: "NOT_FOUND" };
+    if (m.op === "upsert") {
+      const title = String(m.data.title ?? "").trim();
+      if (title.length < 1 || title.length > 200)
+        return { status: "rejected", code: "DOCUMENT_TITLE_INVALID" };
+      this.documents[index]!.title = title;
+      return { status: "applied" };
+    }
+    const [gone] = this.documents.splice(index, 1);
+    this.trash.unshift({
+      id,
+      entity: "document",
+      label: gone!.title ?? id,
+      deletedAt: new Date().toISOString(),
+    });
+    return { status: "applied" };
+  }
+
+  /** The server moves a document on its own (the validation job): the page learns it by pulling. */
+  finish(id: string, change: Partial<Doc>) {
+    Object.assign(
+      this.documents.find((d) => d.id === id)!,
+      change,
+    );
+  }
+
+  private start(body: {
+    documentId: string;
+    subjectId: string;
+    title: string;
+    sha256: string;
+  }): Response {
+    this.starts.push(body);
+    if (!this.subjects.some((s) => s.id === body.subjectId)) return problem(422, "PARENT_DELETED");
+    if (!this.documents.some((d) => d.id === body.documentId)) {
+      this.documents.push({
+        id: body.documentId,
+        subjectId: body.subjectId,
+        title: body.title,
+        status: "UPLOADED",
+        pageCount: null,
+      });
+    }
+    const upload = this.storedHashes.has(body.sha256)
+      ? null
+      : {
+          url: `http://storage.test/put/${body.documentId}`,
+          headers: { "content-type": "application/pdf", "x-amz-checksum-sha256": "abc" },
+        };
+    return Response.json({ documentId: body.documentId, upload }, { status: 201 });
+  }
+
+  private async put(url: URL, init?: RequestInit): Promise<Response> {
+    const body = init?.body as Blob | ArrayBuffer | Uint8Array;
+    const bytes = body instanceof Blob ? body.size : (body as ArrayBuffer).byteLength;
+    this.puts.push({ url: url.href, headers: init?.headers as Record<string, string>, bytes });
+    if (this.putGate) await this.putGate;
+    return new Response(null, { status: 200 });
+  }
+
+  private putGate: Promise<void> | null = null;
+  releasePut: () => void = () => undefined;
+  /** Holds the next storage `PUT` until `releasePut()` is called. */
+  holdNextPut() {
+    this.putGate = new Promise<void>((resolve) => {
+      this.releasePut = () => {
+        this.putGate = null;
+        resolve();
+      };
+    });
+  }
+
+  private confirm(id: string): Response {
+    this.confirms.push(id);
+    const doc = this.documents.find((d) => d.id === id);
+    if (!doc) return problem(404, "NOT_FOUND");
+    doc.status = "VALIDATING";
+    return Response.json({ status: "VALIDATING" }, { status: 202 });
   }
 
   private restore(id: string): Response {
