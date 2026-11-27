@@ -3,10 +3,28 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { pullAll, request, type Failure } from "../../lib/api";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { pullAll, request, type Failure, type Result } from "../../lib/api";
 import type { DocumentItem } from "../documents/documents-client";
-import type { Surface, SurfaceControls, SurfaceState } from "./reader-surface";
+import { CategoriesBar } from "./categories-bar";
+import {
+  changeHighlightCategory,
+  createHighlights,
+  deleteHighlight,
+  extractMarking,
+  type Category,
+  type HighlightItem,
+} from "./highlights-client";
+import { HighlightsPanel } from "./highlights-panel";
+import type {
+  SelectionInfo,
+  Surface,
+  SurfaceControls,
+  SurfaceHighlight,
+  SurfaceState,
+} from "./reader-surface";
+import { SelectionMenu } from "./selection-menu";
+import { useHighlightFailureMessage } from "./use-highlight-failure-message";
 
 type Phase =
   | { kind: "loading" }
@@ -25,6 +43,15 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
   const [typedPage, setTypedPage] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const controls = useRef<SurfaceControls | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [highlights, setHighlights] = useState<HighlightItem[]>([]);
+  const [selection, setSelection] = useState<SelectionInfo | null>(null);
+  const [markError, setMarkError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [marking, setMarking] = useState(false);
+  const busy = useRef(false);
+  const highlightFailure = useHighlightFailureMessage();
+  const marks = useTranslations("Highlights");
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +63,9 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
         else setPhase({ kind: "failed", failure: pulled, doc: placeholder(documentId) });
         return;
       }
+      const found = extractMarking(pulled.value, documentId);
+      setCategories(found.categories);
+      setHighlights(found.highlights);
       const doc = pulled.value
         .filter((c) => c.entity === "document" && c.op === "upsert")
         .map((c) => c.data as DocumentItem)
@@ -61,6 +91,61 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
     // The document id does not change while the page is open.
   }, []);
 
+  async function refreshMarking(): Promise<void> {
+    const pulled = await pullAll();
+    if (!pulled.ok) return;
+    const found = extractMarking(pulled.value, documentId);
+    setCategories(found.categories);
+    setHighlights(found.highlights);
+  }
+
+  /** One change at a time: a second one while a request is pending sends nothing. */
+  async function runMark(action: () => Promise<Result<null>>, onDone?: () => void): Promise<void> {
+    if (busy.current) return;
+    busy.current = true;
+    setMarking(true);
+    setMarkError(null);
+    setNotice(null);
+    const result = await action();
+    if (result.ok) onDone?.();
+    else {
+      const message = highlightFailure(result);
+      if (message) setMarkError(message);
+    }
+    await refreshMarking();
+    busy.current = false;
+    setMarking(false);
+  }
+
+  const mark = (categoryId: string) => {
+    if (!selection) return;
+    void runMark(
+      () => createHighlights(documentId, categoryId, selection),
+      () => {
+        controls.current?.clearSelection();
+        setSelection(null);
+      },
+    );
+  };
+  const clearSelection = () => {
+    if (!selection) return;
+    controls.current?.clearSelection();
+    setSelection(null);
+  };
+  const latest = useRef({ mark, clearSelection, categories });
+  latest.current = { mark, clearSelection, categories };
+
+  const surfaceHighlights = useMemo<SurfaceHighlight[]>(
+    () =>
+      highlights.map((h) => ({
+        id: h.id,
+        pageIndex: h.pageIndex,
+        rects: h.rects,
+        color: categories.find((c) => c.id === h.categoryId)?.color ?? "#9ca3af",
+      })),
+    [highlights, categories],
+  );
+
   const isReady = surface.status === "ready";
   useEffect(() => {
     if (!isReady) return;
@@ -75,6 +160,11 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
       if (event.key === "+" || event.key === "=") controls.current?.zoomIn();
       else if (event.key === "-") controls.current?.zoomOut();
       else if (event.key === "0") controls.current?.fitWidth();
+      else if (event.key === "Escape") latest.current.clearSelection();
+      else if (/^[1-9]$/.test(event.key)) {
+        const category = latest.current.categories.find((c) => c.shortcut === Number(event.key));
+        if (category) latest.current.mark(category.id);
+      }
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -234,8 +324,51 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
       {surface.status === "loading" ? (
         <p className="px-4 py-2 text-sm text-neutral-500">{t("loading")}</p>
       ) : null}
-      <div className="min-h-0 flex-1">
-        <Surface source={source(phase.url)} onState={setSurface} controlsRef={controls} />
+      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2">
+        <CategoriesBar
+          categories={categories}
+          enabled={selection !== null && !marking}
+          onChoose={mark}
+        />
+        {notice ? (
+          <p role="status" className="text-sm text-neutral-700">
+            {notice}
+          </p>
+        ) : null}
+        {markError ? (
+          <p role="alert" className="text-sm text-red-700">
+            {markError}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex min-h-0 flex-1">
+        <div className="relative min-w-0 flex-1">
+          <Surface
+            source={source(phase.url)}
+            onState={setSurface}
+            controlsRef={controls}
+            highlights={surfaceHighlights}
+            onSelection={setSelection}
+          />
+          {selection ? (
+            <SelectionMenu categories={categories} anchor={selection.anchor} onChoose={mark} />
+          ) : null}
+        </div>
+        <HighlightsPanel
+          highlights={highlights}
+          categories={categories}
+          busy={marking}
+          onGo={(h) => controls.current?.goToPage(h.pageIndex + 1)}
+          onChangeCategory={(h, categoryId) =>
+            void runMark(() => changeHighlightCategory(h, categoryId))
+          }
+          onDelete={(h) =>
+            void runMark(
+              () => deleteHighlight(h.id),
+              () => setNotice(marks("movedToTrash")),
+            )
+          }
+        />
       </div>
     </div>
   );
