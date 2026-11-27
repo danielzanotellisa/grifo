@@ -476,3 +476,27 @@ describe("subject page: opening a document", () => {
     expect(screen.queryByRole("link", { name: "Bloqueado" })).toBeNull();
   });
 });
+
+describe("subject page: the summary link", () => {
+  it("[outline-node/screens#AC-10] links the summary of every READY document and of no other", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Aula pronta", status: "READY", pageCount: 3 },
+      { id: "d2", subjectId: "s-redes", title: "Aula em validação", status: "VALIDATING" },
+      {
+        id: "d3",
+        subjectId: "s-redes",
+        title: "Aula recusada",
+        status: "REJECTED",
+        rejectCode: "PDF_INVALID",
+      },
+    ];
+    view();
+    await screen.findByText("Validando…");
+
+    expect(
+      screen.getAllByRole("link", { name: "Resumo" }).map((l) => l.getAttribute("href")),
+    ).toEqual(["/documents/d1/summary"]);
+    expect(within(item("Aula pronta")).getByRole("link", { name: "Resumo" })).toBeTruthy();
+    expect(within(item("Aula em validação")).queryByRole("link", { name: "Resumo" })).toBeNull();
+  });
+});

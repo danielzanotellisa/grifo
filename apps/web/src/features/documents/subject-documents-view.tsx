@@ -294,6 +294,11 @@ export function SubjectDocumentsView({
                     )}
                   </span>
                   <span className="text-sm text-neutral-700">{statusLabel(doc)}</span>
+                  {doc.status === "READY" ? (
+                    <Link href={`/documents/${doc.id}/summary`} className="text-sm underline">
+                      {t("summary")}
+                    </Link>
+                  ) : null}
                   {doc.status === "READY" && doc.pageCount ? (
                     <span className="text-sm text-neutral-500">
                       {t("pages", { count: doc.pageCount })}
