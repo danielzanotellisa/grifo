@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter @app/web --filter @app/worker dev",
     "build": "pnpm -r build",
-    "test": "vitest run --project unit",
+    "test": "vitest run --project unit --project ui",
     "test:integration": "vitest run --project integration",
     "typecheck": "pnpm -r typecheck && tsc -p scripts/tsconfig.json",
     "lint": "eslint .",

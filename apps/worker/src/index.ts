@@ -9,7 +9,7 @@ import {
 import { outlinePurgeParticipant } from "@app/outline";
 import { createDb, createPurge, createS3Storage, s3ConfigFromEnv } from "@app/platform";
 import { studyPurgeParticipant } from "@app/study";
-import { run } from "graphile-worker";
+import { parseCronItems, run } from "graphile-worker";
 import nodemailer from "nodemailer";
 import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
 import { createClamavScanner } from "./tasks/clamav";
@@ -17,7 +17,7 @@ import { createDeepScanTask } from "./tasks/document-deep-scan";
 import { createValidateDocumentTask } from "./tasks/document-validate";
 import { inspectPdf } from "./tasks/pdf-inspect";
 import { createPurgeTask } from "./tasks/trash-purge";
-import { createTaskList, crontab } from "./schedule";
+import { createTaskList, cronItems } from "./schedule";
 
 /**
  * Worker entry point (ADR 0029). Task names must match `TaskName` in @app/platform.
@@ -84,7 +84,7 @@ const runner = await run({
   connectionString: process.env.DATABASE_URL ?? "",
   concurrency: 4,
   taskList,
-  crontab,
+  parsedCronItems: parseCronItems(cronItems),
 });
 
 await runner.promise;

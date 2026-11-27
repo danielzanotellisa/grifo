@@ -8,7 +8,7 @@
 The daily job `trash.purge` that physically deletes what has been in the trash for more than 30 days, and the stored files and result objects that nothing references any more. Deleting an account after its window is `user/purge`, a later slice.
 
 ## Rules
-1. The job runs daily (crontab, 04:00) on the admin connection, across owners. The cutoff is the run time minus 30 days (`TRASH_WINDOW_DAYS`); a row is purged when its own `deleted_at` is before the cutoff. A live row, and a row deleted within the window, is never touched.
+1. The job runs daily (schedule, 04:00) on the admin connection, across owners. The cutoff is the run time minus 30 days (`TRASH_WINDOW_DAYS`); a row is purged when its own `deleted_at` is before the cutoff. A live row, and a row deleted within the window, is never touched.
 2. Each module deletes the rows of its own tables: documents, subjects, highlights, categories, outline nodes, flashcards and exports. A row deleted by cascade has the timestamp of its root and goes with it; a child trashed on its own earlier goes earlier.
 3. Inside a schema the order respects the foreign keys: documents before subjects, highlights before categories. A subject is kept while any document references it, and a category while any highlight references it, in any state; a later run removes it.
 4. A stored file is purged when no document, live or trashed, references it and it was created before the cutoff; this includes orphans (a recent file with no document yet is not an orphan: a person or a test may insert the two in separate steps). In one transaction that locks its row, the object is deleted from the `originals` bucket and then the row. Another owner's stored file with the same bytes is never touched (ADR 0005).
@@ -27,7 +27,7 @@ The daily job `trash.purge` that physically deletes what has been in the trash f
 - [ ] **AC-7** Given the storage fails while the job runs, then the other modules are still purged, the job fails, the rows of the affected files stay, and a later run with the storage back completes the purge.
 - [ ] **AC-8** Given a purged document, then it is not in the trash, restoring it answers 404, and a pull of its id after an earlier change answers a tombstone.
 - [ ] **AC-9** Given an export past the window with a result object, then the object and the row are gone; given one within the window, then both stay.
-- [ ] **AC-10** Given the worker, then `trash.purge` is registered in the task list and runs through the crontab entry.
+- [ ] **AC-10** Given the worker, then `trash.purge` is registered in the task list and scheduled daily at 04:00.
 
 ## Open questions
 - Purging deleted accounts (`user/purge`).

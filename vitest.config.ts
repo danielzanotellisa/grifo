@@ -11,6 +11,17 @@ export default defineConfig({
         },
       },
       {
+        // Client components of the web app, rendered in jsdom.
+        oxc: { jsx: { runtime: "automatic" } },
+        test: {
+          name: "ui",
+          environment: "jsdom",
+          include: ["apps/web/**/*.test.tsx"],
+          exclude: ["**/node_modules/**"],
+          setupFiles: ["./apps/web/src/test/ui-setup.ts"],
+        },
+      },
+      {
         test: {
           name: "integration",
           include: [

@@ -23,7 +23,7 @@ import {
 import { createInProcessEventBus } from "@app/platform";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { crontab, createTaskList } from "../schedule";
+import { createTaskList, cronItems } from "../schedule";
 import { createPurgeTask } from "./trash-purge";
 
 const admin = new pg.Pool({ connectionString: process.env.DATABASE_MIGRATOR_URL });
@@ -404,6 +404,8 @@ describe("the purge task in the worker", () => {
     await (list["trash.purge"] as (...args: unknown[]) => Promise<void>)({}, {});
 
     expect(calls).toEqual(["run"]);
-    expect(crontab.split("\n")).toContain("0 4 * * * trash.purge");
+    expect(cronItems).toContainEqual(
+      expect.objectContaining({ task: "trash.purge", match: "0 4 * * *" }),
+    );
   });
 });

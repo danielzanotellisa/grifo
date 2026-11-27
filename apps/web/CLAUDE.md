@@ -32,6 +32,11 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - Push and restore check the `Origin`; a push is 1 to 100 mutations and at most 1 MiB, read through `readJsonBody` so an oversized body is never fully buffered. The `data` of a mutation is validated by the module that owns the entity, not here.
 - Documents are created by the upload, not by sync: a test that needs one inserts it directly.
 
+## Screens (spec `user/screens`)
+- `/signup`, `/login` and `/` (the home redirects to `/login` without a session). The forms are client components in `src/features/auth/`; they call the authentication routes through `auth-client.ts` and pick the message of a failure by its stable `code` (`use-error-message.ts`), never by its text.
+- `lib/session.ts` `currentUser(headers)` is what a page asks to know who is signed in; the page redirects on null.
+- Component tests (`*.test.tsx`) run in jsdom under the Vitest `ui` project with the real pt-BR messages (`src/test/render.tsx`). Next adds its own `role="alert"` route announcer to the page, so a browser test must target `p[role="alert"]`, not every alert.
+
 ## Document routes (ADR 0037)
 - `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
 - The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.

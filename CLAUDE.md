@@ -76,4 +76,4 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Do not bump or re-add `typescript`: it is aliased to the TS 6 API for ESLint/Next, and `@typescript/native` provides the TS 7 `tsc` (ADR 0031).
 - `pnpm install` — also installs the git hooks (husky, via `prepare`)
 - `pnpm db:setup` — roles, migrations, job queue schema and RLS in one idempotent step (needs `DATABASE_MIGRATOR_URL`); `pnpm db:generate` after changing a schema file, then commit `db/migrations`
-- `pnpm test` runs unit tests only; `pnpm test:integration` needs the compose Postgres and recreates the `grifo_test` database on every run
+- `pnpm test` runs the unit tests and the jsdom component tests (`*.test.tsx`); `pnpm test:integration` needs the compose Postgres and recreates the `grifo_test` database on every run
