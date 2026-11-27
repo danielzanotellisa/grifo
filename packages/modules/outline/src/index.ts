@@ -8,3 +8,4 @@ export { createOutlineTrashParticipant } from "./infra/trash";
 export { registerOutlineReactions } from "./infra/reactions";
 export { nodeSource } from "./infra/node-source";
 export type { NodeSource } from "./infra/node-source";
+export { outlinePurgeParticipant } from "./infra/purge";

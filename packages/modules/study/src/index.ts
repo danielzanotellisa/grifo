@@ -15,3 +15,4 @@ export { createFlashcardSyncHandler } from "./infra/flashcard-sync";
 export type { FlashcardDeps, NodeSourcePort } from "./infra/flashcard-sync";
 export { createFlashcardTrashParticipant } from "./infra/flashcard-trash";
 export { registerStudyReactions } from "./infra/reactions";
+export { studyPurgeParticipant } from "./infra/purge";

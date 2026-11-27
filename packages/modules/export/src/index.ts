@@ -6,3 +6,4 @@ export { NOTE_TYPE, stableIntId } from "./apkg/note-type";
 export type { SafeHtml } from "./render/html";
 export { escapeHtml, html, rawHtml } from "./render/html";
 export { renderPdf } from "./render/gotenberg";
+export { createExportPurgeParticipant } from "./infra/purge";

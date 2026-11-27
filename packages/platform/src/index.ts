@@ -15,3 +15,4 @@ export * from "./kernel/geometry";
 export * from "./kernel/outline-node-id";
 export * from "./events";
 export * from "./queue/enqueue";
+export * from "./purge";
