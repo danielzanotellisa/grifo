@@ -6,3 +6,8 @@ dist/
 *.log
 .DS_Store
 coverage/
+
+# Throwaway spikes: install their own dependencies and generate their own fixtures.
+spikes/**/fixtures/
+spikes/**/out/
+spikes/**/.next/

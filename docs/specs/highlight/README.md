@@ -49,4 +49,4 @@ Entity `highlight`. `data` of an upsert: `{ id, documentId, categoryId, pageInde
 AC-1 to AC-3 (reader behavior) moved to `highlight/reader`; a retired criterion keeps its number.
 
 ## Open questions
-- Re-anchoring strategy and engine capabilities: `docs/pending/P-003`.
+- Re-anchoring and the engine's capabilities are decided in ADR 0040 (`docs/pending/P-003`). The reader behavior is `highlight/reader`, still to be written.
