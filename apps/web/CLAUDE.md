@@ -37,6 +37,11 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `lib/session.ts` `currentUser(headers)` is what a page asks to know who is signed in; the page redirects on null.
 - Component tests (`*.test.tsx`) run in jsdom under the Vitest `ui` project with the real pt-BR messages (`src/test/render.tsx`). Next adds its own `role="alert"` route announcer to the page, so a browser test must target `p[role="alert"]`, not every alert.
 
+## Subjects and trash (spec `subject/screens`)
+- `/` is the list of subjects and `/trash` the trash, both behind `AppShell` (`features/shell`) and a session check that redirects to `/login`. They talk straight to `/api/sync/pull`, `/api/sync/push` and `/api/trash`: no local database and no offline queue until `sync/events`.
+- `features/subjects/subjects-client.ts` is the only code that calls those routes: the list is a full pull where the last change of each entity wins; every change is one push of one mutation; a new subject id is a UUIDv7 made in the browser (`uuid`). Failures become stable codes, and `use-failure-message.ts` turns a code into a pt-BR message (a lost session goes to `/login`).
+- `src/test/fake-api.ts` is an in-memory sync and trash API for the component tests, with `fail`, `rejectNext` and `holdNextPush` to force failures.
+
 ## Document routes (ADR 0037)
 - `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
 - The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.

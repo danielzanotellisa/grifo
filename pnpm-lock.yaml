@@ -274,6 +274,9 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
+      uuid:
+        specifier: 14.0.3
+        version: 14.0.3
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -6522,6 +6525,7 @@ snapshots:
       '@types/node': 26.6.6
     transitivePeerDependencies:
       - msw
+    optional: true
 
   w3c-xmlserializer@6.0.0:
     dependencies:
