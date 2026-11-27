@@ -1,24 +1,28 @@
+import { annotationPurgeParticipant } from "@app/annotation";
+import { createExportPurgeParticipant } from "@app/export";
 import { createAuthDb, createMailOutbox } from "@app/identity";
-import { createDeepScan, createDocumentValidation } from "@app/library";
-import { createDb, createS3Storage, s3ConfigFromEnv } from "@app/platform";
-import { run, type Task, type TaskList } from "graphile-worker";
+import {
+  createDeepScan,
+  createDocumentValidation,
+  createLibraryPurgeParticipant,
+} from "@app/library";
+import { outlinePurgeParticipant } from "@app/outline";
+import { createDb, createPurge, createS3Storage, s3ConfigFromEnv } from "@app/platform";
+import { studyPurgeParticipant } from "@app/study";
+import { run } from "graphile-worker";
 import nodemailer from "nodemailer";
 import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
 import { createClamavScanner } from "./tasks/clamav";
 import { createDeepScanTask } from "./tasks/document-deep-scan";
 import { createValidateDocumentTask } from "./tasks/document-validate";
 import { inspectPdf } from "./tasks/pdf-inspect";
+import { createPurgeTask } from "./tasks/trash-purge";
+import { createTaskList, crontab } from "./schedule";
 
 /**
  * Worker entry point (ADR 0029). Task names must match `TaskName` in @app/platform.
  * Each handler: read in a short withUser transaction -> do the slow work -> write results + recordChange.
  */
-const notImplemented =
-  (name: string): Task =>
-  async (_payload, helpers) => {
-    helpers.logger.warn(`${name}: not implemented yet (see its spec)`);
-  };
-
 const requiredEnv = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set (see .env.example)`);
@@ -56,24 +60,25 @@ const deepScan = createDeepScanTask({
   }),
 });
 
-const taskList: TaskList = {
-  "document.validate": async (payload, helpers) => validateDocument(payload, helpers),
-  "document.deepScan": async (payload, helpers) => deepScan(payload, helpers),
-  "export.render": notImplemented("export.render"),
-  "trash.purge": notImplemented("trash.purge"),
-  "backup.restoreTest": notImplemented("backup.restoreTest"),
-  "storage.integrityCheck": notImplemented("storage.integrityCheck"),
-  "auth.sendEmail": async (payload) => sendEmail(payload),
-  "auth.expireMail": async () => expireMail(),
-};
+// The purge works across owners, so it is the one task that uses the admin connection (ADR 0039).
+const purge = createPurgeTask({
+  db: createDb(requiredEnv("DATABASE_MIGRATOR_URL")),
+  purge: createPurge([
+    createLibraryPurgeParticipant({ storage }),
+    annotationPurgeParticipant,
+    outlinePurgeParticipant,
+    studyPurgeParticipant,
+    createExportPurgeParticipant({ storage }),
+  ]),
+});
 
-// minute hour day-of-month month day-of-week task
-const crontab = [
-  "0 4 * * * trash.purge",
-  "0 5 * * 0 storage.integrityCheck",
-  "0 6 1 * * backup.restoreTest",
-  "0 * * * * auth.expireMail",
-].join("\n");
+const taskList = createTaskList({
+  validateDocument: async (payload, helpers) => validateDocument(payload, helpers),
+  deepScan: async (payload, helpers) => deepScan(payload, helpers),
+  purge: async () => purge(),
+  sendEmail: async (payload) => sendEmail(payload),
+  expireMail: async () => expireMail(),
+});
 
 const runner = await run({
   connectionString: process.env.DATABASE_URL ?? "",

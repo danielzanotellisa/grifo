@@ -20,3 +20,4 @@ export { seedDefaultCategories } from "./infra/seed";
 export function createAnnotationSyncHandlers(deps: HighlightDeps): SyncHandler[] {
   return [createCategorySyncHandler({ events: deps.events }), createHighlightSyncHandler(deps)];
 }
+export { annotationPurgeParticipant } from "./infra/purge";

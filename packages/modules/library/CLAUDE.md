@@ -20,7 +20,7 @@ Subjects, documents and the stored PDF files. Schema: `library`. Specs: `docs/sp
 - A document is never created through sync: the upload creates it (`docs/specs/document/upload.md`). The sync handler accepts only `{ id, subjectId, title }` (strict) because `storedFileId`, `status`, `pageCount`, `riskFlags` and `rejectCode` are stated by the server. Zod validates the payloads.
 - The subject list with document counts is derived on the client; there is no server query.
 - Deep scan (`createDeepScan({ db, storage, scan })`, spec `document/deep-scan`, ADR 0038): `document.validate` enqueues `document.deepScan` when a document ends `READY`; the job quarantines (`MALWARE_DETECTED`) every live `READY` document of the owner that uses the infected `StoredFile`. The scanner is injected (`Scanner`, provided by the worker). After the last failed attempt the document stays `READY` and the failure is logged.
-- Not built yet: the purge of `StoredFile` objects. The subject deletion publishes only per-document events. A deleted row is invisible and read-only (`docs/specs/_cross-cutting/soft-delete`).
+- Purge (`createLibraryPurgeParticipant({ storage })`, ADR 0039): deletes documents past the window, then subjects no document references, then stored files nothing references and created before the cutoff, each under a row lock with its object deleted from the storage first. The subject deletion publishes only per-document events. A deleted row is invisible and read-only (`docs/specs/_cross-cutting/soft-delete`).
 
 ## Depends on
 - `@app/platform`. Must not import any other module (it is at the bottom of the graph).

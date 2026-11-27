@@ -17,7 +17,7 @@ The immutable bytes of an uploaded PDF in the `originals` bucket, addressed by o
 ## Invariants
 1. Never modified or overwritten.
 2. Deduplication only within the same owner.
-3. Physically deleted only by the purge job when no live or trashed document references it.
+3. Physically deleted only by the purge job when no live or trashed document references it (`_cross-cutting/purge`).
 
 ## Acceptance criteria
 - [ ] **AC-1** Given two users upload the same PDF, then two objects exist, one per owner.

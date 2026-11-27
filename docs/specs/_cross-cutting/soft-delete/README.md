@@ -24,7 +24,7 @@ Every user-owned row is deleted softly (`deleted_at`). A deleted row is invisibl
 | Delete | Marks the row, and its cascade, deleted in one transaction. | `NOT_FOUND` if already deleted |
 | Restore | Only a trash item. Restores it and everything deleted with it, in one transaction. | `NOT_FOUND` if not a trash item; `PARENT_DELETED` |
 | List trash | Trash items of the owner, newest first. | — |
-| Purge | Physical delete of trash items past the window. | — |
+| Purge | Physical delete of rows past the window (`_cross-cutting/purge`). | — |
 
 ## API
 - `GET /api/trash` → `{ items: [{ entity, id, label, deletedAt }] }`, newest first.

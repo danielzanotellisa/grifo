@@ -13,3 +13,4 @@ export { createDocumentValidation } from "./infra/document-validation";
 export type { InspectResult, PdfInspector, RejectCode } from "./infra/document-validation";
 export { createDeepScan } from "./infra/deep-scan";
 export type { ScanResult, Scanner } from "./infra/deep-scan";
+export { createLibraryPurgeParticipant } from "./infra/purge";
