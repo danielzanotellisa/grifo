@@ -44,3 +44,4 @@ MADR-style, one decision per file, immutable once accepted (see 0021). Template:
 | 0038 | Deep scan: our own clamd client, and what happens when the scanner is down | accepted |
 | 0039 | Trash purge: one participant per module, run with the admin connection | accepted |
 | 0040 | EmbedPDF confirmed as the PDF engine, with the rules the spike found | accepted, amends 0024 |
+| 0041 | UI styling with Tailwind CSS and texts with next-intl | accepted |
