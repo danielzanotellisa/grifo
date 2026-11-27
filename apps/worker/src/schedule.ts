@@ -1,12 +1,15 @@
-import type { Task, TaskList } from "graphile-worker";
+import type { CronItem, Task, TaskList } from "graphile-worker";
 
-// minute hour day-of-month month day-of-week task
-export const crontab = [
-  "0 4 * * * trash.purge",
-  "0 5 * * 0 storage.integrityCheck",
-  "0 6 1 * * backup.restoreTest",
-  "0 * * * * auth.expireMail",
-].join("\n");
+/**
+ * The schedule. Items, not a crontab text: the crontab syntax of Graphile does not accept a dot in
+ * a task name, and ours have one (`trash.purge`), so the worker would refuse to start.
+ */
+export const cronItems: CronItem[] = [
+  { task: "trash.purge", match: "0 4 * * *" },
+  { task: "storage.integrityCheck", match: "0 5 * * 0" },
+  { task: "backup.restoreTest", match: "0 6 1 * *" },
+  { task: "auth.expireMail", match: "0 * * * *" },
+];
 
 const notImplemented =
   (name: string): Task =>
