@@ -41,11 +41,12 @@ export function makeFakeSurface() {
   fake.Surface = function FakeSurface(props) {
     const { source, onState, controlsRef, onSelection } = props;
     fake.lastProps = props;
+    // Wired while rendering, not in an effect: a test that waits for the surface to appear may emit at once.
+    fake.emitState = onState;
+    fake.emitSelection = onSelection;
     useEffect(() => {
       fake.mounts++;
       controlsRef.current = controls as unknown as SurfaceControls;
-      fake.emitState = onState;
-      fake.emitSelection = onSelection;
       source().then(
         (bytes) => (fake.sourceBytes = bytes),
         (error) => (fake.sourceError = error),
