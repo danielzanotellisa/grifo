@@ -299,6 +299,11 @@ export function SubjectDocumentsView({
                       {t("summary")}
                     </Link>
                   ) : null}
+                  {doc.status === "READY" ? (
+                    <Link href={`/documents/${doc.id}/flashcards`} className="text-sm underline">
+                      {t("flashcards")}
+                    </Link>
+                  ) : null}
                   {doc.status === "READY" && doc.pageCount ? (
                     <span className="text-sm text-neutral-500">
                       {t("pages", { count: doc.pageCount })}

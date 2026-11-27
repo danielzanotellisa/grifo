@@ -438,3 +438,136 @@ describe("summary: failures", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
   });
 });
+
+describe("summary: flashcards", () => {
+  const rowOf = (id: string) => rows().find((r) => r.getAttribute("data-node-id") === id)!;
+  const create = (row: HTMLElement) =>
+    within(row).queryByRole("button", { name: "Criar flashcard" });
+
+  beforeEach(() => {
+    api.highlights = [
+      highlight("h1", "c2", "Roteador encaminha pacotes"),
+      highlight("h2", "c3", "Exemplo de RIP"),
+    ];
+    api.nodes = [
+      { ...free("own", null, "a0", "Ponte liga redes", "DEFINITION") },
+      { ...free("cat", null, "a1"), highlightId: "h1", role: null, text: null },
+      { ...free("over", null, "a2"), highlightId: "h1", role: "ITEM", text: null },
+      { ...free("item", null, "a3"), highlightId: "h2", role: null, text: null },
+    ];
+  });
+
+  it("[flashcard/screens#AC-1] offers to create a flashcard only on nodes whose effective role is DEFINITION", async () => {
+    await open();
+
+    expect(create(rowOf("own"))).toBeTruthy();
+    expect(create(rowOf("cat"))).toBeTruthy();
+    expect(create(rowOf("over"))).toBeNull();
+    expect(create(rowOf("item"))).toBeNull();
+  });
+
+  it("[flashcard/screens#AC-1] opens the field with the key C for a selected definition and does nothing for another", async () => {
+    const user = userEvent.setup();
+    await open();
+
+    await select(user, "item");
+    key("c");
+    expect(screen.queryByLabelText("Frente do flashcard")).toBeNull();
+    key("c");
+    await select(user, "cat");
+    key("c");
+    expect(await screen.findByLabelText("Frente do flashcard")).toBeTruthy();
+  });
+
+  it("[flashcard/screens#AC-1] does not open the field with C when no node is selected", async () => {
+    await open();
+
+    key("c");
+
+    expect(screen.queryByLabelText("Frente do flashcard")).toBeNull();
+  });
+
+  it("[flashcard/screens#AC-2] creates the card with one upsert of id, source and trimmed front, then shows one flashcard", async () => {
+    const user = userEvent.setup();
+    await open();
+
+    await user.click(create(rowOf("own"))!);
+    await user.type(screen.getByLabelText("Frente do flashcard"), "  O que é uma ponte?  ");
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    await waitFor(() => expect(screen.queryByLabelText("Frente do flashcard")).toBeNull());
+    expect(api.batches).toHaveLength(1);
+    expect(api.batches[0]).toHaveLength(1);
+    const sent = api.batches[0]![0]!;
+    expect(sent).toMatchObject({ entity: "flashcard", op: "upsert" });
+    expect(sent.data).toEqual({
+      id: expect.stringMatching(UUID_V7),
+      sourceNodeId: "own",
+      front: "O que é uma ponte?",
+    });
+    expect(api.flashcards[0]!.back).toBe("Ponte liga redes");
+    const link = await within(rowOf("own")).findByRole("link", { name: "1 flashcard" });
+    expect(link.getAttribute("href")).toBe("/documents/d1/flashcards");
+  });
+
+  it("[flashcard/screens#AC-2] refuses a blank front without sending, and Escape closes the field", async () => {
+    const user = userEvent.setup();
+    await open();
+
+    await user.click(create(rowOf("own"))!);
+    await user.type(screen.getByLabelText("Frente do flashcard"), "   ");
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Informe a frente do flashcard.",
+    );
+    expect(api.batches).toEqual([]);
+    fireEvent.keyDown(screen.getByLabelText("Frente do flashcard"), { key: "Escape" });
+    expect(screen.queryByLabelText("Frente do flashcard")).toBeNull();
+    expect(api.batches).toEqual([]);
+  });
+
+  it("[flashcard/screens#AC-7] shows the message of the rejection and keeps the field", async () => {
+    const user = userEvent.setup();
+    await open();
+    await user.click(create(rowOf("own"))!);
+    await user.type(screen.getByLabelText("Frente do flashcard"), "Ponte");
+    api.rejectNext("FLASHCARD_REQUIRES_DEFINITION");
+
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    expect(
+      await screen.findByText("Só é possível criar flashcard a partir de uma definição."),
+    ).toBeTruthy();
+    expect(screen.getByLabelText("Frente do flashcard")).toBeTruthy();
+    expect(api.flashcards).toEqual([]);
+  });
+
+  it("[flashcard/screens#AC-7] goes to the sign-in screen when the session is gone", async () => {
+    const user = userEvent.setup();
+    await open();
+    await user.click(create(rowOf("own"))!);
+    await user.type(screen.getByLabelText("Frente do flashcard"), "Ponte");
+    api.fail("/api/sync/push", problem(401, "UNAUTHENTICATED"));
+
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+  });
+
+  it("[flashcard/screens#AC-8] links the cards page from the header, and counts the cards of each node", async () => {
+    api.flashcards = [
+      { id: "f1", documentId: "d1", sourceNodeId: "own", front: "A", back: "x" },
+      { id: "f2", documentId: "d1", sourceNodeId: "own", front: "B", back: "x" },
+      { id: "f3", documentId: "d1", sourceNodeId: "cat", front: "C", back: "x" },
+    ];
+    await open();
+
+    expect(screen.getByRole("link", { name: "Flashcards" }).getAttribute("href")).toBe(
+      "/documents/d1/flashcards",
+    );
+    expect(within(rowOf("own")).getByRole("link", { name: "2 flashcards" })).toBeTruthy();
+    expect(within(rowOf("cat")).getByRole("link", { name: "1 flashcard" })).toBeTruthy();
+    expect(within(rowOf("item")).queryByRole("link", { name: /flashcard/ })).toBeNull();
+  });
+});

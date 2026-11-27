@@ -19,6 +19,13 @@ type FakeNode = {
   role: string | null;
   text: string | null;
 };
+type FakeCard = {
+  id: string;
+  documentId: string;
+  sourceNodeId: string | null;
+  front: string;
+  back: string;
+};
 type FakeHighlight = {
   id: string;
   documentId: string;
@@ -56,6 +63,7 @@ export class FakeApi {
   categories: FakeCategory[] = [];
   highlights: FakeHighlight[] = [];
   nodes: FakeNode[] = [];
+  flashcards: FakeCard[] = [];
   /** Every push request, as the list of its mutations (a request may carry several). */
   batches: FakeApi["pushes"][] = [];
   /** What the upload routes and the storage received, in order. */
@@ -146,6 +154,12 @@ export class FakeApi {
         op: "upsert",
         data: n,
       })),
+      ...this.flashcards.map((c) => ({
+        entity: "flashcard",
+        entityId: c.id,
+        op: "upsert",
+        data: c,
+      })),
       ...this.subjects.map((s) => ({
         entity: "subject",
         entityId: s.id,
@@ -200,6 +214,7 @@ export class FakeApi {
     if (m.entity === "document") return { ...base, ...this.applyDocument(m, id) };
     if (m.entity === "highlight") return { ...base, ...this.applyHighlight(m, id) };
     if (m.entity === "outlineNode") return { ...base, ...this.applyNode(m, id) };
+    if (m.entity === "flashcard") return { ...base, ...this.applyFlashcard(m, id) };
     if (m.op === "upsert") {
       const name = String(m.data.name ?? "").trim();
       if (name.length < 1 || name.length > 120)
@@ -238,6 +253,68 @@ export class FakeApi {
       entity: "document",
       label: gone!.title ?? id,
       deletedAt: new Date().toISOString(),
+    });
+    return { status: "applied" };
+  }
+
+  /** The document, text and effective role of a node, the way the study module reads them from the outline. */
+  private nodeInfo(nodeId: string) {
+    const node = this.nodes.find((n) => n.id === nodeId);
+    if (!node) return null;
+    const highlight = this.highlights.find((h) => h.id === node.highlightId);
+    const category = this.categories.find((c) => c.id === highlight?.categoryId);
+    return {
+      documentId: node.documentId,
+      text: (node.text ?? highlight?.quote.exact ?? "").trim(),
+      role: node.role ?? category?.role ?? null,
+    };
+  }
+
+  private applyFlashcard(m: FakeApi["pushes"][number], id: string) {
+    const index = this.flashcards.findIndex((c) => c.id === id);
+    if (m.op === "delete") {
+      if (index < 0) return { status: "rejected", code: "NOT_FOUND" };
+      const [gone] = this.flashcards.splice(index, 1);
+      this.trash.unshift({
+        id,
+        entity: "flashcard",
+        label: gone!.front,
+        deletedAt: new Date().toISOString(),
+      });
+      return { status: "applied" };
+    }
+    const data = m.data as Record<string, unknown>;
+    if ("refreshFromSource" in data) {
+      if (index < 0) return { status: "rejected", code: "NOT_FOUND" };
+      const source = this.nodeInfo(String(this.flashcards[index]!.sourceNodeId));
+      if (!source) return { status: "rejected", code: "FLASHCARD_SOURCE_GONE" };
+      if (source.text === "") return { status: "rejected", code: "FLASHCARD_BACK_EMPTY" };
+      this.flashcards[index]!.back = source.text;
+      return { status: "applied" };
+    }
+    if ("back" in data) {
+      if (index < 0) return { status: "rejected", code: "NOT_FOUND" };
+      const front = String(data.front ?? "").trim();
+      const back = String(data.back ?? "").trim();
+      if (front === "") return { status: "rejected", code: "FLASHCARD_FRONT_REQUIRED" };
+      if (back === "") return { status: "rejected", code: "FLASHCARD_BACK_EMPTY" };
+      Object.assign(this.flashcards[index]!, { front, back });
+      return { status: "applied" };
+    }
+    const front = String(data.front ?? "").trim();
+    if (front === "") return { status: "rejected", code: "FLASHCARD_FRONT_REQUIRED" };
+    const source = this.nodeInfo(String(data.sourceNodeId));
+    if (!source) return { status: "rejected", code: "PARENT_DELETED" };
+    if (source.role !== "DEFINITION")
+      return { status: "rejected", code: "FLASHCARD_REQUIRES_DEFINITION" };
+    if (index >= 0) return { status: "rejected", code: "FLASHCARD_INVALID" };
+    if (source.text === "") return { status: "rejected", code: "FLASHCARD_BACK_EMPTY" };
+    this.flashcards.push({
+      id,
+      documentId: source.documentId,
+      sourceNodeId: String(data.sourceNodeId),
+      front,
+      back: source.text,
     });
     return { status: "applied" };
   }

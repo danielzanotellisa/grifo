@@ -60,6 +60,11 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `outline-tree.ts` holds the pure operations (`indent`, `outdent`, `moveAmongSiblings`, `positionAfter`, `flatten`) with `fractional-indexing`; it mirrors the module's own `tree.ts` because `@app/outline`'s root pulls the server (drizzle, pg) into a client bundle. The server does not replay the client's operations, it validates the final state.
 - Dragging with the mouse is not built; the drag-and-drop library choice stays open in `P-009`.
 
+## Flashcards (spec `flashcard/screens`)
+- Cards are created on the summary: a node whose effective role is `DEFINITION` (own role, or its category's) offers "Criar flashcard" (button, or key `C` on the selected node) with an inline front field; the push is one `upsert` of `{ id, sourceNodeId, front }` and the server copies the back. A node with cards shows "N flashcards" linking to the cards page, and the summary header links to it.
+- `/documents/{id}/flashcards` (`features/flashcards/flashcards-view.tsx`) lists the live cards of the document by front (pt-BR), and edits (`{ id, front, back }`), updates from the summary (`{ id, refreshFromSource: true }`) and deletes (`{ id }`, trash notice). The command is told apart by the shape of the data, as in the server's `flashcard-payload`.
+- `use-flashcard-failure-message.ts` maps the stable codes (`FLASHCARD_*`, `PARENT_DELETED`, `NOT_FOUND`, rate limit, network) to pt-BR messages; `UNAUTHENTICATED` goes to `/login`. There is no study mode; Anki is the player (export is the next slice).
+
 ## Document routes (ADR 0037)
 - `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
 - The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.

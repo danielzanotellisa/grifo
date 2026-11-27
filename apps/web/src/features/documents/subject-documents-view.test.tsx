@@ -500,3 +500,19 @@ describe("subject page: the summary link", () => {
     expect(within(item("Aula em validação")).queryByRole("link", { name: "Resumo" })).toBeNull();
   });
 });
+
+describe("subject page: the flashcards link", () => {
+  it("[flashcard/screens#AC-8] links the flashcards of every READY document and of no other", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Aula pronta", status: "READY", pageCount: 3 },
+      { id: "d2", subjectId: "s-redes", title: "Aula em validação", status: "VALIDATING" },
+    ];
+    view();
+    await screen.findByText("Validando…");
+
+    expect(
+      screen.getAllByRole("link", { name: "Flashcards" }).map((l) => l.getAttribute("href")),
+    ).toEqual(["/documents/d1/flashcards"]);
+    expect(within(item("Aula pronta")).getByRole("link", { name: "Flashcards" })).toBeTruthy();
+  });
+});

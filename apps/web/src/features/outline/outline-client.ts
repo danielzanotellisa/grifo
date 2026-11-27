@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from "uuid";
 import { pullAll, pushMutations, type Pulled, type Result } from "../../lib/api";
 import type { DocumentItem } from "../documents/documents-client";
+import type { Flashcard } from "../flashcards/flashcards-client";
 import { extractMarking, type Category, type HighlightItem } from "../reader/highlights-client";
 import type { NodeData, OutlineRole } from "./outline-tree";
 
@@ -9,6 +10,7 @@ export type OutlineData = {
   categories: Category[];
   highlights: HighlightItem[];
   nodes: NodeData[];
+  flashcards: Flashcard[];
 };
 
 /** The document, its categories and highlights and its live outline nodes, from one pull. */
@@ -23,7 +25,11 @@ export function extractOutline(pulled: Pulled[], documentId: string): OutlineDat
     .filter((c) => c.entity === "outlineNode" && c.op === "upsert")
     .map((c) => c.data as NodeData)
     .filter((n) => n.documentId === documentId);
-  return { document, categories, highlights, nodes };
+  const flashcards = pulled
+    .filter((c) => c.entity === "flashcard" && c.op === "upsert")
+    .map((c) => c.data as Flashcard)
+    .filter((c) => c.documentId === documentId);
+  return { document, categories, highlights, nodes, flashcards };
 }
 
 export async function loadOutline(documentId: string): Promise<Result<OutlineData>> {

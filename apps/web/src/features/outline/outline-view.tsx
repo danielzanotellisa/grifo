@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { Result } from "../../lib/api";
+import { createFlashcard } from "../flashcards/flashcards-client";
+import { useFlashcardFailureMessage } from "../flashcards/use-flashcard-failure-message";
 import { loadOutline, newFreeText, removeNode, saveNode, type OutlineData } from "./outline-client";
 import {
   flatten,
@@ -18,14 +20,18 @@ import { useOutlineFailureMessage } from "./use-outline-failure-message";
 
 const ROLES: OutlineRole[] = ["TOPIC", "DEFINITION", "ITEM"];
 type Editing = { id: string; text: string; role: string };
+type Carding = { nodeId: string; front: string };
 
 /** The summary of a document as a tree that is changed with the keyboard (`outline-node/screens`). */
 export function OutlineView({ documentId }: { documentId: string }) {
   const t = useTranslations("Outline");
+  const tCard = useTranslations("Flashcards");
   const failureMessage = useOutlineFailureMessage();
+  const cardFailureMessage = useFlashcardFailureMessage();
   const [data, setData] = useState<OutlineData | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
+  const [carding, setCarding] = useState<Carding | null>(null);
   const [addRole, setAddRole] = useState<OutlineRole>("ITEM");
   const [addText, setAddText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +43,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
     else if (data === null) {
       const message = failureMessage(result);
       setError(message ? `${t("errors.loadFailed")} ${message}` : null);
-      setData({ document: null, categories: [], highlights: [], nodes: [] });
+      setData({ document: null, categories: [], highlights: [], nodes: [], flashcards: [] });
     }
   }
   useEffect(() => {
@@ -56,10 +62,16 @@ export function OutlineView({ documentId }: { documentId: string }) {
   const colorOf = (node: NodeData) =>
     data?.categories.find((c) => c.id === quoteOf(node)?.categoryId)?.color;
 
+  const cardCount = (nodeId: string) =>
+    data?.flashcards.filter((c) => c.sourceNodeId === nodeId).length ?? 0;
+
   const rows = data ? flatten(data.nodes, roleOf) : [];
 
   /** One change at a time; the tree is pulled again whatever the answer (`outline-node/screens`). */
-  async function run(action: () => Promise<Result<null>>): Promise<boolean> {
+  async function run(
+    action: () => Promise<Result<null>>,
+    messageOf = failureMessage,
+  ): Promise<boolean> {
     if (busy.current) return false;
     busy.current = true;
     setError(null);
@@ -67,7 +79,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
     let ok = true;
     if (!result.ok) {
       ok = false;
-      const message = failureMessage(result);
+      const message = messageOf(result);
       if (message) setError(message);
     }
     await refresh();
@@ -76,7 +88,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
   }
 
   function onTreeKey(event: KeyboardEvent) {
-    if (editing || !data) return;
+    if (editing || carding || !data) return;
     const at = rows.findIndex((r) => r.node.id === selectedId);
     const handled = () => event.preventDefault();
 
@@ -94,6 +106,15 @@ export function OutlineView({ documentId }: { documentId: string }) {
       return;
     }
     if (!selectedId) return;
+    if (event.key === "c" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const node = data.nodes.find((n) => n.id === selectedId);
+      if (node && roleOf(node) === "DEFINITION") {
+        handled();
+        setError(null);
+        setCarding({ nodeId: node.id, front: "" });
+      }
+      return;
+    }
     if (event.key === "Tab") {
       handled();
       const changed = event.shiftKey
@@ -126,6 +147,19 @@ export function OutlineView({ documentId }: { documentId: string }) {
       saveNode({ ...node, text: text === "" ? null : text, role: isHighlight ? role : role }),
     );
     if (saved) setEditing(null);
+  }
+
+  async function onCreateCard(event: FormEvent) {
+    event.preventDefault();
+    if (!carding) return;
+    const front = carding.front.trim();
+    if (front === "") {
+      setError(tCard("errors.frontRequired"));
+      return;
+    }
+    if (await run(() => createFlashcard(carding.nodeId, front), cardFailureMessage)) {
+      setCarding(null);
+    }
   }
 
   async function onAdd(event: FormEvent) {
@@ -170,6 +204,9 @@ export function OutlineView({ documentId }: { documentId: string }) {
         <h1 className="text-3xl font-semibold tracking-tight">
           {t("title")}: {data.document.title}
         </h1>
+        <Link href={`/documents/${documentId}/flashcards`} className="text-sm underline">
+          {tCard("title")}
+        </Link>
         <p className="text-sm text-neutral-500">{t("keys")}</p>
       </div>
 
@@ -202,7 +239,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
                 data-node-id={node.id}
                 onClick={() => setSelectedId(node.id)}
                 style={{ paddingLeft: `${depth * 1.25}rem` }}
-                className={`flex items-center gap-2 py-1.5 pr-3 ${selected ? "bg-neutral-100" : ""}`}
+                className={`flex flex-wrap items-center gap-2 py-1.5 pr-3 ${selected ? "bg-neutral-100" : ""}`}
               >
                 {color ? (
                   <span
@@ -278,6 +315,68 @@ export function OutlineView({ documentId }: { documentId: string }) {
                     <span>{textOf(node)}</span>
                   </>
                 )}
+                {editing?.id !== node.id && role === "DEFINITION" ? (
+                  <span className="ml-auto flex items-center gap-2 text-sm">
+                    {cardCount(node.id) > 0 ? (
+                      <Link href={`/documents/${documentId}/flashcards`} className="underline">
+                        {tCard("count", { count: cardCount(node.id) })}
+                      </Link>
+                    ) : null}
+                    {carding?.nodeId === node.id ? null : (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedId(node.id);
+                          setError(null);
+                          setCarding({ nodeId: node.id, front: "" });
+                        }}
+                        className="underline"
+                      >
+                        {tCard("create")}
+                      </button>
+                    )}
+                  </span>
+                ) : null}
+                {carding?.nodeId === node.id ? (
+                  <form
+                    onSubmit={(event) => void onCreateCard(event)}
+                    onClick={(event) => event.stopPropagation()}
+                    noValidate
+                    className="flex basis-full flex-wrap items-center gap-2"
+                  >
+                    <input
+                      aria-label={tCard("frontField")}
+                      value={carding.front}
+                      autoFocus
+                      onChange={(event) => setCarding({ ...carding, front: event.target.value })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                          event.stopPropagation();
+                          setCarding(null);
+                          setError(null);
+                        }
+                      }}
+                      className="min-w-48 flex-1 rounded-md border border-neutral-300 px-2 py-1"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white"
+                    >
+                      {tCard("createSubmit")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCarding(null);
+                        setError(null);
+                      }}
+                      className="rounded-md border border-neutral-300 px-3 py-1 text-sm"
+                    >
+                      {tCard("cancel")}
+                    </button>
+                  </form>
+                ) : null}
               </li>
             );
           })}
