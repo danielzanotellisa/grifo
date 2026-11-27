@@ -1,6 +1,43 @@
 {
   "Home": {
     "title": "Grifo",
-    "tagline": "Estude seus PDFs: marque trechos, monte o resumo e crie flashcards."
+    "tagline": "Estude seus PDFs: marque trechos, monte o resumo e crie flashcards.",
+    "signedInAs": "Você entrou como {email}.",
+    "signOut": "Sair"
+  },
+  "Auth": {
+    "fields": {
+      "name": "Nome",
+      "email": "E-mail",
+      "password": "Senha"
+    },
+    "passwordHint": "Use de 10 a 128 caracteres.",
+    "signUp": {
+      "title": "Criar conta",
+      "submit": "Criar conta",
+      "pending": "Criando…",
+      "hasAccount": "Já tem conta?",
+      "toSignIn": "Entrar",
+      "confirmationTitle": "Confira seu e-mail",
+      "confirmationBody": "Enviamos um link de confirmação para {email}. Abra o link para ativar a conta."
+    },
+    "signIn": {
+      "title": "Entrar",
+      "submit": "Entrar",
+      "pending": "Entrando…",
+      "noAccount": "Ainda não tem conta?",
+      "toSignUp": "Criar conta",
+      "verified": "E-mail confirmado. Entre com a sua senha."
+    },
+    "errors": {
+      "nameRequired": "Informe seu nome.",
+      "emailRequired": "Informe seu e-mail.",
+      "passwordLength": "A senha precisa ter de 10 a 128 caracteres.",
+      "invalidCredentials": "E-mail ou senha incorretos.",
+      "emailNotVerified": "Confirme seu e-mail antes de entrar. Enviamos um link quando você criou a conta.",
+      "rateLimited": "Muitas tentativas. Tente de novo em {seconds, plural, one {# segundo} other {# segundos}}.",
+      "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
+      "generic": "Algo deu errado. Tente de novo."
+    }
   }
 }

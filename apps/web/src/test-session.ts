@@ -25,7 +25,7 @@ const cookieOf = (res: Response) =>
     .getSetCookie()
     .map((c) => c.split(";")[0])
     .join("; ");
-const mailUrl = async (address: string) => {
+export const mailUrl = async (address: string) => {
   for (let i = 0; i < 120; i++) {
     const { rows } = await admin.query(
       `select url from identity.outgoing_mail where to_email = $1 and kind = 'verification' order by created_at desc limit 1`,

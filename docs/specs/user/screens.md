@@ -10,14 +10,14 @@ The first screens a person uses: create an account, confirm the email, sign in a
 ## Screens
 | Path | What it is |
 | --- | --- |
-| `/cadastro` | Sign up: name, email, password. |
-| `/entrar` | Sign in: email, password. |
-| `/` | Home: with a session, the email of the person and a sign-out button; without one, it sends the person to `/entrar`. |
+| `/signup` | Sign up: name, email, password. |
+| `/login` | Sign in: email, password. |
+| `/` | Home: with a session, the email of the person and a sign-out button; without one, it sends the person to `/login`. |
 
 ## Rules
 1. Every text is a key of `messages/pt-BR.json`; the error shown is chosen by the stable `code` of the Problem Details answer, never by its text.
 2. The client trims name and email and checks the password length (10 to 128) before sending; the server still decides.
-3. Sign-up always ends on the same message, "we sent a link to <email>", whatever the server answered with success (it answers the same for a new and for an existing email: `user#AC-4`). The request carries `callbackURL: "/entrar?verificado=1"`, so the verification link lands on the sign-in screen, which then says the email was confirmed.
+3. Sign-up always ends on the same message, "we sent a link to <email>", whatever the server answered with success (it answers the same for a new and for an existing email: `user#AC-4`). The request carries `callbackURL: "/login?verified=1"`, so the verification link lands on the sign-in screen, which then says the email was confirmed.
 4. Errors: `INVALID_CREDENTIALS` → wrong email or password; `EMAIL_NOT_VERIFIED` → confirm the email first; `PASSWORD_INVALID` → the length rule; `RATE_LIMITED` → try again in `Retry-After` seconds; anything else → a generic message. Nothing reveals whether an email exists.
 5. While a request is pending the submit button is disabled, so a second click or Enter sends nothing. The form submits with Enter.
 6. Accessibility: every field has a visible label, the right `autocomplete` (`name`, `email`, `new-password`, `current-password`), errors are announced (`role="alert"`) and the first field with an error takes focus.
@@ -29,9 +29,9 @@ The first screens a person uses: create an account, confirm the email, sign in a
 - [ ] **AC-3** Given the server answers `PASSWORD_INVALID`, `RATE_LIMITED` (with `Retry-After`) or an unexpected error to a sign-up, then the screen shows the message of that code and keeps what was typed.
 - [ ] **AC-4** Given valid credentials, when the sign-in form is sent, then the person goes to `/`.
 - [ ] **AC-5** Given the server answers `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `RATE_LIMITED` (with `Retry-After`) or an unexpected error to a sign-in, then the screen shows the message of that code, keeps the email and clears the password.
-- [ ] **AC-6** Given `/entrar?verificado=1`, then the screen says the email was confirmed; given `/entrar` alone, then it does not.
-- [ ] **AC-7** Given a request with no valid session, then the home path answers a redirect to `/entrar`; given a valid session, then it shows the email of the person, and signing out ends the session and goes to `/entrar`.
-- [ ] **AC-8** Given a sign-up made with `callbackURL: "/entrar?verificado=1"`, when the verification link of the email is opened, then the answer is a redirect to `/entrar?verificado=1` and the email is verified.
+- [ ] **AC-6** Given `/login?verified=1`, then the screen says the email was confirmed; given `/login` alone, then it does not.
+- [ ] **AC-7** Given a request with no valid session, then the home path answers a redirect to `/login`; given a valid session, then it shows the email of the person, and signing out ends the session and goes to `/login`.
+- [ ] **AC-8** Given a sign-up made with `callbackURL: "/login?verified=1"`, when the verification link of the email is opened, then the answer is a redirect to `/login?verified=1` and the email is verified.
 - [ ] **AC-9** Given a form with a request pending, then its submit button is disabled and a second submit sends nothing; given any field, then it has an accessible name and the right `autocomplete`.
 
 ## Open questions
