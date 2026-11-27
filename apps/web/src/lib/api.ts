@@ -62,3 +62,22 @@ export async function pushMutation(
     ? fail({ code: result.code ?? "UNKNOWN" })
     : { ok: true, value: null };
 }
+
+export type Mutation = { entity: string; op: "upsert" | "delete"; data: Record<string, unknown> };
+
+/** Several mutations in one push. The first one the server rejects becomes the failure, with its code. */
+export async function pushMutations(mutations: Mutation[]): Promise<Result<null>> {
+  const answer = await request("/api/sync/push", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      mutations: mutations.map((m) => ({ mutationId: crypto.randomUUID(), ...m })),
+    }),
+  });
+  if (!answer.ok) return answer;
+  const { results } = (await answer.value.json()) as {
+    results: { status: string; code?: string }[];
+  };
+  const rejected = results.find((r) => r.status === "rejected");
+  return rejected ? fail({ code: rejected.code ?? "UNKNOWN" }) : { ok: true, value: null };
+}

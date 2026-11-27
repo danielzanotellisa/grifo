@@ -2,6 +2,23 @@ import { vi } from "vitest";
 import { problem } from "./render";
 
 type Subject = { id: string; name: string };
+type FakeCategory = {
+  id: string;
+  name: string;
+  color: string;
+  role: string;
+  shortcut: number | null;
+  position: string;
+};
+type FakeHighlight = {
+  id: string;
+  documentId: string;
+  categoryId: string;
+  pageIndex: number;
+  rects: { x1: number; y1: number; x2: number; y2: number }[];
+  quote: { exact: string; prefix: string; suffix: string };
+  note: string | null;
+};
 type Doc = {
   id: string;
   subjectId: string;
@@ -27,6 +44,10 @@ export class FakeApi {
   others: { entity: string; entityId: string; data: unknown }[] = [];
   pageSize = 500;
   pushes: { mutationId: string; entity: string; op: string; data: Record<string, unknown> }[] = [];
+  categories: FakeCategory[] = [];
+  highlights: FakeHighlight[] = [];
+  /** Every push request, as the list of its mutations (a request may carry several). */
+  batches: FakeApi["pushes"][] = [];
   /** What the upload routes and the storage received, in order. */
   starts: Record<string, unknown>[] = [];
   puts: { url: string; headers: Record<string, string>; bytes: number }[] = [];
@@ -97,6 +118,18 @@ export class FakeApi {
         op: "upsert",
         data: o.data,
       })),
+      ...this.categories.map((c) => ({
+        entity: "category",
+        entityId: c.id,
+        op: "upsert",
+        data: c,
+      })),
+      ...this.highlights.map((h) => ({
+        entity: "highlight",
+        entityId: h.id,
+        op: "upsert",
+        data: h,
+      })),
       ...this.subjects.map((s) => ({
         entity: "subject",
         entityId: s.id,
@@ -132,6 +165,7 @@ export class FakeApi {
   }
 
   private push(body: { mutations: FakeApi["pushes"] }): Response {
+    this.batches.push(body.mutations);
     const results = body.mutations.map((m) => {
       this.pushes.push(m);
       return this.apply(m);
@@ -148,6 +182,7 @@ export class FakeApi {
     }
     const id = String(m.data.id);
     if (m.entity === "document") return { ...base, ...this.applyDocument(m, id) };
+    if (m.entity === "highlight") return { ...base, ...this.applyHighlight(m, id) };
     if (m.op === "upsert") {
       const name = String(m.data.name ?? "").trim();
       if (name.length < 1 || name.length > 120)
@@ -187,6 +222,47 @@ export class FakeApi {
       label: gone!.title ?? id,
       deletedAt: new Date().toISOString(),
     });
+    return { status: "applied" };
+  }
+
+  private applyHighlight(m: FakeApi["pushes"][number], id: string) {
+    const index = this.highlights.findIndex((h) => h.id === id);
+    if (m.op === "delete") {
+      if (index < 0) return { status: "rejected", code: "NOT_FOUND" };
+      const [gone] = this.highlights.splice(index, 1);
+      this.trash.unshift({
+        id,
+        entity: "highlight",
+        label: gone!.quote.exact,
+        deletedAt: new Date().toISOString(),
+      });
+      return { status: "applied" };
+    }
+    const data = m.data as unknown as FakeHighlight;
+    const document = this.documents.find((d) => d.id === data.documentId);
+    if (!document) return { status: "rejected", code: "PARENT_DELETED" };
+    if ((document.status ?? "READY") !== "READY")
+      return { status: "rejected", code: "DOCUMENT_NOT_READY" };
+    if (!this.categories.some((c) => c.id === data.categoryId))
+      return { status: "rejected", code: "PARENT_DELETED" };
+    if (data.rects.length < 1) return { status: "rejected", code: "HIGHLIGHT_INVALID" };
+    if (data.quote.exact.trim() === "") return { status: "rejected", code: "HIGHLIGHT_EMPTY" };
+    if (index >= 0) {
+      const current = this.highlights[index]!;
+      const geometryChanged =
+        JSON.stringify([current.documentId, current.pageIndex, current.rects, current.quote]) !==
+        JSON.stringify([
+          data.documentId,
+          data.pageIndex,
+          data.rects,
+          { ...data.quote, exact: current.quote.exact },
+        ]);
+      if (geometryChanged) return { status: "rejected", code: "HIGHLIGHT_INVALID" };
+      current.categoryId = data.categoryId;
+      current.note = data.note;
+    } else {
+      this.highlights.push({ ...data });
+    }
     return { status: "applied" };
   }
 

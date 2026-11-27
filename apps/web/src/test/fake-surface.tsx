@@ -1,7 +1,13 @@
 import { act } from "@testing-library/react";
 import { useEffect } from "react";
 import { vi } from "vitest";
-import type { Surface, SurfaceControls, SurfaceState } from "../features/reader/reader-surface";
+import type {
+  SelectionInfo,
+  Surface,
+  SurfaceControls,
+  SurfaceProps,
+  SurfaceState,
+} from "../features/reader/reader-surface";
 
 /**
  * A stand-in for the engine surface: it records what the page asks of it and reports the states a
@@ -13,6 +19,7 @@ export function makeFakeSurface() {
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
     fitWidth: vi.fn(),
+    clearSelection: vi.fn(),
   };
   const fake = {
     controls,
@@ -20,16 +27,26 @@ export function makeFakeSurface() {
     sourceBytes: null as Uint8Array | null,
     sourceError: null as unknown,
     emitState: undefined as unknown as (state: SurfaceState) => void,
+    emitSelection: undefined as unknown as (selection: SelectionInfo | null) => void,
+    /** The props the page gave the surface last (`highlights` changes after every refresh). */
+    lastProps: null as SurfaceProps | null,
     emit(state: SurfaceState) {
       act(() => fake.emitState(state));
     },
+    select(selection: SelectionInfo | null) {
+      act(() => fake.emitSelection(selection));
+    },
     Surface: null as unknown as Surface,
   };
-  fake.Surface = function FakeSurface({ source, onState, controlsRef }) {
+  fake.Surface = function FakeSurface(props) {
+    const { source, onState, controlsRef, onSelection } = props;
+    fake.lastProps = props;
+    // Wired while rendering, not in an effect: a test that waits for the surface to appear may emit at once.
+    fake.emitState = onState;
+    fake.emitSelection = onSelection;
     useEffect(() => {
       fake.mounts++;
       controlsRef.current = controls as unknown as SurfaceControls;
-      fake.emitState = onState;
       source().then(
         (bytes) => (fake.sourceBytes = bytes),
         (error) => (fake.sourceError = error),
