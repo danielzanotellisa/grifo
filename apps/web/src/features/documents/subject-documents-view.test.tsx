@@ -444,3 +444,35 @@ describe("subject page: the import control", () => {
     expect(api.starts.map((s) => s.title)).toEqual(["Um"]);
   });
 });
+
+describe("subject page: opening a document", () => {
+  it("[document/reader#AC-7] links the title of a READY document to its reader and no other", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Aula pronta", status: "READY", pageCount: 3 },
+      { id: "d2", subjectId: "s-redes", title: "Validando", status: "VALIDATING" },
+      {
+        id: "d3",
+        subjectId: "s-redes",
+        title: "Recusado",
+        status: "REJECTED",
+        rejectCode: "PDF_INVALID",
+      },
+      {
+        id: "d4",
+        subjectId: "s-redes",
+        title: "Bloqueado",
+        status: "QUARANTINED",
+        rejectCode: "MALWARE_DETECTED",
+      },
+    ];
+    view();
+    await screen.findByText("Aula pronta");
+
+    expect(screen.getByRole("link", { name: "Aula pronta" }).getAttribute("href")).toBe(
+      "/documents/d1",
+    );
+    expect(screen.queryByRole("link", { name: "Validando" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Recusado" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Bloqueado" })).toBeNull();
+  });
+});

@@ -31,6 +31,8 @@ export class FakeApi {
   starts: Record<string, unknown>[] = [];
   puts: { url: string; headers: Record<string, string>; bytes: number }[] = [];
   confirms: string[] = [];
+  /** The documents whose file URL was requested. */
+  fileRequests: string[] = [];
   /** Hashes the storage already has: a start for one of them answers `upload: null`. */
   storedHashes = new Set<string>();
   restores: string[] = [];
@@ -74,7 +76,12 @@ export class FakeApi {
     if (url.pathname === "/api/trash") return Response.json({ items: this.trash });
     if (url.pathname === "/api/documents/uploads")
       return this.start(JSON.parse(String(init?.body)));
+    if (url.hostname === "storage.test" && url.pathname.startsWith("/get/")) {
+      return new Response(new TextEncoder().encode("%PDF-1.4 fake"), { status: 200 });
+    }
     if (url.hostname === "storage.test") return this.put(url, init);
+    const file = /^\/api\/documents\/([^/]+)\/file$/.exec(url.pathname);
+    if (file) return this.file(file[1]!);
     const confirm = /^\/api\/documents\/([^/]+)\/confirm$/.exec(url.pathname);
     if (confirm) return this.confirm(confirm[1]!);
     const restore = /^\/api\/trash\/([^/]+)\/restore$/.exec(url.pathname);
@@ -235,6 +242,14 @@ export class FakeApi {
         resolve();
       };
     });
+  }
+
+  private file(id: string): Response {
+    this.fileRequests.push(id);
+    const doc = this.documents.find((d) => d.id === id);
+    if (!doc) return problem(404, "NOT_FOUND");
+    if ((doc.status ?? "READY") !== "READY") return problem(409, "DOCUMENT_NOT_READY");
+    return Response.json({ url: `http://storage.test/get/${id}`, expiresInSeconds: 300 });
   }
 
   private confirm(id: string): Response {
