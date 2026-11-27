@@ -24,7 +24,7 @@ Closing an item: record the decision in an ADR or spec, set the status, keep the
 | --- | --- | --- |
 | P-001 | Summary PDF rendering engine | decided → 0028 |
 | P-002 | Job queue library | decided → 0029 |
-| P-003 | PDF engine spike (highlight anchoring) | open |
+| P-003 | PDF engine spike (highlight anchoring) | decided → 0040 |
 | P-004 | Flashcard CSV import behavior in Anki and Noji | dropped |
 | P-005 | Authentication library and sessions | decided → 0034 |
 | P-006 | API contract tooling | open |
