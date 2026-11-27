@@ -46,7 +46,7 @@ function loadSources(): SourceFile[] {
       .map((f) => ({
         path: relative(root, f),
         text: readFileSync(f, "utf8"),
-        isTest: /\.test\.tsx?$/.test(f),
+        isTest: /\.(test|spec)\.tsx?$/.test(f),
       })),
   );
 }

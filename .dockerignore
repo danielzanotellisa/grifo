@@ -1,0 +1,16 @@
+# Keeps the build context small and stops the host's binaries (node_modules) from entering the image.
+**/node_modules
+**/.next
+**/dist
+**/coverage
+.git
+.husky/_
+.env
+.env.*
+!.env.example
+spikes
+apps/e2e/test-results
+apps/e2e/playwright-report
+docs
+**/*.log
+.DS_Store

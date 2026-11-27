@@ -4,6 +4,12 @@
  */
 export const E2E_PORT = 3100;
 
+/**
+ * Set to the address of a stack that is already running (`docker compose --profile app up -d`): the
+ * tests then start no server and no worker and use that stack, as a person does (spec `_cross-cutting/local-run`).
+ */
+export const EXTERNAL_URL = process.env.E2E_BASE_URL;
+
 const defaults: Record<string, string> = {
   DATABASE_MIGRATOR_URL: "postgres://postgres:postgres@localhost:5432/grifo",
   DATABASE_URL: "postgres://app_user:app_user@localhost:5432/grifo",
@@ -16,7 +22,7 @@ const defaults: Record<string, string> = {
   SMTP_HOST: "localhost",
   SMTP_PORT: "1025",
   MAIL_FROM: "Grifo <no-reply@grifo.local>",
-  APP_URL: `http://localhost:${E2E_PORT}`,
+  APP_URL: EXTERNAL_URL ?? `http://localhost:${E2E_PORT}`,
   BETTER_AUTH_SECRET: "e2e-secret-e2e-secret-e2e-secret-e2e-secret",
 };
 

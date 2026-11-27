@@ -71,7 +71,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Sync and durability: tests that drop the network or reload mid-sync must not lose data.
 
 ## Commands
-- `docker compose up -d` — infra (Postgres, S3, ClamAV, Mailpit, Gotenberg)
+- `docker compose --profile app up -d --build` — the whole app, usable at http://localhost:3000 with no setup (spec `_cross-cutting/local-run`); `docker compose up -d` — infra only (Postgres, S3, ClamAV, Mailpit, Gotenberg) for `pnpm dev`
 - `pnpm dev` — web + worker
 - `pnpm e2e` — browser tests (needs `docker compose up -d`; see `apps/e2e/CLAUDE.md`)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm format` · `pnpm trace`

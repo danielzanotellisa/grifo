@@ -1,8 +1,24 @@
-# Local environment (ADR 0019). Everything runs in Docker. Infra starts by default; the app services use the "app" profile:
-#   docker compose up -d                 -> infra only, run the app with `pnpm dev`
-#   docker compose --profile app up -d   -> everything in containers
+# Local environment (ADR 0019, spec `_cross-cutting/local-run`). Everything runs in Docker.
+#   docker compose --profile app up -d --build   -> the whole app, usable at http://localhost:3000
+#   docker compose up -d                         -> infrastructure only, for `pnpm dev` on the host
+# No `.env` is needed: the defaults below are for this machine only. A `.env` next to this file may set
+# APP_URL, BETTER_AUTH_SECRET and MAIL_FROM.
+# Data lives in named volumes: `stop` and `down` keep it, only `down -v` erases it.
 # Image tags are deliberately loose for now; pin them by digest (docs/pending/P-010).
 name: grifo
+
+# The settings web and worker share. The first value of each is the local default.
+x-app-env: &app-env
+  DATABASE_URL: postgres://app_user:app_user@postgres:5432/grifo
+  DATABASE_AUTH_URL: postgres://auth_user:auth_user@postgres:5432/grifo
+  S3_ENDPOINT: http://s3:8333
+  S3_ACCESS_KEY_ID: devaccesskey
+  S3_SECRET_ACCESS_KEY: devsecretkey
+  CLAMAV_HOST: clamav
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  MAIL_FROM: ${MAIL_FROM:-Grifo <no-reply@grifo.local>}
+  GOTENBERG_URL: http://gotenberg:3000
 
 services:
   postgres:
@@ -61,35 +77,47 @@ services:
     command: ["gotenberg", "--chromium-auto-start=true", "--chromium-disable-javascript=true"]
     ports: ["127.0.0.1:3100:3000"]
 
+  # Prepares the database (roles, migrations, queue schema, RLS) as the admin role, then exits.
+  migrate:
+    profiles: ["app"]
+    build: { context: ., dockerfile: apps/worker/Dockerfile }
+    command: ["pnpm", "db:setup"]
+    environment:
+      DATABASE_MIGRATOR_URL: postgres://postgres:postgres@postgres:5432/grifo
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
   web:
     profiles: ["app"]
     build: { context: ., dockerfile: apps/web/Dockerfile }
-    env_file: .env
     environment:
-      DATABASE_URL: postgres://app_user:app_user@postgres:5432/grifo
-      DATABASE_AUTH_URL: postgres://auth_user:auth_user@postgres:5432/grifo
-      S3_ENDPOINT: http://s3:8333
+      <<: *app-env
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-grifo-local-secret-only-for-this-machine-0f3a9c1d7b}
+      # The address the browser reaches the storage at, for the upload and the reader.
       S3_PUBLIC_ENDPOINT: http://localhost:8333
-      CLAMAV_HOST: clamav
-      SMTP_HOST: mailpit
-      GOTENBERG_URL: http://gotenberg:3000
     ports: ["3000:3000"]
     depends_on:
-      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      s3-init: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   worker:
     profiles: ["app"]
     build: { context: ., dockerfile: apps/worker/Dockerfile }
-    env_file: .env
     environment:
-      DATABASE_URL: postgres://app_user:app_user@postgres:5432/grifo
-      DATABASE_AUTH_URL: postgres://auth_user:auth_user@postgres:5432/grifo
-      S3_ENDPOINT: http://s3:8333
-      CLAMAV_HOST: clamav
-      SMTP_HOST: mailpit
-      GOTENBERG_URL: http://gotenberg:3000
+      <<: *app-env
+      # The purge works across owners, so it is the one task that uses the admin role (ADR 0039).
+      DATABASE_MIGRATOR_URL: postgres://postgres:postgres@postgres:5432/grifo
     depends_on:
-      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      s3-init: { condition: service_completed_successfully }
 
 volumes:
   pg-data:
