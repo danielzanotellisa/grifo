@@ -7,3 +7,6 @@ packages:
 # Approve new ones with `pnpm approve-builds <pkg>` after checking why they need it.
 allowBuilds:
   esbuild: true
+  # Pulled in by next-intl and Tailwind; neither needs its build script to build or run (ADR 0041).
+  "@parcel/watcher": false
+  "@swc/core": false
