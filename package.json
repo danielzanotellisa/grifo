@@ -20,7 +20,8 @@
     "db:queue": "pnpm --filter @app/worker exec graphile-worker --schema-only -c \"$DATABASE_MIGRATOR_URL\"",
     "db:rls": "tsx scripts/db/cli.ts rls",
     "db:setup": "tsx scripts/db/cli.ts setup",
-    "prepare": "husky"
+    "prepare": "husky",
+    "e2e": "pnpm --filter @app/e2e test"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

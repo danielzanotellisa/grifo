@@ -21,7 +21,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Commit format `<type>(<scope>): <description>`, enforced by commitlint in the husky `commit-msg` hook and again in CI. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Scope is optional and must be one of those in `commitlint.config.js` (module, app, `db`, `infra`, `docs`, `ci`, `deps`). Lowercase subject.
 - `feat` and `fix` commits end with a footer `Spec: <spec-id>[#AC-n], …` or `Spec: n/a`.
 - Every PR fills `.github/pull_request_template.md`: `Spec:` (spec id, optionally `#AC-n`) and `ADR:` (`ADR-NNNN`), or an explicit `n/a`. CI validates both against the repo.
-- CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, `pnpm trace`, tests, the husky wiring check, commitlint over the PR's commits and the PR-body check. A red CI blocks merge. A new required check must also be added to the ruleset.
+- CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, `pnpm trace`, tests, the integration tests, the end-to-end browser tests, the husky wiring check, commitlint over the PR's commits and the PR-body check. A red CI blocks merge. A new required check must also be added to the ruleset.
 
 ## Traceability (ADR 0030)
 - Spec id = path under `docs/specs` without `README.md`/`.md` (`highlight`, `_cross-cutting/sync`). Acceptance criteria are `**AC-n**`, numbered once, never renumbered.
@@ -31,6 +31,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 ## Repo map
 - `apps/web` — Next.js: React UI and Route Handlers (thin HTTP adapters, SSE).
 - `apps/worker` — Node process that runs background jobs (scans, exports, purge).
+- `apps/e2e` — Playwright browser tests of the whole stack (ADR 0042).
 - `packages/platform` — shared infrastructure: db client, `withUser` (RLS), sync change log, errors, ids, storage port, entitlements, shared kernel types.
 - `packages/modules/*` — domain modules: identity, library, annotation, outline, study, export.
 - `docs/` — adr, specs, pending, architecture (C4).
@@ -63,7 +64,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 - Secrets only through environment variables.
 
 ## Testing
-- Test runner is Vitest (ADR 0031); do not add Jest.
+- Test runner is Vitest (ADR 0031); do not add Jest. Browser tests are Playwright, in `apps/e2e` only (ADR 0042).
 - Domain rules: unit tests inside the module.
 - Every route: tests for unauthenticated access and for another user's resource (expect 404).
 - Anything that reads or writes the database: integration tests (`*.integration.test.ts`) against real Postgres through `withUser`, isolated by fresh owner ids (RLS), never by truncating.
@@ -72,6 +73,7 @@ Code that disagrees with a spec is a bug. A spec that contradicts an ADR is bloc
 ## Commands
 - `docker compose up -d` — infra (Postgres, S3, ClamAV, Mailpit, Gotenberg)
 - `pnpm dev` — web + worker
+- `pnpm e2e` — browser tests (needs `docker compose up -d`; see `apps/e2e/CLAUDE.md`)
 - `pnpm test` · `pnpm typecheck` · `pnpm lint` · `pnpm format` · `pnpm trace`
 - Do not bump or re-add `typescript`: it is aliased to the TS 6 API for ESLint/Next, and `@typescript/native` provides the TS 7 `tsc` (ADR 0031).
 - `pnpm install` — also installs the git hooks (husky, via `prepare`)
