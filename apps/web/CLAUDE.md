@@ -48,6 +48,12 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - The title of a document is the file name without `.pdf`, cut to 200 characters; a document `UPLOADED` that this page is not sending shows as "Envio incompleto".
 - `FakeApi` also serves the upload routes and a fake storage host (`storage.test`); `finish(id, change)` plays the validation job, `holdNextPut()` holds a storage upload.
 
+## Reader (spec `document/reader`)
+- `/documents/{id}` is the reader. `features/reader/document-reader.tsx` holds the page logic (finding the document, the file URL, the bar, the keys) and talks to the engine only through the `Surface` of `reader-surface.ts` (`source`, `onState`, `controlsRef`). `embedpdf-surface.tsx` is the one place that knows EmbedPDF 3.4.0; `reader-page.tsx` loads it on the client only (`dynamic`, no SSR) because the engine needs WebAssembly and workers.
+- The surface registers only the stage, render, interaction and selection plugins (ADR 0040). Never register the actions, form or JavaScript plugins: a PDF's JavaScript must never run. The area is focusable and the adapter scrolls it with the arrows, Page Up, Page Down, Home and End.
+- Component tests use `test/fake-surface.tsx`, which records what the page asks and reports the states a test emits; the real engine is checked in a real browser and by `spikes/pdf-engine/checks`, not in CI. Upgrading `@embedpdf/*` means rerunning those checks and the reader by hand.
+- `features/reader/pdf-engine.ts` is the other, older port (selection and re-anchoring for the highlights slice); the reader surface does not use it.
+
 ## Document routes (ADR 0037)
 - `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
 - The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.
@@ -55,7 +61,7 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 
 ## UI rules
 - Every user mutation: write to IndexedDB and the outbox first, then update UI state. The UI shows "saved on this device" / "synced", never "saved" before IndexedDB commits.
-- The reader talks to the PDF engine only through `features/reader/pdf-engine.ts`. Engine-specific code stays behind that port.
+- The reader talks to the PDF engine only through the `Surface` of `features/reader/reader-surface.ts` (and the selection and re-anchoring port `pdf-engine.ts` once the highlights need it). Engine-specific code stays behind them.
 - PDF rendering runs in a Web Worker; never enable eval or PDF JavaScript in the engine.
 - Highlight geometry is converted between screen and PDF points only at the engine boundary.
 - Keyboard first: category shortcuts 1–9, right-click menu on selections and highlights.

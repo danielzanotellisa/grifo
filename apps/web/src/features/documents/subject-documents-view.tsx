@@ -282,7 +282,16 @@ export function SubjectDocumentsView({
               ) : (
                 <>
                   <span data-title className="min-w-40 flex-1 font-medium">
-                    {doc.title}
+                    {doc.status === "READY" ? (
+                      <Link
+                        href={`/documents/${doc.id}`}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {doc.title}
+                      </Link>
+                    ) : (
+                      doc.title
+                    )}
                   </span>
                   <span className="text-sm text-neutral-700">{statusLabel(doc)}</span>
                   {doc.status === "READY" && doc.pageCount ? (

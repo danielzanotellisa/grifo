@@ -16,6 +16,8 @@
     "@app/outline": "workspace:*",
     "@app/platform": "workspace:*",
     "@app/study": "workspace:*",
+    "@embedpdf/engine": "3.4.0",
+    "@embedpdf/react": "3.4.0",
     "dexie": "^4.4.7",
     "next": "^16.4.6",
     "next-intl": "4.15.1",
