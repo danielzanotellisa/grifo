@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test";
-import { applyDefaults, E2E_PORT } from "./src/env";
+import { applyDefaults, E2E_PORT, EXTERNAL_URL } from "./src/env";
 
 applyDefaults();
 
@@ -16,18 +16,20 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   globalSetup: "./src/global-setup.ts",
   use: {
-    baseURL: `http://localhost:${E2E_PORT}`,
+    baseURL: EXTERNAL_URL ?? `http://localhost:${E2E_PORT}`,
     locale: "pt-BR",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { browserName: "chromium" } }],
-  webServer: {
-    command: `pnpm --filter @app/web build && pnpm --filter @app/web exec next start -p ${E2E_PORT}`,
-    url: `http://localhost:${E2E_PORT}/login`,
-    timeout: 300_000,
-    reuseExistingServer: !process.env.CI,
-    stdout: "ignore",
-    stderr: "pipe",
-  },
+  webServer: EXTERNAL_URL
+    ? []
+    : {
+        command: `pnpm --filter @app/web build && pnpm --filter @app/web exec next start -p ${E2E_PORT}`,
+        url: `http://localhost:${E2E_PORT}/login`,
+        timeout: 300_000,
+        reuseExistingServer: !process.env.CI,
+        stdout: "ignore",
+        stderr: "pipe",
+      },
 });

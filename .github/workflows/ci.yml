@@ -112,22 +112,9 @@ jobs:
   e2e:
     name: End-to-end tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: grifo
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres -d grifo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      mailpit:
-        image: axllent/mailpit:latest
-        ports: ["1025:1025", "8025:8025"]
+    timeout-minutes: 25
+    env:
+      E2E_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -136,12 +123,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Start the S3-compatible storage
+      # The stack a person runs, from a clean state and without a .env (spec `_cross-cutting/local-run`).
+      # ClamAV and Gotenberg are left out: nothing waits for them and ClamAV needs minutes and 1 GB.
+      - name: Start the stack
         run: |
-          docker run -d --name s3 -p 8333:8333 \
-            -v "$PWD/infra/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro" \
-            chrislusf/seaweedfs server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json
-          timeout 90 bash -c 'until curl -s -o /dev/null http://localhost:8333; do sleep 1; done'
+          docker compose --profile app up -d --build web worker mailpit
+          timeout 300 bash -c 'until curl -fs http://localhost:3000/api/health >/dev/null; do sleep 2; done'
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -149,6 +136,9 @@ jobs:
       - name: Install the browser
         run: pnpm --filter @app/e2e exec playwright install --with-deps chromium
       - run: pnpm e2e
+      - name: Keep the logs of the stack
+        if: failure()
+        run: docker compose --profile app logs --no-color > stack.log 2>&1
       - name: Keep the report of a failed run
         if: failure()
         uses: actions/upload-artifact@v4
@@ -157,4 +147,5 @@ jobs:
           path: |
             apps/e2e/playwright-report
             apps/e2e/test-results
+            stack.log
           retention-days: 7

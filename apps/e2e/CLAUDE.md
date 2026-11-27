@@ -5,6 +5,7 @@ Browser tests with Playwright (ADR 0042): a real Chromium drives a production bu
 ## Run
 - `docker compose up -d` (Postgres, storage, Mailpit), then `pnpm e2e` from the repository root. The config builds and starts the web app on port 3100, `src/global-setup.ts` prepares the database and the buckets and starts the worker, and `src/env.ts` holds the local defaults (CI sets its own).
 - The first time, `pnpm --filter @app/e2e exec playwright install chromium`.
+- **Against a running stack** (the way CI runs them, spec `_cross-cutting/local-run`): start `docker compose --profile app up -d --build` and run `E2E_BASE_URL=http://localhost:3000 pnpm e2e`. The tests then start no server and no worker; `stack.spec.ts` also checks that the one-shot `migrate` ended successfully (it uses the `docker` CLI and `COMPOSE_PROJECT_NAME`).
 - A failure keeps a trace, a screenshot and an HTML report (`apps/e2e/test-results`, `playwright-report`; `pnpm --filter @app/e2e exec playwright show-trace <trace.zip>`).
 
 ## Layout

@@ -4,6 +4,7 @@ import {
   s3ConfigFromEnv,
 } from "../../../packages/platform/src/storage/s3-storage";
 import { setupDatabase } from "../../../scripts/db/setup";
+import { EXTERNAL_URL } from "./env";
 
 /** Starts the worker and waits until it is looking for jobs; returns what stops it. */
 function startWorker(): Promise<ChildProcess> {
@@ -32,6 +33,9 @@ function startWorker(): Promise<ChildProcess> {
 }
 
 export default async function globalSetup(): Promise<() => Promise<void>> {
+  // A stack that is already running prepares its own database and buckets and runs its own worker.
+  if (EXTERNAL_URL) return async () => {};
+
   await setupDatabase(process.env.DATABASE_MIGRATOR_URL!);
   await ensureS3Buckets(s3ConfigFromEnv(process.env));
   const worker = await startWorker();
