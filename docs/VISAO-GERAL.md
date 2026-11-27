@@ -112,13 +112,46 @@ erDiagram
   OUTLINE_NODE ||--o| FLASHCARD : "definição vira"
   USER ||--o{ EXPORT : pede
 
-  SUBJECT { uuid id string name }
-  DOCUMENT { uuid id string title string status int pageCount json riskFlags string rejectCode }
-  STORED_FILE { uuid id string sha256 int sizeBytes string storageKey }
-  HIGHLIGHT { uuid id int pageIndex json rects json quote }
-  CATEGORY { uuid id string name string color string role }
-  OUTLINE_NODE { uuid id string role string text }
-  FLASHCARD { uuid id string front string back }
+  SUBJECT {
+    uuid id
+    string name
+  }
+  DOCUMENT {
+    uuid id
+    string title
+    string status
+    int pageCount
+    json riskFlags
+    string rejectCode
+  }
+  STORED_FILE {
+    uuid id
+    string sha256
+    int sizeBytes
+    string storageKey
+  }
+  HIGHLIGHT {
+    uuid id
+    int pageIndex
+    json rects
+    json quote
+  }
+  CATEGORY {
+    uuid id
+    string name
+    string color
+    string role
+  }
+  OUTLINE_NODE {
+    uuid id
+    string role
+    string text
+  }
+  FLASHCARD {
+    uuid id
+    string front
+    string back
+  }
 ```
 
 Toda linha tem `owner_id` e o banco só deixa cada usuário ver as próprias (RLS). Apagar nunca apaga de verdade na hora: marca `deleted_at`.
@@ -205,7 +238,7 @@ Uma linha apagada fica invisível e somente leitura. Os filhos apagados em casca
 | Quero entender | Olhe em |
 | --- | --- |
 | O que o produto faz, por assunto | `docs/specs/<assunto>/` |
-| Por que uma decisão foi tomada | `docs/adr/` (40 decisões) |
+| Por que uma decisão foi tomada | `docs/adr/` (38 decisões) |
 | O que ainda está em aberto | `docs/pending/` |
 | Os nomes oficiais | `docs/specs/glossary.md` |
 | As regras para quem programa | `CLAUDE.md` na raiz e em cada app e módulo |
