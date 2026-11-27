@@ -19,6 +19,8 @@ export default defineConfig({
             "scripts/**/*.integration.test.ts",
           ],
           exclude: ["**/node_modules/**"],
+          // Tests that use the database and the storage are slower on CI than the 5 s default allows.
+          testTimeout: 30_000,
           globalSetup: ["./scripts/db/global-setup.ts"],
         },
       },
