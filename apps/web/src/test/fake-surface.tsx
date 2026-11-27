@@ -51,7 +51,6 @@ export function makeFakeSurface() {
         (bytes) => (fake.sourceBytes = bytes),
         (error) => (fake.sourceError = error),
       );
-      onState({ status: "loading" });
     }, []);
     return <div data-testid="surface" tabIndex={0} />;
   };

@@ -243,6 +243,12 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
           {t("backToSubject")}
         </Link>
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold">{phase.doc.title}</h1>
+        <Link
+          href={`/documents/${documentId}/summary`}
+          className="text-sm text-neutral-600 underline"
+        >
+          {t("summary")}
+        </Link>
         {state ? (
           <>
             <button

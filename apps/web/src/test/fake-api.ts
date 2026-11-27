@@ -10,6 +10,15 @@ type FakeCategory = {
   shortcut: number | null;
   position: string;
 };
+type FakeNode = {
+  id: string;
+  documentId: string;
+  parentId: string | null;
+  position: string;
+  highlightId: string | null;
+  role: string | null;
+  text: string | null;
+};
 type FakeHighlight = {
   id: string;
   documentId: string;
@@ -46,6 +55,7 @@ export class FakeApi {
   pushes: { mutationId: string; entity: string; op: string; data: Record<string, unknown> }[] = [];
   categories: FakeCategory[] = [];
   highlights: FakeHighlight[] = [];
+  nodes: FakeNode[] = [];
   /** Every push request, as the list of its mutations (a request may carry several). */
   batches: FakeApi["pushes"][] = [];
   /** What the upload routes and the storage received, in order. */
@@ -130,6 +140,12 @@ export class FakeApi {
         op: "upsert",
         data: h,
       })),
+      ...this.nodes.map((n) => ({
+        entity: "outlineNode",
+        entityId: n.id,
+        op: "upsert",
+        data: n,
+      })),
       ...this.subjects.map((s) => ({
         entity: "subject",
         entityId: s.id,
@@ -183,6 +199,7 @@ export class FakeApi {
     const id = String(m.data.id);
     if (m.entity === "document") return { ...base, ...this.applyDocument(m, id) };
     if (m.entity === "highlight") return { ...base, ...this.applyHighlight(m, id) };
+    if (m.entity === "outlineNode") return { ...base, ...this.applyNode(m, id) };
     if (m.op === "upsert") {
       const name = String(m.data.name ?? "").trim();
       if (name.length < 1 || name.length > 120)
@@ -222,6 +239,31 @@ export class FakeApi {
       label: gone!.title ?? id,
       deletedAt: new Date().toISOString(),
     });
+    return { status: "applied" };
+  }
+
+  private applyNode(m: FakeApi["pushes"][number], id: string) {
+    const index = this.nodes.findIndex((n) => n.id === id);
+    if (m.op === "delete") {
+      if (index < 0) return { status: "rejected", code: "NOT_FOUND" };
+      const [gone] = this.nodes.splice(index, 1);
+      // the server promotes the children to the parent of the deleted node, in its place
+      for (const child of this.nodes.filter((n) => n.parentId === gone!.id))
+        child.parentId = gone!.parentId;
+      this.trash.unshift({
+        id,
+        entity: "outlineNode",
+        label: gone!.text ?? "",
+        deletedAt: new Date().toISOString(),
+      });
+      return { status: "applied" };
+    }
+    const data = m.data as unknown as FakeNode;
+    if (data.highlightId === null && (data.role === null || (data.text ?? "").trim() === "")) {
+      return { status: "rejected", code: "OUTLINE_NODE_INVALID" };
+    }
+    if (index >= 0) this.nodes[index] = { ...data };
+    else this.nodes.push({ ...data });
     return { status: "applied" };
   }
 

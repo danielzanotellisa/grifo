@@ -268,3 +268,14 @@ describe("reader: the bar", () => {
     expect(within(bar).getByLabelText("Ir para a página")).toBeTruthy();
   });
 });
+
+describe("reader: the summary link", () => {
+  it("[outline-node/screens#AC-10] links to the summary of the document from the bar", async () => {
+    await opened();
+
+    const link = screen.getByRole("link", { name: "Resumo" });
+
+    expect(link.getAttribute("href")).toBe("/documents/d1/summary");
+    expect(within(screen.getByRole("toolbar")).getByRole("link", { name: "Resumo" })).toBe(link);
+  });
+});
