@@ -1,9 +1,9 @@
 {
   "Home": {
     "title": "Grifo",
-    "tagline": "Estude seus PDFs: marque trechos, monte o resumo e crie flashcards.",
     "signedInAs": "Você entrou como {email}.",
-    "signOut": "Sair"
+    "signOut": "Sair",
+    "trash": "Lixeira"
   },
   "Auth": {
     "fields": {
@@ -39,5 +39,51 @@
       "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
       "generic": "Algo deu errado. Tente de novo."
     }
+  },
+  "Subjects": {
+    "title": "Matérias",
+    "loading": "Carregando…",
+    "empty": "Você ainda não tem matérias. Crie a primeira acima.",
+    "newLabel": "Nova matéria",
+    "create": "Criar matéria",
+    "creating": "Criando…",
+    "documentCount": "{count, plural, =0 {Nenhum documento} one {# documento} other {# documentos}}",
+    "rename": "Renomear {name}",
+    "renameLabel": "Novo nome de {name}",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Apagar {name}",
+    "movedToTrash": "“{name}” foi para a lixeira.",
+    "errors": {
+      "nameRequired": "Informe o nome da matéria.",
+      "nameTooLong": "O nome pode ter até 120 caracteres.",
+      "nameInvalid": "O nome precisa ter de 1 a 120 caracteres.",
+      "notFound": "Essa matéria não existe mais. Atualizamos a lista.",
+      "trashNotFound": "Esse item não está mais na lixeira.",
+      "parentDeleted": "Restaure primeiro o item ao qual este pertence.",
+      "rateLimited": "Muitas tentativas. Tente de novo em {seconds, plural, one {# segundo} other {# segundos}}.",
+      "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
+      "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
+      "generic": "Algo deu errado. Tente de novo.",
+      "loadFailed": "Não foi possível carregar suas matérias."
+    }
+  },
+  "Trash": {
+    "title": "Lixeira",
+    "loading": "Carregando…",
+    "empty": "A lixeira está vazia.",
+    "back": "Voltar às matérias",
+    "restore": "Restaurar {label}",
+    "deletedOn": "Apagado em {date}",
+    "kinds": {
+      "subject": "Matéria",
+      "document": "Documento",
+      "category": "Categoria",
+      "highlight": "Marcação",
+      "outlineNode": "Tópico do resumo",
+      "flashcard": "Flashcard",
+      "export": "Exportação"
+    },
+    "loadFailed": "Não foi possível carregar a lixeira."
   }
 }
