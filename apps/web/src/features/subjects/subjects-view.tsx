@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import {
@@ -220,7 +221,12 @@ export function SubjectsView() {
               ) : (
                 <>
                   <span data-name className="flex-1 font-medium">
-                    {subject.name}
+                    <Link
+                      href={`/subjects/${subject.id}`}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {subject.name}
+                    </Link>
                   </span>
                   <span className="text-sm text-neutral-500">
                     {t("documentCount", { count: subject.documentCount })}
