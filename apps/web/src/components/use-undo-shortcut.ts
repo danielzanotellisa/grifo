@@ -1,10 +1,14 @@
 import { useEffect } from "react";
 
-const isTextField = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+/** A field with text keeps Ctrl+Z for its own typing; an empty one has nothing to undo, so the delete is undone. */
+const isTextField = (target: EventTarget | null): boolean => {
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    return target.value !== "";
+  }
+  return target instanceof HTMLElement && target.isContentEditable;
+};
 
-/** Ctrl+Z (Cmd+Z) undoes the delete the notice reports, except inside a text field (`_cross-cutting/undo`). */
+/** Ctrl+Z (Cmd+Z) undoes the delete the notice reports, except in a field that has text (`_cross-cutting/undo`). */
 export function useUndoShortcut(onUndo: (() => void) | null): void {
   useEffect(() => {
     if (!onUndo) return;

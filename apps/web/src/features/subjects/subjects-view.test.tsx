@@ -291,7 +291,7 @@ describe("subjects view: undoing a delete", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("[_cross-cutting/undo#AC-7] undoes with Ctrl+Z and with Cmd+Z, but not inside a text field", async () => {
+  it("[_cross-cutting/undo#AC-7] undoes with Ctrl+Z and with Cmd+Z, but not in a field that has text", async () => {
     const user = userEvent.setup();
     await open();
     await remove(user);
@@ -299,8 +299,9 @@ describe("subjects view: undoing a delete", () => {
     await user.type(screen.getByLabelText("Nova matéria"), "x");
     fireEvent.keyDown(screen.getByLabelText("Nova matéria"), { key: "z", ctrlKey: true });
     expect(api.restores).toEqual([]);
+    await user.clear(screen.getByLabelText("Nova matéria"));
 
-    fireEvent.keyDown(document.body, { key: "z", ctrlKey: true });
+    fireEvent.keyDown(screen.getByLabelText("Nova matéria"), { key: "z", ctrlKey: true });
     await waitFor(() => expect(api.restores).toEqual(["s-zoo"]));
     await waitFor(() => expect(names()).toContain("Zoologia"));
 
