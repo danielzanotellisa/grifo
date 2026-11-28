@@ -402,6 +402,9 @@ importers:
       '@app/study':
         specifier: workspace:*
         version: link:../study
+      '@embedpdf/engine':
+        specifier: 3.4.0
+        version: 3.4.0
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@types/pg@8.23.1)(@types/sql.js@1.4.11)(kysely@0.29.9)(pg@8.23.1)(sql.js@1.16.0)

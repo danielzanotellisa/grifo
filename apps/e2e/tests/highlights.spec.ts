@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "../src/fixtures";
 import { pdfBytes, writeFileIn } from "../src/pdfs";
 
-test("[highlight/screens#AC-9] marks text with the mouse, draws and lists it, keeps it after a reload and removes it", async ({
+test("[highlight/screens#AC-9] [export/annotated-pdf#AC-7] marks text with the mouse, draws and lists it, keeps it after a reload and removes it", async ({
   signedIn: page,
 }, testInfo) => {
   await page.goto("/");
@@ -88,6 +89,16 @@ test("[highlight/screens#AC-9] marks text with the mouse, draws and lists it, ke
         .evaluate((el) => getComputedStyle(el).backgroundColor),
     )
     .toBe("rgb(91, 193, 127)");
+  // export the original with the highlight written in it
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Exportar PDF com marcações" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("Texto (marcado).pdf");
+  const annotated = readFileSync((await download.path())!).toString("latin1");
+  expect(annotated.startsWith("%PDF-")).toBe(true);
+  expect(annotated).toContain("/Highlight");
+
   await panel.getByRole("button", { name: /^Apagar marcação/ }).click();
   await expect(panel.getByRole("listitem")).toHaveCount(0);
   await expect(page.locator("[data-highlight]")).toHaveCount(0);

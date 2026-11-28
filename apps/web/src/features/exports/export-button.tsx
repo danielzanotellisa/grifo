@@ -37,6 +37,8 @@ export function ExportButton({
         return null;
       case "EXPORT_FAILED":
         return t("errors.failed");
+      case "EXPORT_ACTIVE_CONTENT":
+        return t("errors.activeContent");
       case "NOT_FOUND":
         return t("errors.notFound");
       case "RATE_LIMITED":

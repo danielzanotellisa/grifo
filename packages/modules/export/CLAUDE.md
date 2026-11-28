@@ -31,3 +31,8 @@ Everything the user downloads: summary PDF, annotated PDF, flashcard decks (.apk
 
 ## Depends on
 - `@app/platform`, `@app/library`, `@app/annotation`, `@app/outline`, `@app/study` (read-only use of their public APIs).
+
+## Annotated PDF (ADR 0040, spec `export/annotated-pdf`)
+- `annotated/annotate.ts` (`annotatePdf(original, marks)`) runs the EmbedPDF engine (`localEngine`, pinned 3.4.0) in Node: one `/Highlight` per mark with its category color; stored rects (bottom-left points) become quads with the origin at the top-left (`height - y`); the default incremental save keeps the original bytes as the prefix. A page the file does not have is skipped; with nothing to write the original is returned.
+- `ANNOTATED_PDF` is `DOCUMENT` scope only. `prepare` reads the original's key and risk flags (`documentOriginal` of library) and the marks (`highlightMarks` of annotation); a document with active content in its `riskFlags` throws the `DomainError` `EXPORT_ACTIVE_CONTENT`, which `run` records as a final failure without a retry. Rotated pages and crop boxes are not handled.
+

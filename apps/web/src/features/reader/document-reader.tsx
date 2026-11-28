@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { pullAll, request, type Failure, type Result } from "../../lib/api";
 import type { DocumentItem } from "../documents/documents-client";
+import { ExportButton } from "../exports/export-button";
 import { CategoriesBar } from "./categories-bar";
 import {
   changeHighlightCategory,
@@ -36,6 +37,7 @@ type Phase =
 /** The reader page: finds the document, asks for its file and hands it to the engine surface (`document/reader`). */
 export function DocumentReader({ documentId, Surface }: { documentId: string; Surface: Surface }) {
   const t = useTranslations("Reader");
+  const tExport = useTranslations("Exports");
   const errors = useTranslations("Reader.errors");
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
@@ -249,6 +251,12 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
         >
           {t("summary")}
         </Link>
+        <ExportButton
+          kind="ANNOTATED_PDF"
+          scope="DOCUMENT"
+          scopeId={documentId}
+          label={tExport("annotatedLabel")}
+        />
         {state ? (
           <>
             <button
