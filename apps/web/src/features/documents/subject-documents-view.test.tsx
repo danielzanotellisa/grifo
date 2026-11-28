@@ -601,6 +601,8 @@ describe("subject page: undoing a delete", () => {
       "Esta matéria não existe mais.",
     );
     expect(screen.queryByRole("status")).toBeNull();
+  });
+});
 
 describe("subject page: drop, progress and cancel", () => {
   const dropArea = () => screen.getByLabelText("Importar PDFs").closest("div")!;
