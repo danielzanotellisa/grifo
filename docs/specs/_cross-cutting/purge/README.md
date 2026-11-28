@@ -5,7 +5,7 @@
 - ADRs: 0005, 0018, 0032, 0039
 
 ## Definition
-The daily job `trash.purge` that physically deletes what has been in the trash for more than 30 days, and the stored files and result objects that nothing references any more. Deleting an account after its window is `user/purge`, a later slice.
+The daily job `trash.purge` that physically deletes what has been in the trash for more than 30 days, and the stored files and result objects that nothing references any more. Deleting an account after its window is `user/purge`, which the same job also runs.
 
 ## Rules
 1. The job runs daily (schedule, 04:00) on the admin connection, across owners. The cutoff is the run time minus 30 days (`TRASH_WINDOW_DAYS`); a row is purged when its own `deleted_at` is before the cutoff. A live row, and a row deleted within the window, is never touched.
@@ -30,6 +30,5 @@ The daily job `trash.purge` that physically deletes what has been in the trash f
 - [ ] **AC-10** Given the worker, then `trash.purge` is registered in the task list and scheduled daily at 04:00.
 
 ## Open questions
-- Purging deleted accounts (`user/purge`).
 - Trimming the change log (`docs/pending/P-007`, point 1).
 - Versions of an object: the local storage is not versioned; the managed storage of production must also drop versions (P-008).

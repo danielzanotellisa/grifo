@@ -1,5 +1,5 @@
 import type { ObjectStorage, PurgeParticipant } from "@app/platform";
-import { eq, lt } from "drizzle-orm";
+import { eq, inArray, lt } from "drizzle-orm";
 import { exports } from "./schema";
 
 /**
@@ -18,6 +18,24 @@ export function createExportPurgeParticipant(deps: { storage: ObjectStorage }): 
 
       let failure: unknown;
       for (const row of expired) {
+        try {
+          if (row.resultKey) await deps.storage.delete("derived", row.resultKey);
+          await db.delete(exports).where(eq(exports.id, row.id));
+        } catch (error) {
+          failure ??= error;
+        }
+      }
+      if (failure) throw failure;
+    },
+
+    async purgeOwners(db, ownerIds) {
+      const rows = await db
+        .select({ id: exports.id, resultKey: exports.resultKey })
+        .from(exports)
+        .where(inArray(exports.ownerId, ownerIds));
+
+      let failure: unknown;
+      for (const row of rows) {
         try {
           if (row.resultKey) await deps.storage.delete("derived", row.resultKey);
           await db.delete(exports).where(eq(exports.id, row.id));

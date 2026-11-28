@@ -1,5 +1,5 @@
 import type { PurgeParticipant } from "@app/platform";
-import { and, eq, lt, notExists } from "drizzle-orm";
+import { and, eq, inArray, lt, notExists } from "drizzle-orm";
 import { categories, highlights } from "./schema";
 
 /**
@@ -25,5 +25,10 @@ export const annotationPurgeParticipant: PurgeParticipant = {
           ),
         ),
       );
+  },
+
+  async purgeOwners(db, ownerIds) {
+    await db.delete(highlights).where(inArray(highlights.ownerId, ownerIds));
+    await db.delete(categories).where(inArray(categories.ownerId, ownerIds));
   },
 };

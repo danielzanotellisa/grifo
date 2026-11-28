@@ -1,5 +1,5 @@
 import type { Db, ObjectStorage, PurgeParticipant } from "@app/platform";
-import { and, eq, lt, notExists, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, notExists, sql } from "drizzle-orm";
 import { documents, storedFiles, subjects } from "./schema";
 
 const unreferenced = (db: Db) =>
@@ -54,6 +54,27 @@ export function createLibraryPurgeParticipant(deps: { storage: ObjectStorage }):
             await deps.storage.delete("originals", file.storageKey);
             await tx.delete(storedFiles).where(eq(storedFiles.id, file.id));
           });
+        } catch (error) {
+          failure ??= error;
+        }
+      }
+      if (failure) throw failure;
+    },
+
+    async purgeOwners(db, ownerIds) {
+      await db.delete(documents).where(inArray(documents.ownerId, ownerIds));
+      await db.delete(subjects).where(inArray(subjects.ownerId, ownerIds));
+
+      const files = await db
+        .select({ id: storedFiles.id, storageKey: storedFiles.storageKey })
+        .from(storedFiles)
+        .where(inArray(storedFiles.ownerId, ownerIds));
+
+      let failure: unknown;
+      for (const file of files) {
+        try {
+          await deps.storage.delete("originals", file.storageKey);
+          await db.delete(storedFiles).where(eq(storedFiles.id, file.id));
         } catch (error) {
           failure ??= error;
         }

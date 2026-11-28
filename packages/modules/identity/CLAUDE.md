@@ -19,7 +19,7 @@ Accounts and sessions. Schema: `identity`. Spec: `docs/specs/user/`.
 - Deleting an account needs the current password, sets `deleted_at` and removes every session in one transaction. A hook refuses new sessions for a deleted account, and `authenticate` returns null for it, so a session that was open stops working. The email stays reserved until the purge (ADR 0018).
 - `onSignIn` runs after every session is created (the app seeds the default categories there); a failure is logged and never blocks the sign-in.
 - An email with surrounding spaces is refused (400); the client trims. The library stores addresses in lowercase.
-- Account deletion = soft delete + purge job after the trash window (ADR 0018); the purge must also remove every object in storage owned by the user.
+- Account deletion = soft delete + purge job after the trash window (ADR 0018). `accountPurge` (`infra/purge.ts`) finds the expired accounts and removes their identity rows, on the admin connection, after every module has purged its data and objects (`user/purge`).
 
 ## Depends on
 - `@app/platform` only. Nothing depends on identity internals; other modules only see a `userId: string`.

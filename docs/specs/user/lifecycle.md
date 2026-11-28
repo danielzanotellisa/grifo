@@ -24,5 +24,5 @@ What happens to an account at its edges: its first sign-in and its deletion.
 - [ ] **AC-4** Given 5 delete attempts of one user within 15 minutes, when a 6th arrives, then 429 `RATE_LIMITED` even with the right password and the account is unchanged; attempts of other users are not counted, and the count restarts after the window.
 
 ## Open questions
-- The purge of a deleted account after 30 days (database and storage) is a worker slice.
+- The purge of a deleted account after 30 days is `user/purge`.
 - Exporting all the user's data is in the `export` spec.
