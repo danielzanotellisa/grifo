@@ -373,7 +373,7 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1">
-        <div className="relative min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1 bg-surface-dim">
           <Surface
             source={source(phase.url)}
             onState={setSurface}

@@ -97,7 +97,7 @@
       "generic": "Algo deu errado. Tente de novo.",
       "loadFailed": "Não foi possível carregar suas matérias."
     },
-    "stats": "{subjects, plural, one {# matéria} other {# matérias}} · {documents, plural, one {# documento} other {# documentos}}"
+    "stats": "{subjects, plural, one {# matéria} other {# matérias}} · {documents, plural, =0 {nenhum documento} one {# documento} other {# documentos}}"
   },
   "Trash": {
     "title": "Lixeira",

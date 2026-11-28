@@ -376,9 +376,9 @@ export function SubjectDocumentsView({
                       setProblems([]);
                       setRenaming({ id: doc.id, value: doc.title });
                     }}
-                    className={`${buttonSecondary} h-8 px-3`}
+                    className="ml-auto inline-flex size-8 items-center justify-center rounded-md text-ink-muted hover:bg-sunken hover:text-ink disabled:opacity-60"
                   >
-                    {t("rename", { title: "" }).trim()}
+                    <Icon name="edit" size={16} />
                   </button>
                   <button
                     type="button"
@@ -391,9 +391,9 @@ export function SubjectDocumentsView({
                         () => setNotice(t("movedToTrash", { title: doc.title })),
                       )
                     }
-                    className={`${buttonSecondary} h-8 px-3 text-error`}
+                    className="inline-flex size-8 items-center justify-center rounded-md text-ink-muted hover:bg-sunken hover:text-error disabled:opacity-60"
                   >
-                    {t("delete", { title: "" }).trim()}
+                    <Icon name="trash" size={16} />
                   </button>
                 </>
               )}
