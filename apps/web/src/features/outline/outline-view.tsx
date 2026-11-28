@@ -5,6 +5,9 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { Result } from "../../lib/api";
 import { ExportButton } from "../exports/export-button";
+import { Notice } from "../../components/notice";
+import { useUndoShortcut } from "../../components/use-undo-shortcut";
+import { restoreTrashItem } from "../subjects/subjects-client";
 import { createFlashcard } from "../flashcards/flashcards-client";
 import { useFlashcardFailureMessage } from "../flashcards/use-flashcard-failure-message";
 import { loadOutline, newFreeText, removeNode, saveNode, type OutlineData } from "./outline-client";
@@ -38,6 +41,8 @@ export function OutlineView({ documentId }: { documentId: string }) {
   const [addRole, setAddRole] = useState<OutlineRole>("ITEM");
   const [addText, setAddText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
   const busy = useRef(false);
 
   async function refresh(): Promise<void> {
@@ -78,6 +83,8 @@ export function OutlineView({ documentId }: { documentId: string }) {
     if (busy.current) return false;
     busy.current = true;
     setError(null);
+    setNotice(null);
+    setUndoId(null);
     const result = await action();
     let ok = true;
     if (!result.ok) {
@@ -126,13 +133,34 @@ export function OutlineView({ documentId }: { documentId: string }) {
       if (changed) void run(() => saveNode(changed));
     } else if (event.key === "Delete" || event.key === "Backspace") {
       handled();
-      void run(() => removeNode(selectedId)).then(() => setSelectedId(null));
+      const id = selectedId;
+      void run(() => removeNode(id)).then((ok) => {
+        setSelectedId(null);
+        if (!ok) return;
+        setNotice(t("movedToTrash"));
+        setUndoId(id);
+      });
     } else if (event.key === "Enter" || event.key === "F2") {
       handled();
       const node = data.nodes.find((n) => n.id === selectedId);
       if (node) setEditing({ id: node.id, text: textOf(node), role: node.role ?? "" });
     }
   }
+
+  /** Puts the last deleted node back (`_cross-cutting/undo`). */
+  async function onUndo() {
+    if (!undoId || busy.current) return;
+    const id = undoId;
+    setNotice(null);
+    setUndoId(null);
+    const result = await restoreTrashItem(id);
+    if (!result.ok) {
+      const message = failureMessage(result);
+      if (message) setError(message);
+    }
+    await refresh();
+  }
+  useUndoShortcut(undoId ? () => void onUndo() : null);
 
   async function onSave(event: FormEvent) {
     event.preventDefault();
@@ -223,6 +251,11 @@ export function OutlineView({ documentId }: { documentId: string }) {
         <p role="alert" className="text-sm text-error">
           {error}
         </p>
+      ) : null}
+      {notice ? (
+        <Notice icon="trash" onUndo={undoId ? () => void onUndo() : undefined}>
+          {notice}
+        </Notice>
       ) : null}
 
       {rows.length === 0 ? (

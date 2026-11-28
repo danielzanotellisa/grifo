@@ -261,3 +261,88 @@ describe("subjects view", () => {
     expect(screen.getByRole("button", { name: "Apagar Cálculo" })).toBeTruthy();
   });
 });
+
+describe("subjects view: undoing a delete", () => {
+  beforeEach(() => {
+    api.subjects = [
+      { id: "s-redes", name: "Redes" },
+      { id: "s-zoo", name: "Zoologia" },
+    ];
+  });
+  const open = async () => {
+    renderPt(<SubjectsView />);
+    await screen.findByText("Redes");
+  };
+  const remove = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "Apagar Zoologia" }));
+    await screen.findByRole("status");
+  };
+
+  it("[_cross-cutting/undo#AC-1] offers Desfazer after a delete and puts the subject back", async () => {
+    const user = userEvent.setup();
+    await open();
+    await remove(user);
+    expect(names()).toEqual(["Redes"]);
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await waitFor(() => expect(names()).toEqual(["Redes", "Zoologia"]));
+    expect(api.restores).toEqual(["s-zoo"]);
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("[_cross-cutting/undo#AC-7] undoes with Ctrl+Z and with Cmd+Z, but not inside a text field", async () => {
+    const user = userEvent.setup();
+    await open();
+    await remove(user);
+
+    await user.type(screen.getByLabelText("Nova matéria"), "x");
+    fireEvent.keyDown(screen.getByLabelText("Nova matéria"), { key: "z", ctrlKey: true });
+    expect(api.restores).toEqual([]);
+
+    fireEvent.keyDown(document.body, { key: "z", ctrlKey: true });
+    await waitFor(() => expect(api.restores).toEqual(["s-zoo"]));
+    await waitFor(() => expect(names()).toContain("Zoologia"));
+
+    await remove(user);
+    fireEvent.keyDown(document.body, { key: "z", metaKey: true });
+    await waitFor(() => expect(api.restores).toEqual(["s-zoo", "s-zoo"]));
+  });
+
+  it("[_cross-cutting/undo#AC-8] shows the message of a restore that fails and closes the notice", async () => {
+    const user = userEvent.setup();
+    await open();
+    await remove(user);
+    api.fail("/api/trash", problem(404, "NOT_FOUND"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Essa matéria não existe mais.",
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("[_cross-cutting/undo#AC-8] goes to the sign-in screen when the session is gone", async () => {
+    const user = userEvent.setup();
+    await open();
+    await remove(user);
+    api.fail("/api/trash", problem(401, "UNAUTHENTICATED"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+  });
+
+  it("[_cross-cutting/undo#AC-9] drops the notice when another change starts", async () => {
+    const user = userEvent.setup();
+    await open();
+    await remove(user);
+
+    await user.type(screen.getByLabelText("Nova matéria"), "Física");
+    await user.click(screen.getByRole("button", { name: "Criar matéria" }));
+
+    await waitFor(() => expect(names()).toContain("Física"));
+    expect(screen.queryByRole("button", { name: "Desfazer" })).toBeNull();
+  });
+});

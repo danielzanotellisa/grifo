@@ -564,3 +564,42 @@ describe("subject page: documents without selectable text", () => {
     expect(within(item("Escaneado")).getByText("Sem texto selecionável")).toBeTruthy();
   });
 });
+
+describe("subject page: undoing a delete", () => {
+  it("[_cross-cutting/undo#AC-2] offers Desfazer after deleting a document and puts it back", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Aula 1", status: "READY", pageCount: 3 },
+      { id: "d2", subjectId: "s-redes", title: "Aula 2", status: "READY", pageCount: 3 },
+    ];
+    view();
+    const user = userEvent.setup();
+    await screen.findByText("Aula 1");
+
+    await user.click(screen.getByRole("button", { name: "Apagar Aula 2" }));
+    await screen.findByRole("status");
+    expect(titles()).toEqual(["Aula 1"]);
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await waitFor(() => expect(titles()).toEqual(["Aula 1", "Aula 2"]));
+    expect(api.restores).toEqual(["d2"]);
+  });
+
+  it("[_cross-cutting/undo#AC-8] shows the message of a restore that fails", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Aula 1", status: "READY", pageCount: 3 },
+    ];
+    view();
+    const user = userEvent.setup();
+    await screen.findByText("Aula 1");
+    await user.click(screen.getByRole("button", { name: "Apagar Aula 1" }));
+    await screen.findByRole("status");
+    api.fail("/api/trash", problem(422, "PARENT_DELETED"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Esta matéria não existe mais.",
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});

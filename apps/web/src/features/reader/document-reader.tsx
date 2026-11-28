@@ -6,6 +6,9 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { pullAll, request, type Failure, type Result } from "../../lib/api";
 import { Icon } from "../../components/icons";
+import { Notice } from "../../components/notice";
+import { useUndoShortcut } from "../../components/use-undo-shortcut";
+import { restoreTrashItem } from "../subjects/subjects-client";
 import { bannerError } from "../../components/styles";
 import type { DocumentItem } from "../documents/documents-client";
 import { ExportButton } from "../exports/export-button";
@@ -52,6 +55,7 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
   const [markError, setMarkError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
   const busy = useRef(false);
   const highlightFailure = useHighlightFailureMessage();
@@ -110,6 +114,7 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
     setMarking(true);
     setMarkError(null);
     setNotice(null);
+    setUndoId(null);
     const result = await action();
     if (result.ok) onDone?.();
     else {
@@ -120,6 +125,21 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
     busy.current = false;
     setMarking(false);
   }
+
+  /** Puts the last deleted highlight back (`_cross-cutting/undo`). */
+  async function onUndo() {
+    if (!undoId || busy.current) return;
+    const id = undoId;
+    setNotice(null);
+    setUndoId(null);
+    const result = await restoreTrashItem(id);
+    if (!result.ok) {
+      const message = highlightFailure(result);
+      if (message) setMarkError(message);
+    }
+    await refreshMarking();
+  }
+  useUndoShortcut(undoId ? () => void onUndo() : null);
 
   const mark = (categoryId: string) => {
     if (!selection) return;
@@ -362,9 +382,9 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
           onChoose={mark}
         />
         {notice ? (
-          <p role="status" className="text-sm text-ink-muted">
+          <Notice icon="trash" onUndo={undoId ? () => void onUndo() : undefined}>
             {notice}
-          </p>
+          </Notice>
         ) : null}
         {markError ? (
           <p role="alert" className={bannerError}>
@@ -396,7 +416,10 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
           onDelete={(h) =>
             void runMark(
               () => deleteHighlight(h.id),
-              () => setNotice(marks("movedToTrash")),
+              () => {
+                setNotice(marks("movedToTrash"));
+                setUndoId(h.id);
+              },
             )
           }
         />
