@@ -14,8 +14,8 @@
 
 ## Template `classic` v1
 1. The tree is ordered by `position` among siblings (ties by id); a node whose parent is missing counts as a root.
-2. The effective role is the node's own, or its highlight's category role; a node with no role or with `IGNORE` is left out.
-3. `TOPIC` → heading, level = number of `TOPIC` ancestors + 1, capped at 4 (`h2`…`h4` under the document title `h1`... the document title is `h1`, so levels map to `h2`, `h3`, `h4`, `h4`). `DEFINITION` → a block with a bar in the category color and the page. `ITEM` → a bullet indented by its depth.
+2. The effective role is the node's own, or its highlight's category role; a node with no role or with `IGNORE` is left out and its children take its place. A node's depth counts the nodes shown above it, starting at 1.
+3. `TOPIC` → heading, level = number of `TOPIC` ancestors + 1; the document title is the `h1`, so levels 1, 2, 3 and deeper become `h2`, `h3` and `h4`. `DEFINITION` → a block with a bar in the category color and the page. `ITEM` → a bullet indented by its depth.
 4. Highlight nodes show the quote, or their own text when overridden; a source page is shown as `p. N` (1-based) for highlight nodes.
 5. A document with no nodes shows "Resumo vazio."; a subject export has one section per live document, by title, each starting a page.
 6. Every page has the document title (the subject name for a subject export) and the page number in the footer, through `@page`.

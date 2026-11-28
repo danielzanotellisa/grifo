@@ -29,7 +29,7 @@ export function parseSince(value: string | null): number {
 }
 
 const exportRequest = z.object({
-  kind: z.literal("FLASHCARDS_APKG"),
+  kind: z.enum(["FLASHCARDS_APKG", "SUMMARY_PDF"]),
   scope: z.enum(["DOCUMENT", "SUBJECT"]),
   scopeId: z.uuid(),
 });

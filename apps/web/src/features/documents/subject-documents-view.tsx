@@ -22,7 +22,7 @@ import {
   type DocumentItem,
   type SubjectPage,
 } from "./documents-client";
-import { ExportDeckButton } from "../exports/export-deck-button";
+import { ExportButton } from "../exports/export-button";
 import { useDocumentFailureMessage } from "./use-document-failure-message";
 
 type Importing = { current: number; total: number; name: string };
@@ -221,7 +221,18 @@ export function SubjectDocumentsView({
           className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-white disabled:opacity-60"
         />
         <p className="text-sm text-neutral-500">{t("importHint")}</p>
-        <ExportDeckButton scope="SUBJECT" scopeId={subjectId} label={tExport("subjectLabel")} />
+        <ExportButton
+          kind="FLASHCARDS_APKG"
+          scope="SUBJECT"
+          scopeId={subjectId}
+          label={tExport("subjectLabel")}
+        />
+        <ExportButton
+          kind="SUMMARY_PDF"
+          scope="SUBJECT"
+          scopeId={subjectId}
+          label={tExport("summarySubjectLabel")}
+        />
         {importing ? (
           <p role="status" className="text-sm text-neutral-700">
             {t("importing", importing)}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { Result } from "../../lib/api";
+import { ExportButton } from "../exports/export-button";
 import { createFlashcard } from "../flashcards/flashcards-client";
 import { useFlashcardFailureMessage } from "../flashcards/use-flashcard-failure-message";
 import { loadOutline, newFreeText, removeNode, saveNode, type OutlineData } from "./outline-client";
@@ -26,6 +27,7 @@ type Carding = { nodeId: string; front: string };
 export function OutlineView({ documentId }: { documentId: string }) {
   const t = useTranslations("Outline");
   const tCard = useTranslations("Flashcards");
+  const tExport = useTranslations("Exports");
   const failureMessage = useOutlineFailureMessage();
   const cardFailureMessage = useFlashcardFailureMessage();
   const [data, setData] = useState<OutlineData | null>(null);
@@ -208,6 +210,12 @@ export function OutlineView({ documentId }: { documentId: string }) {
           {tCard("title")}
         </Link>
         <p className="text-sm text-neutral-500">{t("keys")}</p>
+        <ExportButton
+          kind="SUMMARY_PDF"
+          scope="DOCUMENT"
+          scopeId={documentId}
+          label={tExport("summaryDocumentLabel")}
+        />
       </div>
 
       {error ? (

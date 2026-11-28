@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "../src/fixtures";
 import { pdfBytes, writeFileIn } from "../src/pdfs";
 
-test("[outline-node/screens#AC-11] two marked passages become nodes that Tab indents, and free text can be added, edited and removed", async ({
+test("[outline-node/screens#AC-11] [export/summary-pdf#AC-7] two marked passages become nodes that Tab indents, and free text can be added, edited and removed", async ({
   signedIn: page,
 }, testInfo) => {
   await page.goto("/");
@@ -73,6 +74,15 @@ test("[outline-node/screens#AC-11] two marked passages become nodes that Tab ind
   await page.getByLabel("Texto do nó").fill("Nota editada");
   await page.getByLabel("Texto do nó").press("Enter");
   await expect(items.filter({ hasText: "Nota editada" })).toHaveCount(1);
+
+  // export the summary: the browser downloads a PDF
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Exportar resumo (PDF)" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("Texto.pdf");
+  const bytes = readFileSync((await download.path())!);
+  expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
 
   await items.filter({ hasText: "Nota editada" }).click();
   await page.keyboard.press("Delete");

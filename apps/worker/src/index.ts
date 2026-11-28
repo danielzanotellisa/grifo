@@ -1,5 +1,5 @@
 import { annotationPurgeParticipant } from "@app/annotation";
-import { createExportPurgeParticipant, createExports } from "@app/export";
+import { createExportPurgeParticipant, createExports, renderPdf } from "@app/export";
 import { createAuthDb, createMailOutbox } from "@app/identity";
 import {
   createDeepScan,
@@ -61,7 +61,13 @@ const deepScan = createDeepScanTask({
   }),
 });
 
-const exportRender = createExportRenderTask({ exports: createExports({ db, storage }) });
+const exportRender = createExportRenderTask({
+  exports: createExports({
+    db,
+    storage,
+    renderPdf: (document) => renderPdf(requiredEnv("GOTENBERG_URL"), document),
+  }),
+});
 
 // The purge works across owners, so it is the one task that uses the admin connection (ADR 0039).
 const purge = createPurgeTask({

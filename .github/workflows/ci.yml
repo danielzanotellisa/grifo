@@ -124,10 +124,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # The stack a person runs, from a clean state and without a .env (spec `_cross-cutting/local-run`).
-      # ClamAV and Gotenberg are left out: nothing waits for them and ClamAV needs minutes and 1 GB.
+      # ClamAV is left out: nothing waits for it and it needs minutes and 1 GB. Gotenberg renders the summary PDF.
       - name: Start the stack
         run: |
-          docker compose --profile app up -d --build web worker mailpit
+          docker compose --profile app up -d --build web worker mailpit gotenberg
           timeout 300 bash -c 'until curl -fs http://localhost:3000/api/health >/dev/null; do sleep 2; done'
       - uses: actions/cache@v4
         with:

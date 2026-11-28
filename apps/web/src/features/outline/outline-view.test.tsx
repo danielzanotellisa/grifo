@@ -571,3 +571,20 @@ describe("summary: flashcards", () => {
     expect(within(rowOf("item")).queryByRole("link", { name: /flashcard/ })).toBeNull();
   });
 });
+
+describe("summary: the PDF export", () => {
+  it("[export/summary-pdf#AC-6] exports the summary of this document as a PDF", async () => {
+    api.exportAnswers = [{ status: "RUNNING", error: null }]; // the page does not navigate in jsdom
+    api.nodes = [free("n1", null, "a0")];
+    const user = userEvent.setup();
+    await open();
+
+    await user.click(screen.getByRole("button", { name: "Exportar resumo (PDF)" }));
+
+    await waitFor(() =>
+      expect(api.exportRequests).toEqual([
+        { kind: "SUMMARY_PDF", scope: "DOCUMENT", scopeId: "d1" },
+      ]),
+    );
+  });
+});
