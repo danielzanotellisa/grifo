@@ -1,20 +1,14 @@
-import { annotationPurgeParticipant } from "@app/annotation";
-import { createExportPurgeParticipant, createExports, renderPdf } from "@app/export";
+import { createExports, renderPdf } from "@app/export";
 import { createAuthDb, createMailOutbox } from "@app/identity";
-import {
-  createDeepScan,
-  createDocumentValidation,
-  createLibraryPurgeParticipant,
-} from "@app/library";
-import { outlinePurgeParticipant } from "@app/outline";
-import { createDb, createPurge, createS3Storage, s3ConfigFromEnv } from "@app/platform";
-import { studyPurgeParticipant } from "@app/study";
+import { createDeepScan, createDocumentValidation } from "@app/library";
+import { createDb, createS3Storage, s3ConfigFromEnv } from "@app/platform";
 import { parseCronItems, run } from "graphile-worker";
 import nodemailer from "nodemailer";
 import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
 import { createClamavScanner } from "./tasks/clamav";
 import { createDeepScanTask } from "./tasks/document-deep-scan";
 import { createExportRenderTask } from "./tasks/export-render";
+import { buildPurge } from "./purge-setup";
 import { createValidateDocumentTask } from "./tasks/document-validate";
 import { inspectPdf } from "./tasks/pdf-inspect";
 import { createPurgeTask } from "./tasks/trash-purge";
@@ -72,13 +66,7 @@ const exportRender = createExportRenderTask({
 // The purge works across owners, so it is the one task that uses the admin connection (ADR 0039).
 const purge = createPurgeTask({
   db: createDb(requiredEnv("DATABASE_MIGRATOR_URL")),
-  purge: createPurge([
-    createLibraryPurgeParticipant({ storage }),
-    annotationPurgeParticipant,
-    outlinePurgeParticipant,
-    studyPurgeParticipant,
-    createExportPurgeParticipant({ storage }),
-  ]),
+  purge: buildPurge(storage),
 });
 
 const taskList = createTaskList({

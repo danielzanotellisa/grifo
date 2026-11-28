@@ -1,19 +1,11 @@
-import { annotationPurgeParticipant } from "@app/annotation";
-import { createExportPurgeParticipant } from "@app/export";
-import { createLibraryPurgeParticipant } from "@app/library";
-import { outlinePurgeParticipant } from "@app/outline";
 import {
   createDb,
-  createPurge,
-  createS3Storage,
   createSyncEngine,
   createTrash,
   ensureS3Buckets,
   newId,
-  s3ConfigFromEnv,
   type ObjectStorage,
 } from "@app/platform";
-import { studyPurgeParticipant } from "@app/study";
 import {
   createDocumentSyncHandler,
   createSubjectSyncHandler,
@@ -21,15 +13,30 @@ import {
   subjectTrashParticipant,
 } from "@app/library";
 import { createInProcessEventBus } from "@app/platform";
-import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildPurge } from "../purge-setup";
 import { createTaskList, cronItems } from "../schedule";
+import {
+  admin,
+  adminDb,
+  ALL,
+  category,
+  config,
+  document,
+  exists,
+  exportRow,
+  flashcard,
+  highlight,
+  node,
+  present,
+  rows,
+  SHA,
+  storage,
+  storedFile,
+  subject,
+  world,
+} from "./purge-fixtures";
 import { createPurgeTask } from "./trash-purge";
-
-const admin = new pg.Pool({ connectionString: process.env.DATABASE_MIGRATOR_URL });
-const adminDb = createDb(process.env.DATABASE_MIGRATOR_URL ?? "");
-const config = s3ConfigFromEnv(process.env);
-const storage = createS3Storage(config);
 
 /** A storage that can be told to fail, to test that one broken step does not stop the others. */
 let storageDown = false;
@@ -40,151 +47,12 @@ const flakyStorage: ObjectStorage = {
     return storage.delete(bucket, key);
   },
 };
-const purge = createPurge([
-  createLibraryPurgeParticipant({ storage: flakyStorage }),
-  annotationPurgeParticipant,
-  outlinePurgeParticipant,
-  studyPurgeParticipant,
-  createExportPurgeParticipant({ storage: flakyStorage }),
-]);
+const purge = buildPurge(flakyStorage);
 
 beforeAll(() => ensureS3Buckets(config));
 afterAll(() => admin.end());
 
 const run = () => purge.run(adminDb);
-const rows = async (sql: string, params: unknown[] = []) => (await admin.query(sql, params)).rows;
-const exists = async (table: string, id: string) =>
-  (await rows(`select 1 from ${table} where id = $1`, [id])).length === 1;
-
-/** `old` rows were deleted 31 days ago, `recent` ones 29 days ago, `live` ones never. */
-type Age = "old" | "recent" | "live";
-const deletion = (age: Age, id: string): string =>
-  age === "live" ? "null, null" : `now() - interval '${age === "old" ? 31 : 29} days', '${id}'`;
-const SHA = () => newId().replaceAll("-", "").padEnd(64, "0");
-
-const subject = async (owner: string, age: Age = "live", rootId?: string) => {
-  const id = newId();
-  await admin.query(
-    `insert into library.subjects (id, owner_id, name, deleted_at, deleted_root_id) values ($1, $2, 'Redes', ${deletion(age, rootId ?? id)})`,
-    [id, owner],
-  );
-  return id;
-};
-const storedFile = async (owner: string, opts: { createdDaysAgo?: number; sha?: string } = {}) => {
-  const id = newId();
-  const sha = opts.sha ?? SHA();
-  const key = `${owner}/${sha}.pdf`;
-  await admin.query(
-    `insert into library.stored_files (id, owner_id, sha256, size_bytes, storage_key, created_at)
-     values ($1, $2, $3, 4, $4, now() - ($5 || ' days')::interval)`,
-    [id, owner, sha, key, String(opts.createdDaysAgo ?? 60)],
-  );
-  await storage.put("originals", key, Buffer.from("%PDF"), "application/pdf");
-  return { id, key };
-};
-const document = async (
-  owner: string,
-  subjectId: string,
-  fileId: string,
-  age: Age = "live",
-  rootId?: string,
-) => {
-  const id = newId();
-  await admin.query(
-    `insert into library.documents (id, owner_id, subject_id, stored_file_id, title, status, page_count, deleted_at, deleted_root_id)
-     values ($1, $2, $3, $4, 'Aula', 'READY', 1, ${deletion(age, rootId ?? id)})`,
-    [id, owner, subjectId, fileId],
-  );
-  return id;
-};
-const category = async (owner: string, age: Age = "live") => {
-  const id = newId();
-  await admin.query(
-    `insert into annotation.categories (id, owner_id, name, color, role, position, deleted_at, deleted_root_id)
-     values ($1, $2, 'Definição', '#ff0000', 'DEFINITION', 'a0', ${deletion(age, id)})`,
-    [id, owner],
-  );
-  return id;
-};
-const highlight = async (
-  owner: string,
-  documentId: string,
-  categoryId: string,
-  age: Age = "live",
-  rootId?: string,
-) => {
-  const id = newId();
-  await admin.query(
-    `insert into annotation.highlights (id, owner_id, document_id, category_id, page_index, rects, quote, deleted_at, deleted_root_id)
-     values ($1, $2, $3, $4, 0, '[]', '{}', ${deletion(age, rootId ?? id)})`,
-    [id, owner, documentId, categoryId],
-  );
-  return id;
-};
-const node = async (owner: string, documentId: string, age: Age = "live", rootId?: string) => {
-  const id = newId();
-  await admin.query(
-    `insert into outline.nodes (id, owner_id, document_id, position, role, text, deleted_at, deleted_root_id)
-     values ($1, $2, $3, 'a0', 'TOPIC', 'Tópico', ${deletion(age, rootId ?? id)})`,
-    [id, owner, documentId],
-  );
-  return id;
-};
-const flashcard = async (owner: string, documentId: string, age: Age = "live", rootId?: string) => {
-  const id = newId();
-  await admin.query(
-    `insert into study.flashcards (id, owner_id, document_id, front, back, deleted_at, deleted_root_id)
-     values ($1, $2, $3, 'frente', 'verso', ${deletion(age, rootId ?? id)})`,
-    [id, owner, documentId],
-  );
-  return id;
-};
-const exportRow = async (owner: string, age: Age, resultKey?: string) => {
-  const id = newId();
-  await admin.query(
-    `insert into export.exports (id, owner_id, kind, scope, snapshot_cursor, result_key, deleted_at, deleted_root_id)
-     values ($1, $2, 'SUMMARY_PDF', 'DOCUMENT', 0, $3, ${deletion(age, id)})`,
-    [id, owner, resultKey ?? null],
-  );
-  if (resultKey) await storage.put("derived", resultKey, Buffer.from("%PDF"), "application/pdf");
-  return id;
-};
-
-/** One of each kind of row, of one owner, in the given state. */
-const world = async (owner: string, age: Age) => {
-  const s = await subject(owner, age);
-  const file = await storedFile(owner);
-  const d = await document(owner, s, file.id, age);
-  const c = await category(owner, age);
-  return {
-    subject: s,
-    document: d,
-    category: c,
-    highlight: await highlight(owner, d, c, age),
-    node: await node(owner, d, age),
-    flashcard: await flashcard(owner, d, age),
-    export: await exportRow(owner, age, `${owner}/${newId()}.pdf`),
-    file,
-  };
-};
-const TABLES = {
-  subject: "library.subjects",
-  document: "library.documents",
-  category: "annotation.categories",
-  highlight: "annotation.highlights",
-  node: "outline.nodes",
-  flashcard: "study.flashcards",
-  export: "export.exports",
-} as const;
-const present = async (w: Awaited<ReturnType<typeof world>>) =>
-  Object.fromEntries(
-    await Promise.all(
-      (Object.keys(TABLES) as (keyof typeof TABLES)[]).map(
-        async (key) => [key, await exists(TABLES[key], w[key])] as const,
-      ),
-    ),
-  );
-const ALL = (value: boolean) => Object.fromEntries(Object.keys(TABLES).map((key) => [key, value]));
 
 describe("trash.purge", () => {
   it("[_cross-cutting/purge#AC-1] deletes the rows past the window of every owner and keeps the rest", async () => {
@@ -408,5 +276,165 @@ describe("the purge task in the worker", () => {
     expect(cronItems).toContainEqual(
       expect.objectContaining({ task: "trash.purge", match: "0 4 * * *" }),
     );
+  });
+});
+
+// The account tests share the file (and so the run order) with the trash tests: both run the whole purge on the same database.
+type Account = { id: string; email: string };
+/** An account with a user row, a session, a credential, a verification, a pending mail and a rate-limit counter. */
+const account = async (deletedDaysAgo: number | null): Promise<Account> => {
+  const id = newId();
+  const email = `purge-${id}@example.com`;
+  await admin.query(
+    `insert into identity.users (id, email, deleted_at) values ($1, $2, ${
+      deletedDaysAgo === null ? "null" : `now() - interval '${deletedDaysAgo} days'`
+    })`,
+    [id, email],
+  );
+  await admin.query(
+    `insert into identity.sessions (id, user_id, token, expires_at) values ($1, $2, $3, now() + interval '1 day')`,
+    [newId(), id, `token-${id}`],
+  );
+  await admin.query(
+    `insert into identity.accounts (id, user_id, account_id, provider_id) values ($1, $2, $3, 'credential')`,
+    [newId(), id, id],
+  );
+  await admin.query(
+    `insert into identity.verifications (id, identifier, value, expires_at) values ($1, $2, 'v', now() + interval '1 day')`,
+    [newId(), email],
+  );
+  await admin.query(
+    `insert into identity.outgoing_mail (id, to_email, kind, url) values ($1, $2, 'verification', 'http://x')`,
+    [newId(), email],
+  );
+  await admin.query(
+    `insert into identity.rate_limits (key, count, last_request) values ($1, 1, 0)`,
+    [`account-delete:${id}`],
+  );
+  await admin.query(
+    `insert into platform.change_log (owner_id, entity, entity_id, op) values ($1, 'subject', $2, 'upsert')`,
+    [id, newId()],
+  );
+  await admin.query(
+    `insert into platform.processed_mutations (mutation_id, owner_id, outcome) values ($1, $2, '{}')`,
+    [newId(), id],
+  );
+  return { id, email };
+};
+const identityRows = async (a: Account) =>
+  Number(
+    (
+      await rows(
+        `select (select count(*) from identity.users where id = $1)
+              + (select count(*) from identity.sessions where user_id = $1)
+              + (select count(*) from identity.accounts where user_id = $1)
+              + (select count(*) from identity.verifications where identifier = $2)
+              + (select count(*) from identity.outgoing_mail where to_email = $2)
+              + (select count(*) from identity.rate_limits where key = $3) as n`,
+        [a.id, a.email, `account-delete:${a.id}`],
+      )
+    )[0].n,
+  );
+const platformRows = async (a: Account) =>
+  Number(
+    (
+      await rows(
+        `select (select count(*) from platform.change_log where owner_id = $1)
+              + (select count(*) from platform.processed_mutations where owner_id = $1) as n`,
+        [a.id],
+      )
+    )[0].n,
+  );
+const objectExists = async (bucket: "originals" | "derived", key: string) =>
+  (await storage.head(bucket, key)) !== null;
+
+describe("purge of deleted accounts", () => {
+  it("[user/purge#AC-1] [user/purge#AC-3] deletes everything of an account deleted 31 days ago and keeps the others", async () => {
+    const [old, recent, live] = [await account(31), await account(29), await account(null)];
+    const [oldWorld, recentWorld, liveWorld] = [
+      await world(old.id, "live"),
+      await world(recent.id, "live"),
+      await world(live.id, "live"),
+    ];
+
+    await run();
+
+    expect(await present(oldWorld)).toEqual(ALL(false));
+    expect(await identityRows(old)).toBe(0);
+    expect(await platformRows(old)).toBe(0);
+    expect(await present(recentWorld)).toEqual(ALL(true));
+    expect(await present(liveWorld)).toEqual(ALL(true));
+    expect(await identityRows(recent)).toBe(6);
+    expect(await identityRows(live)).toBe(6);
+    expect(await platformRows(recent)).toBe(2);
+    expect(await platformRows(live)).toBe(2);
+    expect(await exists("identity.users", old.id)).toBe(false);
+  });
+
+  it("[user/purge#AC-2] deletes the objects of the account and leaves another owner's object with the same bytes", async () => {
+    const old = await account(31);
+    const other = await account(null);
+    const sha = "ab".repeat(32);
+    const own = await storedFile(old.id, { sha });
+    const foreign = await storedFile(other.id, { sha });
+    await document(other.id, await subject(other.id), foreign.id);
+    const resultKey = `${old.id}/exports/${newId()}.pdf`;
+    const exportId = await exportRow(old.id, "live", resultKey);
+
+    await run();
+
+    expect(await objectExists("originals", own.key)).toBe(false);
+    expect(await exists("library.stored_files", own.id)).toBe(false);
+    expect(await objectExists("derived", resultKey)).toBe(false);
+    expect(await exists("export.exports", exportId)).toBe(false);
+    expect(await objectExists("originals", foreign.key)).toBe(true);
+    expect(await exists("library.stored_files", foreign.id)).toBe(true);
+  });
+
+  it("[user/purge#AC-4] purges the other modules, keeps the user and fails when the storage is down, then completes", async () => {
+    const old = await account(31);
+    const oldWorld = await world(old.id, "live");
+
+    storageDown = true;
+    await expect(run()).rejects.toThrow(/purge failed/);
+    storageDown = false;
+
+    expect(await exists("annotation.highlights", oldWorld.highlight)).toBe(false);
+    expect(await exists("outline.nodes", oldWorld.node)).toBe(false);
+    expect(await exists("study.flashcards", oldWorld.flashcard)).toBe(false);
+    expect(await exists("library.stored_files", oldWorld.file.id)).toBe(true);
+    expect(await exists("export.exports", oldWorld.export)).toBe(true);
+    expect(await exists("identity.users", old.id)).toBe(true);
+
+    await run();
+
+    expect(await present(oldWorld)).toEqual(ALL(false));
+    expect(await exists("library.stored_files", oldWorld.file.id)).toBe(false);
+    expect(await objectExists("originals", oldWorld.file.key)).toBe(false);
+    expect(await exists("identity.users", old.id)).toBe(false);
+  });
+
+  it("[user/purge#AC-5] changes nothing and does not fail when it runs again", async () => {
+    const old = await account(31);
+    const live = await account(null);
+    const liveWorld = await world(live.id, "live");
+    await world(old.id, "live");
+
+    await run();
+    await run();
+
+    expect(await present(liveWorld)).toEqual(ALL(true));
+    expect(await identityRows(live)).toBe(6);
+    expect(await identityRows(old)).toBe(0);
+  });
+
+  it("[user/purge#AC-6] runs through the trash.purge task as the worker builds it", async () => {
+    const old = await account(31);
+    const oldWorld = await world(old.id, "live");
+
+    await createPurgeTask({ db: adminDb, purge: buildPurge(storage) })();
+
+    expect(await present(oldWorld)).toEqual(ALL(false));
+    expect(await exists("identity.users", old.id)).toBe(false);
   });
 });
