@@ -13,7 +13,6 @@ import {
 } from "@app/platform";
 import { and, eq, sql } from "drizzle-orm";
 import { generateApkg } from "../apkg/generate";
-import { annotatePdf } from "../annotated/annotate";
 import { CLASSIC_TEMPLATE, renderClassicSummary } from "../templates/classic";
 import type { SafeHtml } from "../render/html";
 import type { ApkgNote } from "../apkg/types";
@@ -129,10 +128,14 @@ export function createExports(deps: {
         );
       }
       const marks = await highlightMarks(tx, ownerId, scopeId);
-      return async () => ({
-        bytes: await annotatePdf(await storage.get("originals", original.storageKey), marks),
-        contentType: "application/pdf",
-      });
+      return async () => {
+        // Loaded here, not at the top: the engine is a native addon that only the worker runs, and the web bundle must not follow it.
+        const { annotatePdf } = await import("../annotated/annotate");
+        return {
+          bytes: await annotatePdf(await storage.get("originals", original.storageKey), marks),
+          contentType: "application/pdf",
+        };
+      };
     }
     const documents = await documentsOf(tx, ownerId, scope, scopeId);
     const nodes = await summaryNodes(
