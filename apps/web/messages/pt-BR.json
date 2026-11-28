@@ -249,7 +249,8 @@
       "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
       "generic": "Algo deu errado. Tente de novo.",
       "loadFailed": "Não foi possível carregar o resumo."
-    }
+    },
+    "movedToTrash": "Item do resumo enviado para a lixeira."
   },
   "Flashcards": {
     "title": "Flashcards",
@@ -366,5 +367,8 @@
     "delete": "Excluir minha conta",
     "passwordRequired": "Informe sua senha.",
     "wrongPassword": "Senha incorreta."
+  },
+  "Undo": {
+    "label": "Desfazer"
   }
 }

@@ -588,3 +588,63 @@ describe("summary: the PDF export", () => {
     );
   });
 });
+
+describe("summary: undoing a delete", () => {
+  beforeEach(() => {
+    api.nodes = [free("A", null, "a0"), free("B", null, "a1")];
+  });
+
+  it("[_cross-cutting/undo#AC-6] tells where a deleted node went and puts it back with Desfazer", async () => {
+    const user = userEvent.setup();
+    await open();
+    await select(user, "B");
+
+    key("Delete");
+
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "Item do resumo enviado para a lixeira.",
+    );
+    await waitFor(() => expect(ids()).toEqual(["A"]));
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+    await waitFor(() => expect(ids()).toEqual(["A", "B"]));
+    expect(api.restores).toEqual(["B"]);
+  });
+
+  it("[_cross-cutting/undo#AC-7] undoes with Ctrl+Z", async () => {
+    const user = userEvent.setup();
+    await open();
+    await select(user, "B");
+    key("Delete");
+    await screen.findByRole("status");
+
+    fireEvent.keyDown(document.body, { key: "z", ctrlKey: true });
+
+    await waitFor(() => expect(ids()).toEqual(["A", "B"]));
+  });
+
+  it("[_cross-cutting/undo#AC-8] shows the message of a restore that fails", async () => {
+    const user = userEvent.setup();
+    await open();
+    await select(user, "B");
+    key("Delete");
+    await screen.findByRole("status");
+    api.fail("/api/trash", problem(404, "NOT_FOUND"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Esse item não existe mais.");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("[_cross-cutting/undo#AC-9] drops the notice when another change starts", async () => {
+    const user = userEvent.setup();
+    await open();
+    await select(user, "B");
+    key("Delete");
+    await screen.findByRole("status");
+    await user.type(screen.getByLabelText("Texto do novo nó"), "Outro");
+    await user.click(screen.getByRole("button", { name: "Adicionar" }));
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Desfazer" })).toBeNull());
+  });
+});

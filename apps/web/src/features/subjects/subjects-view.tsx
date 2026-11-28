@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Icon } from "../../components/icons";
 import { Notice } from "../../components/notice";
+import { useUndoShortcut } from "../../components/use-undo-shortcut";
 import {
   bannerError,
   buttonPrimary,
@@ -17,6 +18,7 @@ import {
   deleteSubject,
   loadSubjects,
   renameSubject,
+  restoreTrashItem,
   type Failure,
   type Result,
   type SubjectItem,
@@ -31,6 +33,7 @@ export function SubjectsView() {
   const [subjects, setSubjects] = useState<SubjectItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -75,6 +78,7 @@ export function SubjectsView() {
     setPending(key);
     setError(null);
     setNotice(null);
+    setUndoId(null);
     const result = await action();
     if (result.ok) {
       if (await refresh()) onDone();
@@ -134,10 +138,23 @@ export function SubjectsView() {
       () => deleteSubject(subject.id),
       () => {
         setNotice(t("movedToTrash", { name: subject.name }));
+        setUndoId(subject.id);
         setFocusAfter("new-subject");
       },
     );
   }
+
+  /** Puts the last deleted subject back (`_cross-cutting/undo`). */
+  async function onUndo() {
+    if (!undoId || busy.current) return;
+    const id = undoId;
+    setNotice(null);
+    setUndoId(null);
+    const result = await restoreTrashItem(id);
+    if (!result.ok) showFailure(result);
+    await refresh();
+  }
+  useUndoShortcut(undoId ? () => void onUndo() : null);
 
   function onRenameKey(event: KeyboardEvent) {
     if (event.key === "Escape" && renaming) {
@@ -192,7 +209,11 @@ export function SubjectsView() {
           {error}
         </p>
       ) : null}
-      {notice ? <Notice icon="trash">{notice}</Notice> : null}
+      {notice ? (
+        <Notice icon="trash" onUndo={undoId ? () => void onUndo() : undefined}>
+          {notice}
+        </Notice>
+      ) : null}
 
       {subjects === null ? (
         <p className="text-ink-muted">{t("loading")}</p>

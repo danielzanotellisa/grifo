@@ -379,3 +379,51 @@ describe("highlights: failures", () => {
     expect(surface.lastProps!.highlights[0]!.color).toBe("#4F8EF7");
   });
 });
+
+describe("highlights: undoing a delete", () => {
+  beforeEach(() => {
+    api.highlights = [highlight("h1", 4, 300, "Uma passagem importante", "c1")];
+  });
+  const remove = async (user: ReturnType<typeof userEvent.setup>) => {
+    await open();
+    await waitFor(() => expect(items()).toHaveLength(1));
+    await user.click(
+      screen.getByRole("button", { name: "Apagar marcação: Uma passagem importante" }),
+    );
+    await screen.findByRole("status");
+  };
+
+  it("[_cross-cutting/undo#AC-4] offers Desfazer after deleting a highlight and puts it back", async () => {
+    const user = userEvent.setup();
+    await remove(user);
+    await waitFor(() => expect(items()).toHaveLength(0));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await waitFor(() => expect(items()).toHaveLength(1));
+    expect(api.restores).toEqual(["h1"]);
+    expect(surface.lastProps!.highlights).toHaveLength(1);
+  });
+
+  it("[_cross-cutting/undo#AC-7] undoes with Ctrl+Z", async () => {
+    const user = userEvent.setup();
+    await remove(user);
+
+    fireEvent.keyDown(document.body, { key: "z", ctrlKey: true });
+
+    await waitFor(() => expect(items()).toHaveLength(1));
+  });
+
+  it("[_cross-cutting/undo#AC-8] shows the message of a restore that fails", async () => {
+    const user = userEvent.setup();
+    await remove(user);
+    api.fail("/api/trash", problem(404, "NOT_FOUND"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Essa marcação não existe mais.",
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});

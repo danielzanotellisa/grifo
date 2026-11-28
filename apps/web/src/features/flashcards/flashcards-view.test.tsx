@@ -347,3 +347,37 @@ describe("flashcards page: number and source", () => {
     expect(orfao!.textContent).not.toContain(", p.");
   });
 });
+
+describe("flashcards page: undoing a delete", () => {
+  beforeEach(() => {
+    api.flashcards = [card("f1", "Roteador", "Texto antigo")];
+  });
+
+  it("[_cross-cutting/undo#AC-3] offers Desfazer after deleting a flashcard and puts it back", async () => {
+    const user = userEvent.setup();
+    await open();
+    await user.click(screen.getByRole("button", { name: "Apagar Roteador" }));
+    await screen.findByRole("status");
+    await waitFor(() => expect(cards()).toHaveLength(0));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await waitFor(() => expect(fronts()).toEqual(["Roteador"]));
+    expect(api.restores).toEqual(["f1"]);
+  });
+
+  it("[_cross-cutting/undo#AC-8] shows the message of a restore that fails", async () => {
+    const user = userEvent.setup();
+    await open();
+    await user.click(screen.getByRole("button", { name: "Apagar Roteador" }));
+    await screen.findByRole("status");
+    api.fail("/api/trash", problem(404, "NOT_FOUND"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Esse flashcard não existe mais.",
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});

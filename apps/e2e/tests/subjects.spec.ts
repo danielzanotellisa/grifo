@@ -34,7 +34,9 @@ test("[e2e] creates, renames and deletes subjects, then restores one from the tr
   await expect(names).toHaveText(["Álgebra Linear", "Biologia", "Redes de Computadores"]);
 
   await page.getByRole("button", { name: "Apagar Redes de Computadores" }).click();
-  await expect(page.getByRole("status")).toHaveText("“Redes de Computadores” foi para a lixeira.");
+  await expect(page.getByRole("status")).toContainText(
+    "“Redes de Computadores” foi para a lixeira.",
+  );
   await expect(names).toHaveText(["Álgebra Linear", "Biologia"]);
 
   await page.getByRole("link", { name: "Lixeira" }).click();
@@ -47,4 +49,25 @@ test("[e2e] creates, renames and deletes subjects, then restores one from the tr
 
   await page.goto("/");
   await expect(names).toHaveText(["Álgebra Linear", "Biologia", "Redes de Computadores"]);
+});
+
+test("[_cross-cutting/undo#AC-1] a deleted subject comes back with Desfazer, with the button and with Ctrl+Z", async ({
+  signedIn: page,
+}) => {
+  await page.goto("/");
+  for (const name of ["Álgebra", "Biologia"]) {
+    await page.getByLabel("Nova matéria").fill(name);
+    await page.getByLabel("Nova matéria").press("Enter");
+    await expect(page.getByRole("link", { name })).toBeVisible();
+  }
+
+  await page.getByRole("button", { name: "Apagar Álgebra" }).click();
+  await expect(page.getByRole("link", { name: "Álgebra" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Desfazer" }).click();
+  await expect(page.getByRole("link", { name: "Álgebra" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Apagar Biologia" }).click();
+  await expect(page.getByRole("link", { name: "Biologia" })).toHaveCount(0);
+  await page.keyboard.press("Control+z");
+  await expect(page.getByRole("link", { name: "Biologia" })).toBeVisible();
 });

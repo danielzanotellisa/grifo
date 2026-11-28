@@ -314,3 +314,33 @@ describe("categories: failures", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
   });
 });
+
+describe("categories: undoing a delete", () => {
+  it("[_cross-cutting/undo#AC-5] offers Desfazer after deleting a category and puts it back", async () => {
+    const user = userEvent.setup();
+    await open();
+
+    await user.click(screen.getByRole("button", { name: "Apagar Exemplo" }));
+    await screen.findByRole("status");
+    expect(names()).toEqual(["Tópico", "Definição"]);
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await waitFor(() => expect(names()).toEqual(["Tópico", "Definição", "Exemplo"]));
+    expect(api.restores).toEqual(["c3"]);
+  });
+
+  it("[_cross-cutting/undo#AC-8] shows the message of a restore that fails", async () => {
+    const user = userEvent.setup();
+    await open();
+    await user.click(screen.getByRole("button", { name: "Apagar Exemplo" }));
+    await screen.findByRole("status");
+    api.fail("/api/trash", problem(409, "CATEGORY_NAME_TAKEN"));
+
+    await user.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Já existe uma categoria com esse nome.",
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});

@@ -25,6 +25,8 @@ import {
 import { ExportButton } from "../exports/export-button";
 import { Icon } from "../../components/icons";
 import { Notice } from "../../components/notice";
+import { useUndoShortcut } from "../../components/use-undo-shortcut";
+import { restoreTrashItem } from "../subjects/subjects-client";
 import {
   bannerError,
   buttonPrimary,
@@ -49,6 +51,7 @@ export function SubjectDocumentsView({
   const [page, setPage] = useState<SubjectPage | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
   const [importing, setImporting] = useState<Importing | null>(null);
   const [sending, setSending] = useState<ReadonlySet<string>>(new Set());
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
@@ -127,6 +130,7 @@ export function SubjectDocumentsView({
     setPending(key);
     setProblems([]);
     setNotice(null);
+    setUndoId(null);
     const result = await action();
     if (result.ok) {
       await refresh(true);
@@ -138,6 +142,21 @@ export function SubjectDocumentsView({
     busy.current = false;
     setPending(null);
   }
+
+  /** Puts the last deleted document back (`_cross-cutting/undo`). */
+  async function onUndo() {
+    if (!undoId || busy.current) return;
+    const id = undoId;
+    setNotice(null);
+    setUndoId(null);
+    const result = await restoreTrashItem(id);
+    if (!result.ok) {
+      const message = failureMessage(result);
+      setProblems(message ? [message] : []);
+    }
+    await refresh(true);
+  }
+  useUndoShortcut(undoId ? () => void onUndo() : null);
 
   const invalidTitle = (title: string): string | null =>
     title.length < 1
@@ -282,7 +301,11 @@ export function SubjectDocumentsView({
           ))}
         </div>
       ) : null}
-      {notice ? <Notice icon="trash">{notice}</Notice> : null}
+      {notice ? (
+        <Notice icon="trash" onUndo={undoId ? () => void onUndo() : undefined}>
+          {notice}
+        </Notice>
+      ) : null}
 
       {documents.length === 0 ? (
         <p className="font-serif text-lg italic text-ink-muted">{t("empty")}</p>
@@ -388,7 +411,10 @@ export function SubjectDocumentsView({
                       void run(
                         `delete-${doc.id}`,
                         () => deleteDocument(doc.id),
-                        () => setNotice(t("movedToTrash", { title: doc.title })),
+                        () => {
+                          setNotice(t("movedToTrash", { title: doc.title }));
+                          setUndoId(doc.id);
+                        },
                       )
                     }
                     className="inline-flex size-8 items-center justify-center rounded-md text-ink-muted hover:bg-sunken hover:text-error disabled:opacity-60"

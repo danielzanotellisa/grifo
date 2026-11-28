@@ -13,6 +13,9 @@ import {
   type CategoryDraft,
   type CategoryRole,
 } from "./categories-client";
+import { Notice } from "../../components/notice";
+import { useUndoShortcut } from "../../components/use-undo-shortcut";
+import { restoreTrashItem } from "../subjects/subjects-client";
 import { useCategoryFailureMessage } from "./use-category-failure-message";
 import { buttonPrimary, buttonSecondary } from "../../components/styles";
 
@@ -34,6 +37,7 @@ export function CategoriesView() {
   const [moving, setMoving] = useState<Moving | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
 
@@ -63,6 +67,7 @@ export function CategoriesView() {
     setPending(true);
     setError(null);
     setNotice(null);
+    setUndoId(null);
     const result = await started;
     if (!result.ok && !onFailure?.(result.code)) {
       const message = failureMessage(result);
@@ -101,7 +106,10 @@ export function CategoriesView() {
         return true;
       },
     ).then((ok) => {
-      if (ok) setNotice(t("movedToTrash", { name: category.name }));
+      if (ok) {
+        setNotice(t("movedToTrash", { name: category.name }));
+        setUndoId(category.id);
+      }
     });
   }
 
@@ -110,8 +118,24 @@ export function CategoriesView() {
     if (await run(() => removeCategory(category.id, moving.target))) {
       setMoving(null);
       setNotice(t("movedToTrash", { name: category.name }));
+      setUndoId(category.id);
     }
   }
+
+  /** Puts the last deleted category back (`_cross-cutting/undo`). */
+  async function onUndo() {
+    if (!undoId || busy.current) return;
+    const id = undoId;
+    setNotice(null);
+    setUndoId(null);
+    const result = await restoreTrashItem(id);
+    if (!result.ok) {
+      const message = failureMessage(result);
+      if (message) setError(message);
+    }
+    await refresh();
+  }
+  useUndoShortcut(undoId ? () => void onUndo() : null);
 
   const escape = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -211,9 +235,9 @@ export function CategoriesView() {
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="text-sm text-ink">
+        <Notice icon="trash" onUndo={undoId ? () => void onUndo() : undefined}>
           {notice}
-        </p>
+        </Notice>
       ) : null}
 
       {categories.length === 0 ? (

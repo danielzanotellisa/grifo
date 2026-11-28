@@ -95,3 +95,6 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 
 ## Annotated PDF (spec `export/annotated-pdf`)
 - The reader bar has "Exportar PDF com marcações" (`ExportButton` with `kind="ANNOTATED_PDF"`); the export is requested for the document, polled and downloaded like the others. `EXPORT_ACTIVE_CONTENT` (a document whose `riskFlags` show active content) has its own message.
+
+## Undo (spec `_cross-cutting/undo`)
+- A delete's notice is `components/notice.tsx` with `onUndo`: the button "Desfazer" and Ctrl+Z / Cmd+Z (`components/use-undo-shortcut.ts`, off inside a text field) restore the deleted item by its id with `restoreTrashItem` (`POST /api/trash/{id}/restore`) and load the screen again. Each screen keeps the `undoId` of its last delete and clears it when another change starts.

@@ -102,7 +102,7 @@ test("[highlight/screens#AC-9] [export/annotated-pdf#AC-7] marks text with the m
   await panel.getByRole("button", { name: /^Apagar marcação/ }).click();
   await expect(panel.getByRole("listitem")).toHaveCount(0);
   await expect(page.locator("[data-highlight]")).toHaveCount(0);
-  await expect(page.getByRole("status")).toHaveText("Marcação enviada para a lixeira.");
+  await expect(page.getByRole("status")).toContainText("Marcação enviada para a lixeira.");
 
   await page.reload();
   await expect(page.getByText("Página 1 de 1")).toBeVisible();

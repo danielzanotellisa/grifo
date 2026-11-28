@@ -50,6 +50,8 @@ type TrashItem = {
   label: string;
   deletedAt: string;
   parentDeleted?: boolean;
+  /** Puts the item back where it was, as the restore route does. */
+  restore?: () => void;
 };
 
 /** What the sync and trash routes answer, held in memory, so a screen is tested against behavior and not a script. */
@@ -245,12 +247,17 @@ export class FakeApi {
     const index = this.subjects.findIndex((s) => s.id === id);
     if (index < 0) return { ...base, status: "rejected", code: "NOT_FOUND" };
     const [gone] = this.subjects.splice(index, 1);
+    const removed = this.documents.filter((d) => d.subjectId === id);
     this.documents = this.documents.filter((d) => d.subjectId !== id);
     this.trash.unshift({
       id,
       entity: "subject",
       label: gone!.name,
       deletedAt: new Date().toISOString(),
+      restore: () => {
+        this.subjects.push(gone!);
+        this.documents.push(...removed);
+      },
     });
     return { ...base, status: "applied" };
   }
@@ -276,6 +283,7 @@ export class FakeApi {
         entity: "category",
         label: gone!.name,
         deletedAt: new Date().toISOString(),
+        restore: () => void this.categories.push(gone!),
       });
       return { status: "applied" };
     }
@@ -317,6 +325,7 @@ export class FakeApi {
       entity: "document",
       label: gone!.title ?? id,
       deletedAt: new Date().toISOString(),
+      restore: () => void this.documents.push(gone!),
     });
     return { status: "applied" };
   }
@@ -344,6 +353,7 @@ export class FakeApi {
         entity: "flashcard",
         label: gone!.front,
         deletedAt: new Date().toISOString(),
+        restore: () => void this.flashcards.push(gone!),
       });
       return { status: "applied" };
     }
@@ -396,6 +406,7 @@ export class FakeApi {
         entity: "outlineNode",
         label: gone!.text ?? "",
         deletedAt: new Date().toISOString(),
+        restore: () => void this.nodes.push(gone!),
       });
       return { status: "applied" };
     }
@@ -418,6 +429,7 @@ export class FakeApi {
         entity: "highlight",
         label: gone!.quote.exact,
         deletedAt: new Date().toISOString(),
+        restore: () => void this.highlights.push(gone!),
       });
       return { status: "applied" };
     }
@@ -526,7 +538,8 @@ export class FakeApi {
     const item = this.trash[index]!;
     if (item.parentDeleted) return problem(422, "PARENT_DELETED");
     this.trash.splice(index, 1);
-    if (item.entity === "subject") this.subjects.push({ id: item.id, name: item.label });
+    if (item.restore) item.restore();
+    else if (item.entity === "subject") this.subjects.push({ id: item.id, name: item.label });
     return new Response(null, { status: 204 });
   }
 }

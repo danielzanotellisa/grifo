@@ -51,7 +51,7 @@ test("[e2e] imports PDFs, follows their validation and manages the documents", a
   await expect(row("Rascunho")).toBeVisible();
 
   await page.getByRole("button", { name: "Apagar Rascunho" }).click();
-  await expect(page.getByRole("status")).toHaveText("“Rascunho” foi para a lixeira.");
+  await expect(page.getByRole("status")).toContainText("“Rascunho” foi para a lixeira.");
   await page.getByRole("link", { name: "Lixeira" }).click();
   await expect(page.locator("li").first()).toContainText("Rascunho");
   await page.getByRole("button", { name: "Restaurar Rascunho" }).click();
