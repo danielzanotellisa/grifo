@@ -41,11 +41,11 @@ Measured on Chromium 148 (headless, Apple Silicon), against a local Vite server,
 Also verified: a Next.js 16 production build (Turbopack) bundles the worker and the WebAssembly as static assets and gives the same results; a scanned page gives an empty selection and an empty text; the packages are Apache-2.0 and MIT.
 
 ## Decisions taken here
-- `normalizeQuoteText` known issue: the engine itself drops the hyphen of a word hyphenated at a line end ("bem-" + "estar" is read as "bemestar"), so a compound is joined and its hyphen cannot be recovered. It is accepted and documented (ADR 0040). A separate gap: a wrapped soft hyphen comes back as U+00AD inside the word, which `normalizeQuoteText` does not remove today; that fix needs an acceptance criterion in the `highlight` spec.
+- `normalizeQuoteText` known issue: the engine itself drops the hyphen of a word hyphenated at a line end ("bem-" + "estar" is read as "bemestar"), so a compound is joined and its hyphen cannot be recovered. It is accepted and documented (ADR 0040). A separate gap, fixed (`highlight#AC-14`): a wrapped soft hyphen comes back as U+00AD inside the word, and `normalizeQuoteText` now removes it.
 - Scanned PDFs: the reader says there is no text layer and blocks highlighting; OCR is a later feature.
 
 ## Follow-ups
-- The spec `highlight` needs the U+00AD criterion, and `highlight/reader` (the reader behavior, AC-1 to AC-3) is still to be written.
+- `highlight/reader` (the reader behavior, AC-1 to AC-3) is still to be written.
 - Measure the real fetch time of a large original through a presigned URL.
 - Test Acrobat by hand with an exported file.
 

@@ -23,6 +23,7 @@ export function normalizeQuoteText(raw: string): string {
   return raw
     .normalize("NFKC") // ligatures such as "ﬁ" become "fi"
     .replace(/(\p{L})[-\u00AD]\s*\n\s*(\p{Ll})/gu, "$1$2") // "orien-\ntado" -> "orientado"
+    .replace(/\u00AD/g, "") // a soft hyphen the engine left inside a word (ADR 0040, point 4)
     .replace(/\s*\n\s*/g, " ")
     .replace(/[ \t\u00A0]+/g, " ")
     .trim();

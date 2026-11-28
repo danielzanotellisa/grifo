@@ -45,6 +45,7 @@ Entity `highlight`. `data` of an upsert: `{ id, documentId, categoryId, pageInde
 - [ ] **AC-11** Given a document is deleted, then its highlights are deleted with the document's root and a pull delivers the tombstones.
 - [ ] **AC-12** Given a deleted highlight, then the trash lists it with its quote and restoring it brings back the highlight and its node; restoring while its document or category is deleted answers `PARENT_DELETED` and restores nothing.
 - [ ] **AC-13** Given a highlight is moved between categories (by changing its category, or by deleting its category with `moveHighlightsTo`) and the move crosses `IGNORE`, then its node is removed or created accordingly.
+- [ ] **AC-14** Given text taken from a selection with a soft hyphen (U+00AD) inside a word or before a line break, then the quote has it removed: "inter\u00ADnet" is "internet" and "orien\u00AD" + line break + "tado" is "orientado".
 
 AC-1 to AC-3 (reader behavior) moved to `highlight/reader`; a retired criterion keeps its number.
 
