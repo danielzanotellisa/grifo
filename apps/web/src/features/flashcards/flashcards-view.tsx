@@ -11,7 +11,7 @@ import {
   removeFlashcard,
   type FlashcardsData,
 } from "./flashcards-client";
-import { ExportDeckButton } from "../exports/export-deck-button";
+import { ExportButton } from "../exports/export-button";
 import { useFlashcardFailureMessage } from "./use-flashcard-failure-message";
 
 type Editing = { id: string; front: string; back: string };
@@ -101,7 +101,12 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
         <Link href={`/documents/${documentId}/summary`} className="text-sm underline">
           {t("toSummary")}
         </Link>
-        <ExportDeckButton scope="DOCUMENT" scopeId={documentId} label={tExport("documentLabel")} />
+        <ExportButton
+          kind="FLASHCARDS_APKG"
+          scope="DOCUMENT"
+          scopeId={documentId}
+          label={tExport("documentLabel")}
+        />
       </div>
 
       {error ? (

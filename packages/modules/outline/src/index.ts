@@ -10,3 +10,5 @@ export { nodeSource } from "./infra/node-source";
 export type { NodeSource } from "./infra/node-source";
 export { outlinePurgeParticipant } from "./infra/purge";
 export { nodePages } from "./infra/node-pages";
+export { summaryNodes } from "./infra/summary-nodes";
+export type { SummaryNode } from "./domain/summary";

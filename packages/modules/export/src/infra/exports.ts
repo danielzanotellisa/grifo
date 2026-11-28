@@ -1,5 +1,5 @@
 import { deckDocuments, type DeckDocument } from "@app/library";
-import { nodePages } from "@app/outline";
+import { nodePages, summaryNodes } from "@app/outline";
 import { ankiGuid, deckName, liveFlashcards } from "@app/study";
 import {
   DomainError,
@@ -12,6 +12,8 @@ import {
 } from "@app/platform";
 import { and, eq, sql } from "drizzle-orm";
 import { generateApkg } from "../apkg/generate";
+import { CLASSIC_TEMPLATE, renderClassicSummary } from "../templates/classic";
+import type { SafeHtml } from "../render/html";
 import type { ApkgNote } from "../apkg/types";
 import type { Export, ExportKind, ExportScope } from "../domain/export";
 import { exports } from "./schema";
@@ -29,13 +31,22 @@ export type ExportStatusView = {
 const invalid = (message: string): DomainError =>
   new DomainError("VALIDATION_FAILED", message, 400);
 
-const resultKeyFor = (ownerId: string, exportId: string): string =>
-  `${ownerId}/exports/${exportId}.apkg`;
+const EXTENSION = { FLASHCARDS_APKG: "apkg", SUMMARY_PDF: "pdf" } as const;
+type BuiltKind = keyof typeof EXTENSION;
+const isBuilt = (kind: string): kind is BuiltKind => kind in EXTENSION;
+
+const resultKeyFor = (ownerId: string, exportId: string, kind: BuiltKind): string =>
+  `${ownerId}/exports/${exportId}.${EXTENSION[kind]}`;
 
 const tag = (text: string): string => text.trim().replaceAll(/\s+/g, "_");
 
 /** Flashcard decks as exports: request, status and the job that builds the package (`export/apkg`). */
-export function createExports(deps: { db: Db; storage: ObjectStorage }) {
+export function createExports(deps: {
+  db: Db;
+  storage: ObjectStorage;
+  /** Turns the summary HTML into a PDF; only the worker needs it. */
+  renderPdf?: (document: SafeHtml) => Promise<Uint8Array>;
+}) {
   const { db, storage } = deps;
 
   const documentsOf = async (
@@ -88,6 +99,42 @@ export function createExports(deps: { db: Db; storage: ObjectStorage }) {
     });
   }
 
+  type Built = { bytes: Uint8Array; contentType: string };
+
+  /** Reads everything the file needs inside the caller's transaction; the slow part is the returned function. */
+  async function prepare(
+    tx: Parameters<typeof deckDocuments>[0],
+    ownerId: string,
+    kind: BuiltKind,
+    scope: ExportScope,
+    scopeId: string,
+  ): Promise<() => Promise<Built>> {
+    if (kind === "FLASHCARDS_APKG") {
+      const notes = await collectNotes(tx, ownerId, scope, scopeId);
+      return async () => ({
+        bytes: await generateApkg(notes),
+        contentType: "application/octet-stream",
+      });
+    }
+    const documents = await documentsOf(tx, ownerId, scope, scopeId);
+    const nodes = await summaryNodes(
+      tx,
+      ownerId,
+      documents.map((d) => d.documentId),
+    );
+    const template = {
+      footer: scope === "DOCUMENT" ? documents[0]!.title : (documents[0]?.subjectName ?? ""),
+      documents: documents.map((d) => ({ title: d.title, nodes: nodes.get(d.documentId) ?? [] })),
+    };
+    return async () => {
+      if (!deps.renderPdf) throw new Error("This process has no PDF renderer");
+      return {
+        bytes: await deps.renderPdf(renderClassicSummary(template)),
+        contentType: "application/pdf",
+      };
+    };
+  }
+
   const finish = (ownerId: string, exportId: string, set: Partial<typeof exports.$inferInsert>) =>
     withUser(db, ownerId, (tx) =>
       tx
@@ -98,9 +145,9 @@ export function createExports(deps: { db: Db; storage: ObjectStorage }) {
 
   return {
     async request(ownerId: string, input: ExportRequest): Promise<{ id: string }> {
-      if (input.kind !== "FLASHCARDS_APKG") throw invalid("Only FLASHCARDS_APKG can be exported");
+      if (!isBuilt(input.kind)) throw invalid("This kind of export is not available");
       if (input.scope !== "DOCUMENT" && input.scope !== "SUBJECT") {
-        throw invalid("A deck is exported for a DOCUMENT or a SUBJECT");
+        throw invalid("An export is made for a DOCUMENT or a SUBJECT");
       }
       const id = newId();
       await withUser(db, ownerId, async (tx) => {
@@ -116,6 +163,9 @@ export function createExports(deps: { db: Db; storage: ObjectStorage }) {
           kind: input.kind,
           scope: input.scope,
           scopeId: input.scopeId,
+          ...(input.kind === "SUMMARY_PDF"
+            ? { templateId: CLASSIC_TEMPLATE.id, templateVersion: CLASSIC_TEMPLATE.version }
+            : {}),
           snapshotCursor: Number(cursor?.seq ?? 0),
         });
         await enqueueJob(
@@ -154,7 +204,9 @@ export function createExports(deps: { db: Db; storage: ObjectStorage }) {
       if (found.status === "SUCCEEDED" && found.resultKey) {
         view.downloadUrl = await storage.presignGet("derived", found.resultKey, {
           expiresInSeconds: DOWNLOAD_URL_SECONDS,
-          downloadName: `${name.replaceAll(/[^\p{L}\p{N} _-]/gu, "")}.apkg`,
+          downloadName: `${name.replaceAll(/[^\p{L}\p{N} _-]/gu, "")}.${
+            found.resultKey.endsWith(".pdf") ? "pdf" : "apkg"
+          }`,
         });
       }
       return view;
@@ -166,22 +218,27 @@ export function createExports(deps: { db: Db; storage: ObjectStorage }) {
      */
     async run(ownerId: string, exportId: string, opts: { lastAttempt: boolean }): Promise<void> {
       try {
-        const work = await withUser(db, ownerId, async (tx) => {
+        const job = await withUser(db, ownerId, async (tx) => {
           const [row] = await tx
             .select()
             .from(exports)
             .where(and(eq(exports.ownerId, ownerId), eq(exports.id, exportId)));
           if (!row || row.deletedAt || row.status === "SUCCEEDED" || !row.scopeId) return null;
+          if (!isBuilt(row.kind)) throw new Error(`${row.kind} exports are not built`);
           await tx
             .update(exports)
             .set({ status: "RUNNING", updatedAt: new Date() })
             .where(eq(exports.id, exportId));
-          return collectNotes(tx, ownerId, row.scope, row.scopeId);
+          return {
+            kind: row.kind,
+            build: await prepare(tx, ownerId, row.kind, row.scope, row.scopeId),
+          };
         });
-        if (work === null) return;
+        if (job === null) return;
 
-        const key = resultKeyFor(ownerId, exportId);
-        await storage.put("derived", key, await generateApkg(work), "application/octet-stream");
+        const key = resultKeyFor(ownerId, exportId, job.kind);
+        const built = await job.build();
+        await storage.put("derived", key, built.bytes, built.contentType);
         const now = new Date();
         await finish(ownerId, exportId, {
           status: "SUCCEEDED",

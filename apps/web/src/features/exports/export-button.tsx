@@ -4,18 +4,20 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { Failure } from "../../lib/api";
-import { runDeckExport } from "./exports-client";
+import { runExport, type ExportKind } from "./exports-client";
 
 const startDownload = (url: string) => window.location.assign(url);
 
-/** Asks for the flashcard deck of a document or subject, waits for the job and downloads the file (`export/apkg`). */
-export function ExportDeckButton({
+/** Asks for an export of a document or subject, waits for the job and downloads the file (`export/apkg`, `export/summary-pdf`). */
+export function ExportButton({
+  kind,
   scope,
   scopeId,
   label,
   pollMs = 1000,
   onDownload = startDownload,
 }: {
+  kind: ExportKind;
   scope: "DOCUMENT" | "SUBJECT";
   scopeId: string;
   label: string;
@@ -53,7 +55,7 @@ export function ExportDeckButton({
     busy.current = true;
     setError(null);
     setWorking(true);
-    const result = await runDeckExport(scope, scopeId, pollMs, () => undefined);
+    const result = await runExport(kind, scope, scopeId, pollMs, () => undefined);
     if (result.ok) onDownload(result.value);
     else setError(messageOf(result));
     setWorking(false);

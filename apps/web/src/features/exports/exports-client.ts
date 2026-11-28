@@ -7,14 +7,17 @@ export type ExportView = {
   downloadUrl?: string;
 };
 
-export async function requestDeckExport(
+export type ExportKind = "FLASHCARDS_APKG" | "SUMMARY_PDF";
+
+export async function requestExport(
+  kind: ExportKind,
   scope: "DOCUMENT" | "SUBJECT",
   scopeId: string,
 ): Promise<Result<{ id: string }>> {
   const answer = await request("/api/exports", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ kind: "FLASHCARDS_APKG", scope, scopeId }),
+    body: JSON.stringify({ kind, scope, scopeId }),
   });
   return answer.ok ? { ok: true, value: (await answer.value.json()) as { id: string } } : answer;
 }
@@ -25,13 +28,14 @@ export async function loadExport(id: string): Promise<Result<ExportView>> {
 }
 
 /** Asks for the export and polls it until it ends; a failed export becomes its error code. */
-export async function runDeckExport(
+export async function runExport(
+  kind: ExportKind,
   scope: "DOCUMENT" | "SUBJECT",
   scopeId: string,
   pollMs: number,
   onWaiting: () => void,
 ): Promise<Result<string>> {
-  const requested = await requestDeckExport(scope, scopeId);
+  const requested = await requestExport(kind, scope, scopeId);
   if (!requested.ok) return requested;
   onWaiting();
   for (;;) {

@@ -56,7 +56,7 @@ describe("export routes", () => {
 
     const foreign = await ask(cookie, deck(subject));
     const missing = await ask(cookie, deck(randomUUID()));
-    const badKind = await ask(cookie, { ...deck(subject), kind: "SUMMARY_PDF" });
+    const badKind = await ask(cookie, { ...deck(subject), kind: "ANNOTATED_PDF" });
     const badScope = await ask(cookie, { kind: "FLASHCARDS_APKG", scope: "SUBJECT" });
     const notJson = await requestRoute(
       call("/api/exports", { method: "POST", body: "nope", cookie }),

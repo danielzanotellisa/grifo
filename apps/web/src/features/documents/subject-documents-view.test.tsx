@@ -532,3 +532,19 @@ describe("subject page: the deck export", () => {
     );
   });
 });
+
+describe("subject page: the summaries export", () => {
+  it("[export/summary-pdf#AC-6] exports the summaries of the whole subject as a PDF", async () => {
+    api.exportAnswers = [{ status: "RUNNING", error: null }]; // the page does not navigate in jsdom
+    view();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Exportar resumos (PDF)" }));
+
+    await waitFor(() =>
+      expect(api.exportRequests).toEqual([
+        { kind: "SUMMARY_PDF", scope: "SUBJECT", scopeId: "s-redes" },
+      ]),
+    );
+  });
+});

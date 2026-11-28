@@ -267,6 +267,8 @@
       "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
       "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
       "generic": "Algo deu errado. Tente de novo."
-    }
+    },
+    "summaryDocumentLabel": "Exportar resumo (PDF)",
+    "summarySubjectLabel": "Exportar resumos (PDF)"
   }
 }

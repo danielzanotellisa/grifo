@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeApi } from "../../test/fake-api";
 import { problem, renderPt } from "../../test/render";
-import { ExportDeckButton } from "./export-deck-button";
+import { ExportButton } from "./export-button";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
@@ -17,33 +17,46 @@ beforeEach(() => {
   vi.stubGlobal("fetch", api.fetch);
 });
 
-const show = (scope: "DOCUMENT" | "SUBJECT" = "DOCUMENT", label = "Exportar para Anki") => {
+const show = (
+  scope: "DOCUMENT" | "SUBJECT" = "DOCUMENT",
+  label = "Exportar para Anki",
+  kind: "FLASHCARDS_APKG" | "SUMMARY_PDF" = "FLASHCARDS_APKG",
+) => {
   renderPt(
-    <ExportDeckButton scope={scope} scopeId="s1" label={label} pollMs={5} onDownload={download} />,
+    <ExportButton
+      kind={kind}
+      scope={scope}
+      scopeId="s1"
+      label={label}
+      pollMs={5}
+      onDownload={download}
+    />,
   );
   return userEvent.setup();
 };
 
-describe("export deck button", () => {
+describe("export button", () => {
   it.each([
-    ["DOCUMENT", "Exportar para Anki"],
-    ["SUBJECT", "Exportar flashcards (Anki)"],
+    ["FLASHCARDS_APKG", "DOCUMENT", "Exportar para Anki"],
+    ["FLASHCARDS_APKG", "SUBJECT", "Exportar flashcards (Anki)"],
+    ["SUMMARY_PDF", "DOCUMENT", "Exportar resumo (PDF)"],
+    ["SUMMARY_PDF", "SUBJECT", "Exportar resumos (PDF)"],
   ] as const)(
-    "[export/apkg#AC-8] requests the %s deck, waits for it and downloads the file",
-    async (scope, label) => {
+    "[export/apkg#AC-8] [export/summary-pdf#AC-6] requests the %s export of a %s, waits for it and downloads the file",
+    async (kind, scope, label) => {
       api.exportAnswers = [
         { status: "QUEUED", error: null },
         { status: "RUNNING", error: null },
         { status: "SUCCEEDED", error: null, downloadUrl: "http://storage.test/get/deck.apkg" },
       ];
-      const user = show(scope, label);
+      const user = show(scope, label, kind);
 
       await user.click(screen.getByRole("button", { name: label }));
 
       await waitFor(() =>
         expect(download).toHaveBeenCalledWith("http://storage.test/get/deck.apkg"),
       );
-      expect(api.exportRequests).toEqual([{ kind: "FLASHCARDS_APKG", scope, scopeId: "s1" }]);
+      expect(api.exportRequests).toEqual([{ kind, scope, scopeId: "s1" }]);
       expect(api.exportPolls).toBe(3);
       expect(download).toHaveBeenCalledTimes(1);
       expect((screen.getByRole("button", { name: label }) as HTMLButtonElement).disabled).toBe(

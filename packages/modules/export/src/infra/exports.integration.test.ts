@@ -10,7 +10,12 @@ const appPool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const admin = new pg.Pool({ connectionString: process.env.DATABASE_MIGRATOR_URL });
 const db: Db = drizzle(appPool);
 const storage = createS3Storage(s3ConfigFromEnv(process.env));
-const exports_ = createExports({ db, storage });
+// The renderer is replaced by one that returns the HTML itself, so the tests can read what it was given.
+const exports_ = createExports({
+  db,
+  storage,
+  renderPdf: async (document) => new TextEncoder().encode(document.__html),
+});
 
 afterAll(async () => {
   await Promise.all([appPool.end(), admin.end()]);
@@ -165,7 +170,7 @@ describe("export of a flashcard deck", () => {
     await expect(ask(owner, "DOCUMENT", deleted)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(ask(other, "SUBJECT", s)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(
-      exports_.request(owner, { kind: "SUMMARY_PDF", scope: "DOCUMENT", scopeId: s }),
+      exports_.request(owner, { kind: "ANNOTATED_PDF", scope: "DOCUMENT", scopeId: s }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
     await expect(
       exports_.request(owner, { kind: "FLASHCARDS_APKG", scope: "ACCOUNT", scopeId: s }),
@@ -225,5 +230,127 @@ describe("export of a flashcard deck", () => {
     const { status } = await run(owner, "DOCUMENT", d);
 
     expect((await notesOf(status.downloadUrl!)).notes).toEqual([]);
+  });
+});
+
+const textOf = async (url: string) => (await fetch(url)).text();
+const summary = async (owner: string, scope: "DOCUMENT" | "SUBJECT", scopeId: string) => {
+  const { id } = await exports_.request(owner, { kind: "SUMMARY_PDF", scope, scopeId });
+  await exports_.run(owner, id, { lastAttempt: false });
+  return { id, status: await exports_.get(owner, id) };
+};
+const freeNode = async (
+  owner: string,
+  documentId: string,
+  position: string,
+  role: string,
+  text: string,
+  deleted = false,
+) =>
+  insert(
+    `insert into outline.nodes (id, owner_id, document_id, position, role, text, deleted_at, deleted_root_id)
+     values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      newId(),
+      owner,
+      documentId,
+      position,
+      role,
+      text,
+      deleted ? new Date() : null,
+      deleted ? newId() : null,
+    ],
+  );
+
+describe("export of a summary PDF", () => {
+  it("[export/summary-pdf#AC-4] records the template and refuses a scope that is missing or another user's", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const d = await document(owner, s, "TCP");
+
+    const { id } = await exports_.request(owner, {
+      kind: "SUMMARY_PDF",
+      scope: "DOCUMENT",
+      scopeId: d,
+    });
+
+    const row = await admin.query(
+      `select template_id, template_version from export.exports where id = $1`,
+      [id],
+    );
+    expect(row.rows).toEqual([{ template_id: "classic", template_version: 1 }]);
+    await expect(
+      exports_.request(newId(), { kind: "SUMMARY_PDF", scope: "DOCUMENT", scopeId: d }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(
+      exports_.request(owner, { kind: "SUMMARY_PDF", scope: "SUBJECT", scopeId: newId() }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("[export/summary-pdf#AC-5] renders the live nodes of the document in order, with the page, and names the file after it", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const d = await document(owner, s, "TCP & UDP");
+    const h = await highlight(owner, d, 2);
+    await node(owner, d, h);
+    await freeNode(owner, d, "a", "TOPIC", "Camadas");
+    await freeNode(owner, d, "a9", "ITEM", "Apagado", true);
+    await freeNode(newId(), d, "a1", "ITEM", "De outro dono");
+
+    const { status } = await summary(owner, "DOCUMENT", d);
+
+    expect(status.status).toBe("SUCCEEDED");
+    const out = await textOf(status.downloadUrl!);
+    expect(out).toContain("<h1>TCP &amp; UDP</h1>");
+    expect(out.indexOf("Camadas")).toBeLessThan(out.indexOf("texto"));
+    expect(out).toContain("p. 3");
+    expect(out).not.toContain("Apagado");
+    expect(out).not.toContain("De outro dono");
+    expect(decodeURIComponent(status.downloadUrl!)).toContain("TCP  UDP.pdf");
+    const key = await admin.query(`select result_key from export.exports where id = $1`, [
+      status.id,
+    ]);
+    expect(key.rows[0].result_key).toBe(`${owner}/exports/${status.id}.pdf`);
+  });
+
+  it("[export/summary-pdf#AC-5] renders a section for each live document of a subject, by title", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const udp = await document(owner, s, "UDP");
+    const tcp = await document(owner, s, "TCP");
+    const gone = await document(owner, s, "Removido", true);
+    await freeNode(owner, udp, "a0", "ITEM", "no udp");
+    await freeNode(owner, tcp, "a0", "ITEM", "no tcp");
+    await freeNode(owner, gone, "a0", "ITEM", "no removido");
+
+    const { status } = await summary(owner, "SUBJECT", s);
+
+    const out = await textOf(status.downloadUrl!);
+    expect(out.indexOf("<h1>TCP</h1>")).toBeLessThan(out.indexOf("<h1>UDP</h1>"));
+    expect(out).toContain("no tcp");
+    expect(out).toContain("no udp");
+    expect(out).not.toContain("Removido");
+    expect(out).toContain("Redes");
+    expect(decodeURIComponent(status.downloadUrl!)).toContain("Redes.pdf");
+  });
+
+  it("[export/summary-pdf#AC-5] fails the export on the last attempt when the renderer fails", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const { id } = await exports_.request(owner, {
+      kind: "SUMMARY_PDF",
+      scope: "SUBJECT",
+      scopeId: s,
+    });
+    const broken = createExports({
+      db,
+      storage,
+      renderPdf: () => Promise.reject(new Error("renderer down")),
+    });
+
+    await expect(broken.run(owner, id, { lastAttempt: false })).rejects.toThrow("renderer down");
+    await broken.run(owner, id, { lastAttempt: true });
+
+    expect(await exports_.get(owner, id)).toMatchObject({ status: "FAILED" });
   });
 });
