@@ -516,3 +516,19 @@ describe("subject page: the flashcards link", () => {
     expect(within(item("Aula pronta")).getByRole("link", { name: "Flashcards" })).toBeTruthy();
   });
 });
+
+describe("subject page: the deck export", () => {
+  it("[export/apkg#AC-8] exports the flashcards of the whole subject", async () => {
+    api.exportAnswers = [{ status: "RUNNING", error: null }]; // the page does not navigate in jsdom
+    view();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Exportar flashcards (Anki)" }));
+
+    await waitFor(() =>
+      expect(api.exportRequests).toEqual([
+        { kind: "FLASHCARDS_APKG", scope: "SUBJECT", scopeId: "s-redes" },
+      ]),
+    );
+  });
+});

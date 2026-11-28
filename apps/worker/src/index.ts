@@ -1,5 +1,5 @@
 import { annotationPurgeParticipant } from "@app/annotation";
-import { createExportPurgeParticipant } from "@app/export";
+import { createExportPurgeParticipant, createExports } from "@app/export";
 import { createAuthDb, createMailOutbox } from "@app/identity";
 import {
   createDeepScan,
@@ -14,6 +14,7 @@ import nodemailer from "nodemailer";
 import { createExpireMailTask, createSendEmailTask } from "./tasks/auth-mail";
 import { createClamavScanner } from "./tasks/clamav";
 import { createDeepScanTask } from "./tasks/document-deep-scan";
+import { createExportRenderTask } from "./tasks/export-render";
 import { createValidateDocumentTask } from "./tasks/document-validate";
 import { inspectPdf } from "./tasks/pdf-inspect";
 import { createPurgeTask } from "./tasks/trash-purge";
@@ -60,6 +61,8 @@ const deepScan = createDeepScanTask({
   }),
 });
 
+const exportRender = createExportRenderTask({ exports: createExports({ db, storage }) });
+
 // The purge works across owners, so it is the one task that uses the admin connection (ADR 0039).
 const purge = createPurgeTask({
   db: createDb(requiredEnv("DATABASE_MIGRATOR_URL")),
@@ -75,6 +78,7 @@ const purge = createPurgeTask({
 const taskList = createTaskList({
   validateDocument: async (payload, helpers) => validateDocument(payload, helpers),
   deepScan: async (payload, helpers) => deepScan(payload, helpers),
+  exportRender: async (payload, helpers) => exportRender(payload, helpers),
   purge: async () => purge(),
   sendEmail: async (payload) => sendEmail(payload),
   expireMail: async () => expireMail(),

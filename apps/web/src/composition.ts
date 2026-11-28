@@ -28,6 +28,7 @@ import {
   nodeSource,
   registerOutlineReactions,
 } from "@app/outline";
+import { createExports } from "@app/export";
 import {
   createFlashcardSyncHandler,
   createFlashcardTrashParticipant,
@@ -86,12 +87,23 @@ const requiredEnv = (name: string): string => {
 
 export const appUrl = (): string => requiredEnv("APP_URL");
 
+let storage: ReturnType<typeof createS3Storage> | undefined;
+const getStorage = () => (storage ??= createS3Storage(s3ConfigFromEnv(process.env)));
+
 let uploads: ReturnType<typeof createUploads> | undefined;
 
 /** Built on first use: the storage settings are only needed once someone uploads or opens a PDF. */
 export function getUploads(): ReturnType<typeof createUploads> {
-  uploads ??= createUploads({ db, storage: createS3Storage(s3ConfigFromEnv(process.env)) });
+  uploads ??= createUploads({ db, storage: getStorage() });
   return uploads;
+}
+
+let exportsService: ReturnType<typeof createExports> | undefined;
+
+/** Built on first use, like the uploads: the storage settings are needed once someone downloads. */
+export function getExports(): ReturnType<typeof createExports> {
+  exportsService ??= createExports({ db, storage: getStorage() });
+  return exportsService;
 }
 
 let auth: Auth | undefined;

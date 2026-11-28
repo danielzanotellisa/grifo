@@ -21,3 +21,4 @@ export function createAnnotationSyncHandlers(deps: HighlightDeps): SyncHandler[]
   return [createCategorySyncHandler({ events: deps.events }), createHighlightSyncHandler(deps)];
 }
 export { annotationPurgeParticipant } from "./infra/purge";
+export { highlightPages } from "./infra/highlight-pages";

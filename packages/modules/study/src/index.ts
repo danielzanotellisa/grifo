@@ -16,3 +16,4 @@ export type { FlashcardDeps, NodeSourcePort } from "./infra/flashcard-sync";
 export { createFlashcardTrashParticipant } from "./infra/flashcard-trash";
 export { registerStudyReactions } from "./infra/reactions";
 export { studyPurgeParticipant } from "./infra/purge";
+export { liveFlashcards } from "./infra/live-flashcards";

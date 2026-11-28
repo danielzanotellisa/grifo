@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import pg from "pg";
 import { GET as verifyRoute, POST as authPost } from "./app/api/auth/[...all]/route";
 
@@ -5,7 +6,8 @@ export const ORIGIN = "http://localhost:3000";
 const PASSWORD = "senha-bem-forte-123";
 export const admin = new pg.Pool({ connectionString: process.env.DATABASE_MIGRATOR_URL });
 let counter = 0;
-let ips = 0;
+// The rate limit is stored in the database and shared by the test files that run in parallel, so each file starts at its own address.
+let ips = randomInt(0, 2 ** 24);
 export const call = (
   path: string,
   init: { method?: string; body?: string; cookie?: string; origin?: string | null } = {},
@@ -14,7 +16,10 @@ export const call = (
     method: init.method ?? "GET",
     headers: {
       "content-type": "application/json",
-      "x-real-ip": `10.7.${(ips >> 8) & 255}.${++ips & 255}`,
+      "x-real-ip": (() => {
+        ips = (ips + 1) % 2 ** 24;
+        return `10.${(ips >> 16) & 255}.${(ips >> 8) & 255}.${ips & 255}`;
+      })(),
       ...(init.origin === null ? {} : { origin: init.origin ?? ORIGIN }),
       ...(init.cookie ? { cookie: init.cookie } : {}),
     },

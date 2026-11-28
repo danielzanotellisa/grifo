@@ -27,3 +27,15 @@ export function parseSince(value: string | null): number {
   }
   return Number(value);
 }
+
+const exportRequest = z.object({
+  kind: z.literal("FLASHCARDS_APKG"),
+  scope: z.enum(["DOCUMENT", "SUBJECT"]),
+  scopeId: z.uuid(),
+});
+
+export function parseExportRequest(body: unknown) {
+  const parsed = exportRequest.safeParse(body);
+  if (!parsed.success) throw invalidInput(z.prettifyError(parsed.error));
+  return parsed.data;
+}

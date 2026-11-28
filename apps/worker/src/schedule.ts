@@ -21,6 +21,7 @@ const notImplemented =
 export function createTaskList(tasks: {
   validateDocument: Task;
   deepScan: Task;
+  exportRender: Task;
   purge: Task;
   sendEmail: Task;
   expireMail: Task;
@@ -28,7 +29,7 @@ export function createTaskList(tasks: {
   return {
     "document.validate": tasks.validateDocument,
     "document.deepScan": tasks.deepScan,
-    "export.render": notImplemented("export.render"),
+    "export.render": tasks.exportRender,
     "trash.purge": tasks.purge,
     "backup.restoreTest": notImplemented("backup.restoreTest"),
     "storage.integrityCheck": notImplemented("storage.integrityCheck"),

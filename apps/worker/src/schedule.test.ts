@@ -6,6 +6,7 @@ const noop = async () => undefined;
 const taskList = createTaskList({
   validateDocument: noop,
   deepScan: noop,
+  exportRender: noop,
   purge: noop,
   sendEmail: noop,
   expireMail: noop,

@@ -75,6 +75,12 @@ export class FakeApi {
   /** Hashes the storage already has: a start for one of them answers `upload: null`. */
   storedHashes = new Set<string>();
   restores: string[] = [];
+  /** The export requests received, and what each poll of the export answers, in order (the last one repeats). */
+  exportRequests: Record<string, unknown>[] = [];
+  exportAnswers: Record<string, unknown>[] = [
+    { status: "SUCCEEDED", error: null, downloadUrl: "http://storage.test/get/deck.apkg" },
+  ];
+  exportPolls = 0;
   pulls = 0;
   /** The next request to this path prefix fails with this answer; `network` makes it throw. */
   private failures: { prefix: string; answer: Response | "network" }[] = [];
@@ -111,6 +117,15 @@ export class FakeApi {
         await gate;
       }
       return this.push(JSON.parse(String(init?.body)));
+    }
+    if (url.pathname === "/api/exports") {
+      this.exportRequests.push(JSON.parse(String(init?.body)));
+      return Response.json({ id: "e1" }, { status: 202 });
+    }
+    if (url.pathname === "/api/exports/e1") {
+      const answer =
+        this.exportAnswers[Math.min(this.exportPolls++, this.exportAnswers.length - 1)];
+      return Response.json({ id: "e1", ...answer });
     }
     if (url.pathname === "/api/trash") return Response.json({ items: this.trash });
     if (url.pathname === "/api/documents/uploads")

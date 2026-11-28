@@ -65,6 +65,10 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `/documents/{id}/flashcards` (`features/flashcards/flashcards-view.tsx`) lists the live cards of the document by front (pt-BR), and edits (`{ id, front, back }`), updates from the summary (`{ id, refreshFromSource: true }`) and deletes (`{ id }`, trash notice). The command is told apart by the shape of the data, as in the server's `flashcard-payload`.
 - `use-flashcard-failure-message.ts` maps the stable codes (`FLASHCARD_*`, `PARENT_DELETED`, `NOT_FOUND`, rate limit, network) to pt-BR messages; `UNAUTHENTICATED` goes to `/login`. There is no study mode; Anki is the player (export is the next slice).
 
+## Deck export (spec `export/apkg`)
+- `POST /api/exports` (same-origin, Zod-parsed `{ kind: "FLASHCARDS_APKG", scope: "DOCUMENT" | "SUBJECT", scopeId }`, answers 202 `{ id }`) and `GET /api/exports/{id}` (state, `downloadUrl` once done) call `getExports()` from the composition root, which shares one S3 storage with `getUploads()`.
+- `features/exports/export-deck-button.tsx` asks, polls every second and then sets `window.location` to the presigned URL (its `Content-Disposition` makes the browser download without leaving the page). It is on the cards page (document) and the subject page (subject).
+
 ## Document routes (ADR 0037)
 - `POST /api/documents/uploads` (start), `POST /api/documents/{id}/confirm` and `GET /api/documents/{id}/file` call `getUploads()` (built on first use, so the storage settings are only needed when someone uploads). Spec: `document/upload`.
 - The bytes never pass through the app: the browser PUTs to the presigned URL with the returned headers. `S3_PUBLIC_ENDPOINT` is the address the browser reaches the storage at, when it differs from `S3_ENDPOINT`.
