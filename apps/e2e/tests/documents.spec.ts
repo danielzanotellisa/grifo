@@ -62,3 +62,28 @@ test("[e2e] imports PDFs, follows their validation and manages the documents", a
   await page.goto("/subjects/00000000-0000-7000-8000-000000000000");
   await expect(page.getByText("Matéria não encontrada.")).toBeVisible();
 });
+
+test("[document/import-ui#AC-4] a PDF dropped on the import area is imported and becomes ready", async ({
+  signedIn: page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("Nova matéria").fill("Arrastar");
+  await page.getByLabel("Nova matéria").press("Enter");
+  await page.getByRole("link", { name: "Arrastar" }).click();
+  await expect(page).toHaveURL(/\/subjects\//);
+
+  const base64 = pdfBytes.text().toString("base64");
+  const transfer = await page.evaluateHandle((data) => {
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+    const dt = new DataTransfer();
+    dt.items.add(new File([bytes], "Solto.pdf", { type: "application/pdf" }));
+    return dt;
+  }, base64);
+  await page
+    .getByLabel("Importar PDFs")
+    .locator("xpath=ancestor::div[1]")
+    .dispatchEvent("drop", { dataTransfer: transfer });
+
+  await expect(page.getByRole("link", { name: "Solto" })).toBeVisible();
+  await expect(page.getByText("Pronto")).toBeVisible();
+});

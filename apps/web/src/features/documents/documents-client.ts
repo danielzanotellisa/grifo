@@ -54,15 +54,46 @@ async function sha256Hex(file: File): Promise<string> {
 }
 
 /**
+ * The `PUT` of the bytes to the storage with `XMLHttpRequest`, so the progress can be read (a
+ * `fetch` cannot). `signal` aborts it; the answer is the HTTP status, or 0 for a network failure.
+ */
+function putWithProgress(
+  url: string,
+  headers: Record<string, string>,
+  file: File,
+  onProgress: (percent: number) => void,
+  signal: AbortSignal,
+): Promise<number | "aborted"> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    for (const [name, value] of Object.entries(headers)) xhr.setRequestHeader(name, value);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () => resolve(xhr.status);
+    xhr.onerror = () => resolve(0);
+    xhr.onabort = () => resolve("aborted");
+    signal.addEventListener("abort", () => xhr.abort(), { once: true });
+    if (signal.aborted) return resolve("aborted");
+    xhr.send(file);
+  });
+}
+
+/**
  * The upload of one PDF: start, `PUT` straight to the storage (skipped when the server already has
  * the bytes), confirm. `onStarted` tells the screen the document exists before the bytes travel.
- * A failed `PUT` has the code `UPLOAD_PUT_FAILED`.
+ * A failed `PUT` has the code `UPLOAD_PUT_FAILED`, a cancelled one `UPLOAD_CANCELLED`.
  */
 export async function importPdf(
   subjectId: string,
   file: File,
   onStarted: (documentId: string) => void,
+  options: { onProgress?: (percent: number) => void; signal?: AbortSignal } = {},
 ): Promise<Result<{ documentId: string }>> {
+  const signal = options.signal ?? new AbortController().signal;
   const documentId = uuidv7();
   const started = await request("/api/documents/uploads", {
     method: "POST",
@@ -82,12 +113,15 @@ export async function importPdf(
     upload: { url: string; headers: Record<string, string> } | null;
   };
   if (upload) {
-    const sent = await fetch(upload.url, {
-      method: "PUT",
-      headers: upload.headers,
-      body: file,
-    }).catch(() => null);
-    if (!sent?.ok) return fail({ code: "UPLOAD_PUT_FAILED" });
+    const sent = await putWithProgress(
+      upload.url,
+      upload.headers,
+      file,
+      options.onProgress ?? (() => undefined),
+      signal,
+    );
+    if (sent === "aborted") return fail({ code: "UPLOAD_CANCELLED" });
+    if (sent < 200 || sent >= 300) return fail({ code: "UPLOAD_PUT_FAILED" });
   }
 
   const confirmed = await request(`/api/documents/${documentId}/confirm`, { method: "POST" });
