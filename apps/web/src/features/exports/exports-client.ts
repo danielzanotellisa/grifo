@@ -7,7 +7,7 @@ export type ExportView = {
   downloadUrl?: string;
 };
 
-export type ExportKind = "FLASHCARDS_APKG" | "SUMMARY_PDF";
+export type ExportKind = "FLASHCARDS_APKG" | "SUMMARY_PDF" | "ANNOTATED_PDF";
 
 export async function requestExport(
   kind: ExportKind,

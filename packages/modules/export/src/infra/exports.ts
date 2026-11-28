@@ -1,4 +1,5 @@
-import { deckDocuments, type DeckDocument } from "@app/library";
+import { highlightMarks } from "@app/annotation";
+import { deckDocuments, documentOriginal, type DeckDocument } from "@app/library";
 import { nodePages, summaryNodes } from "@app/outline";
 import { ankiGuid, deckName, liveFlashcards } from "@app/study";
 import {
@@ -31,7 +32,7 @@ export type ExportStatusView = {
 const invalid = (message: string): DomainError =>
   new DomainError("VALIDATION_FAILED", message, 400);
 
-const EXTENSION = { FLASHCARDS_APKG: "apkg", SUMMARY_PDF: "pdf" } as const;
+const EXTENSION = { FLASHCARDS_APKG: "apkg", SUMMARY_PDF: "pdf", ANNOTATED_PDF: "pdf" } as const;
 type BuiltKind = keyof typeof EXTENSION;
 const isBuilt = (kind: string): kind is BuiltKind => kind in EXTENSION;
 
@@ -116,6 +117,26 @@ export function createExports(deps: {
         contentType: "application/octet-stream",
       });
     }
+    if (kind === "ANNOTATED_PDF") {
+      const original = await documentOriginal(tx, ownerId, scopeId);
+      if (!original) throw notFound("document");
+      if (Object.values(original.riskFlags).some((count) => (count ?? 0) > 0)) {
+        throw new DomainError(
+          "EXPORT_ACTIVE_CONTENT",
+          "The document has active content, which an exported file must not carry",
+          422,
+        );
+      }
+      const marks = await highlightMarks(tx, ownerId, scopeId);
+      return async () => {
+        // Loaded here, not at the top: the engine is a native addon that only the worker runs, and the web bundle must not follow it.
+        const { annotatePdf } = await import("../annotated/annotate");
+        return {
+          bytes: await annotatePdf(await storage.get("originals", original.storageKey), marks),
+          contentType: "application/pdf",
+        };
+      };
+    }
     const documents = await documentsOf(tx, ownerId, scope, scopeId);
     const nodes = await summaryNodes(
       tx,
@@ -149,9 +170,16 @@ export function createExports(deps: {
       if (input.scope !== "DOCUMENT" && input.scope !== "SUBJECT") {
         throw invalid("An export is made for a DOCUMENT or a SUBJECT");
       }
+      if (input.kind === "ANNOTATED_PDF" && input.scope !== "DOCUMENT") {
+        throw invalid("An annotated PDF is exported for a DOCUMENT");
+      }
       const id = newId();
       await withUser(db, ownerId, async (tx) => {
-        await documentsOf(tx, ownerId, input.scope, input.scopeId);
+        if (input.kind === "ANNOTATED_PDF") {
+          if (!(await documentOriginal(tx, ownerId, input.scopeId))) throw notFound("document");
+        } else {
+          await documentsOf(tx, ownerId, input.scope, input.scopeId);
+        }
         const [cursor] = await tx
           .execute<{ seq: string }>(
             sql`select coalesce(max(seq), 0)::text as seq from platform.change_log where owner_id = ${ownerId}`,
@@ -204,7 +232,7 @@ export function createExports(deps: {
       if (found.status === "SUCCEEDED" && found.resultKey) {
         view.downloadUrl = await storage.presignGet("derived", found.resultKey, {
           expiresInSeconds: DOWNLOAD_URL_SECONDS,
-          downloadName: `${name.replaceAll(/[^\p{L}\p{N} _-]/gu, "")}.${
+          downloadName: `${(found.kind === "ANNOTATED_PDF" ? `${name} (marcado)` : name).replaceAll(/[^\p{L}\p{N} _()-]/gu, "")}.${
             found.resultKey.endsWith(".pdf") ? "pdf" : "apkg"
           }`,
         });
@@ -248,11 +276,13 @@ export function createExports(deps: {
           expiresAt: new Date(now.getTime() + 30 * 24 * 3600 * 1000),
         });
       } catch (error) {
-        if (!opts.lastAttempt) throw error;
+        // A refusal by the domain is final: retrying cannot change the answer.
+        const refused = error instanceof DomainError;
+        if (!refused && !opts.lastAttempt) throw error;
         await finish(ownerId, exportId, {
           status: "FAILED",
           error: {
-            code: "EXPORT_FAILED",
+            code: refused ? error.code : "EXPORT_FAILED",
             message: error instanceof Error ? error.message : "The export failed",
           },
         });

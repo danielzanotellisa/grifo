@@ -1,9 +1,10 @@
-import { createS3Storage, newId, s3ConfigFromEnv, type Db } from "@app/platform";
+import { localEngine } from "@embedpdf/engine";
+import { createS3Storage, ensureS3Buckets, newId, s3ConfigFromEnv, type Db } from "@app/platform";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { unzipSync } from "fflate";
 import pg from "pg";
 import initSqlJs from "sql.js";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createExports } from "./exports";
 
 const appPool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -17,6 +18,7 @@ const exports_ = createExports({
   renderPdf: async (document) => new TextEncoder().encode(document.__html),
 });
 
+beforeAll(() => ensureS3Buckets(s3ConfigFromEnv(process.env)));
 afterAll(async () => {
   await Promise.all([appPool.end(), admin.end()]);
 });
@@ -170,7 +172,7 @@ describe("export of a flashcard deck", () => {
     await expect(ask(owner, "DOCUMENT", deleted)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(ask(other, "SUBJECT", s)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(
-      exports_.request(owner, { kind: "ANNOTATED_PDF", scope: "DOCUMENT", scopeId: s }),
+      exports_.request(owner, { kind: "FULL_DATA", scope: "DOCUMENT", scopeId: s }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
     await expect(
       exports_.request(owner, { kind: "FLASHCARDS_APKG", scope: "ACCOUNT", scopeId: s }),
@@ -352,5 +354,147 @@ describe("export of a summary PDF", () => {
     await broken.run(owner, id, { lastAttempt: true });
 
     expect(await exports_.get(owner, id)).toMatchObject({ status: "FAILED" });
+  });
+});
+
+const ORIGINAL = new Uint8Array(
+  Buffer.from(
+    "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] >>\nendobj\ntrailer\n<< /Size 4 /Root 1 0 R >>\n%%EOF\n",
+    "latin1",
+  ),
+);
+/** A READY document whose original is a real PDF in the storage. */
+const pdfDocument = async (
+  owner: string,
+  subjectId: string,
+  opts: { title?: string; status?: string; riskFlags?: object } = {},
+) => {
+  const id = newId();
+  const file = newId();
+  const key = `${owner}/${file}.pdf`;
+  await storage.put("originals", key, Buffer.from(ORIGINAL), "application/pdf");
+  await insert(
+    `insert into library.stored_files (id, owner_id, sha256, size_bytes, storage_key) values ($1, $2, $3, $4, $5)`,
+    [file, owner, newId().replaceAll("-", "").repeat(2), ORIGINAL.length, key],
+  );
+  await insert(
+    `insert into library.documents (id, owner_id, subject_id, stored_file_id, title, status, page_count, risk_flags)
+     values ($1, $2, $3, $4, $5, $6, 1, $7)`,
+    [
+      id,
+      owner,
+      subjectId,
+      file,
+      opts.title ?? "Aula",
+      opts.status ?? "READY",
+      JSON.stringify(opts.riskFlags ?? {}),
+    ],
+  );
+  return id;
+};
+const mark = async (
+  owner: string,
+  documentId: string,
+  color: string,
+  rects: object[],
+  deleted = false,
+) => {
+  const category = newId();
+  const id = newId();
+  await insert(
+    `insert into annotation.categories (id, owner_id, name, color, role, position) values ($1, $2, $3, $4, 'ITEM', 'a0')`,
+    [category, owner, `cat-${category}`, color],
+  );
+  await insert(
+    `insert into annotation.highlights (id, owner_id, document_id, category_id, page_index, rects, quote, deleted_at, deleted_root_id)
+     values ($1, $2, $3, $4, 0, $5::jsonb, '{"exact":"x","prefix":"","suffix":""}'::jsonb, $6, $7)`,
+    [
+      id,
+      owner,
+      documentId,
+      category,
+      JSON.stringify(rects),
+      deleted ? new Date() : null,
+      deleted ? id : null,
+    ],
+  );
+};
+const annotated = async (owner: string, documentId: string) => {
+  const { id } = await exports_.request(owner, {
+    kind: "ANNOTATED_PDF",
+    scope: "DOCUMENT",
+    scopeId: documentId,
+  });
+  await exports_.run(owner, id, { lastAttempt: false });
+  return { id, status: await exports_.get(owner, id) };
+};
+const bytesOf = async (url: string) => new Uint8Array(await (await fetch(url)).arrayBuffer());
+
+describe("export of an annotated PDF", () => {
+  it("[export/annotated-pdf#AC-3] accepts a document and refuses a subject, or a document that is missing, deleted, not ready or foreign", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const ready = await pdfDocument(owner, s);
+    const validating = await pdfDocument(owner, s, { status: "VALIDATING" });
+    const gone = await document(owner, s, "Removido", true);
+    const ask = (user: string, scope: "DOCUMENT" | "SUBJECT", scopeId: string) =>
+      exports_.request(user, { kind: "ANNOTATED_PDF", scope, scopeId });
+
+    await expect(ask(owner, "DOCUMENT", ready)).resolves.toMatchObject({ id: expect.any(String) });
+    await expect(ask(owner, "SUBJECT", s)).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    for (const [user, id] of [
+      [owner, newId()],
+      [owner, gone],
+      [owner, validating],
+      [newId(), ready],
+    ] as const) {
+      await expect(ask(user, "DOCUMENT", id)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    }
+  });
+
+  it("[export/annotated-pdf#AC-4] writes the live highlights of the owner on the original and names the file", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const d = await pdfDocument(owner, s, { title: "Aula 1" });
+    await mark(owner, d, "#F7D04F", [{ x1: 20, y1: 100, x2: 120, y2: 114 }]);
+    await mark(owner, d, "#FF0000", [{ x1: 20, y1: 50, x2: 60, y2: 64 }], true);
+    await mark(newId(), d, "#00FF00", [{ x1: 5, y1: 5, x2: 9, y2: 9 }]);
+
+    const { status } = await annotated(owner, d);
+
+    expect(status.status).toBe("SUCCEEDED");
+    expect(decodeURIComponent(status.downloadUrl!)).toContain("Aula 1 (marcado).pdf");
+    const bytes = await bytesOf(status.downloadUrl!);
+    expect(Buffer.from(bytes).subarray(0, ORIGINAL.length).equals(Buffer.from(ORIGINAL))).toBe(
+      true,
+    );
+    const doc = await localEngine().open({ kind: "bytes", bytes });
+    const { pages } = await doc.pages.list();
+    const { annotations } = await doc.page(pages[0]!.ref).annotations.list();
+    expect(
+      annotations.flatMap((a) => (a.subtype === "highlight" ? [a.color.toLowerCase()] : [])),
+    ).toEqual(["#f7d04f"]);
+    const key = await admin.query(`select result_key from export.exports where id = $1`, [
+      status.id,
+    ]);
+    expect(key.rows[0].result_key).toBe(`${owner}/exports/${status.id}.pdf`);
+  });
+
+  it("[export/annotated-pdf#AC-5] fails at once, with its code, a document that has active content", async () => {
+    const owner = newId();
+    const s = await subject(owner, "Redes");
+    const d = await pdfDocument(owner, s, { riskFlags: { javascript: 1 } });
+    const { id } = await exports_.request(owner, {
+      kind: "ANNOTATED_PDF",
+      scope: "DOCUMENT",
+      scopeId: d,
+    });
+
+    await exports_.run(owner, id, { lastAttempt: false });
+
+    expect(await exports_.get(owner, id)).toMatchObject({
+      status: "FAILED",
+      error: { code: "EXPORT_ACTIVE_CONTENT" },
+    });
   });
 });

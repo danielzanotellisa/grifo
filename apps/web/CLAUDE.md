@@ -91,3 +91,6 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - `/forgot-password` (`features/auth/forgot-password-form.tsx`) requests the reset link with `redirectTo: "/reset-password"` and always ends on the same message; `/reset-password?token=` (`reset-password-form.tsx`) sets the new password and goes to `/login?reset=1`; a missing token, an `error` query or `INVALID_TOKEN` shows the invalid-link message.
 - The sign-in form links to the request, shows the changed-password banner and, after `EMAIL_NOT_VERIFIED`, offers to resend the confirmation (`send-verification-email`). `/account` (`features/account/account-view.tsx`) shows the e-mail and deletes the account with `POST /api/account/delete`.
 - `use-account-error-message.ts` adds the invalid link, the network failure and, for the deletion, the wrong password to the messages of `use-error-message.ts`; the sign-in and sign-up errors keep their own hook.
+
+## Annotated PDF (spec `export/annotated-pdf`)
+- The reader bar has "Exportar PDF com marcações" (`ExportButton` with `kind="ANNOTATED_PDF"`); the export is requested for the document, polled and downloaded like the others. `EXPORT_ACTIVE_CONTENT` (a document whose `riskFlags` show active content) has its own message.

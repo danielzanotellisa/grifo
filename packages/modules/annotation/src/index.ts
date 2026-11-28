@@ -24,3 +24,5 @@ export { annotationPurgeParticipant } from "./infra/purge";
 export { highlightPages } from "./infra/highlight-pages";
 export { highlightDetails } from "./infra/highlight-details";
 export type { HighlightDetails } from "./infra/highlight-details";
+export { highlightMarks } from "./infra/highlight-marks";
+export type { HighlightMark } from "./infra/highlight-marks";

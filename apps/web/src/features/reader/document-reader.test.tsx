@@ -259,6 +259,7 @@ describe("reader: the bar", () => {
       .map((b) => b.getAttribute("aria-label") ?? b.textContent);
 
     expect(names).toEqual([
+      "Exportar PDF com marcações",
       "Página anterior",
       "Próxima página",
       "Diminuir zoom",
@@ -306,4 +307,36 @@ describe("reader: a document without selectable text", () => {
       expect(screen.queryByText(notice)).toBeNull();
     },
   );
+});
+
+describe("reader: the annotated PDF export", () => {
+  it("[export/annotated-pdf#AC-6] requests the annotated PDF of this document", async () => {
+    api.exportAnswers = [{ status: "RUNNING", error: null }]; // the page does not navigate in jsdom
+    await opened();
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Exportar PDF com marcações" }));
+
+    await waitFor(() =>
+      expect(api.exportRequests).toEqual([
+        { kind: "ANNOTATED_PDF", scope: "DOCUMENT", scopeId: "d1" },
+      ]),
+    );
+  });
+
+  it("[export/annotated-pdf#AC-6] says the document has active content when the export is refused for it", async () => {
+    api.exportAnswers = [
+      { status: "FAILED", error: { code: "EXPORT_ACTIVE_CONTENT", message: "x" } },
+    ];
+    await opened();
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Exportar PDF com marcações" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Este PDF tem conteúdo ativo (como scripts) e não pode ser exportado com marcações.",
+    );
+  });
 });
