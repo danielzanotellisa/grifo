@@ -33,6 +33,7 @@ Creating flashcards from the definitions of the summary, and listing, editing, r
 - [ ] **AC-7** Given a rejected result, a problem answer or a network failure when creating, editing, updating or deleting, then the message of its code is shown and the cards are as the server has them; `UNAUTHENTICATED` goes to `/login`.
 - [ ] **AC-8** Given the summary and the subject page, then the summary has a "Flashcards" link to `/documents/{id}/flashcards` and a node with cards links to the same page, and each `READY` document row of the subject page has a "Flashcards" link and no other row has.
 - [ ] **AC-9** Given the real app in a browser, when a passage is marked with the Definição category, then its node on the summary offers "Create flashcard"; a card is created with a front, shown on the cards page with the passage as its back, edited, updated from the summary after the node text changes, and deleted.
+- [ ] **AC-10** Given the cards page, then each card shows its number in the list (`#01`) and its source as "Fonte: Matéria › Documento", with ", p. N" when its summary node comes from a highlight on page N (1-based) and without it for free text or a node that is gone.
 
 ## Open questions
 - The export of the deck to Anki (`deck`, ADR 0027) is the next slice.

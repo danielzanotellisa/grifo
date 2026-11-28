@@ -13,7 +13,9 @@ import {
 } from "./flashcards-client";
 import { ExportButton } from "../exports/export-button";
 import { useFlashcardFailureMessage } from "./use-flashcard-failure-message";
-import { buttonPrimary, buttonSecondary } from "../../components/styles";
+import { Icon } from "../../components/icons";
+import { Notice } from "../../components/notice";
+import { bannerError, buttonPrimary, buttonSecondary, inputClass } from "../../components/styles";
 
 type Editing = { id: string; front: string; back: string };
 
@@ -34,7 +36,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
     else if (data === null) {
       const message = failureMessage(result);
       setError(message ? `${t("errors.loadFailed")} ${message}` : null);
-      setData({ document: null, cards: [] });
+      setData({ document: null, subjectName: null, cards: [], pages: {} });
     }
   }
   useEffect(() => {
@@ -91,15 +93,21 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
   if (data.document.status !== "READY") return <p>{t("notReady")}</p>;
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <Link href={`/documents/${documentId}`} className="text-sm text-ink-muted underline">
-          {t("back")}
+    <section className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <Link
+          href={`/documents/${documentId}`}
+          className="text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+        >
+          ← {t("back")}
         </Link>
         <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
           {t("title")}: {data.document.title}
         </h1>
-        <Link href={`/documents/${documentId}/summary`} className="text-sm underline">
+        <Link
+          href={`/documents/${documentId}/summary`}
+          className="text-sm text-ink underline underline-offset-4"
+        >
           {t("toSummary")}
         </Link>
         <ExportButton
@@ -111,27 +119,42 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
       </div>
 
       {error ? (
-        <p role="alert" className="text-sm text-error">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}
-      {notice ? (
-        <p role="status" className="text-sm text-ink">
-          {notice}
-        </p>
-      ) : null}
+      {notice ? <Notice icon="trash">{notice}</Notice> : null}
 
       {data.cards.length === 0 ? (
-        <p className="text-ink-muted">{t("empty")}</p>
+        <p className="font-serif text-lg italic text-ink-muted">{t("empty")}</p>
       ) : (
-        <ul aria-label={t("list")} className="flex flex-col gap-3">
-          {data.cards.map((card) => (
-            <li key={card.id} className="rounded-md border border-hairline p-3">
+        <ul aria-label={t("list")} className="flex flex-col gap-4">
+          {data.cards.map((card, index) => (
+            <li
+              key={card.id}
+              className="overflow-hidden rounded-lg border border-hairline bg-paper"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-hairline bg-surface-container px-4 py-2 text-xs text-ink-muted">
+                <span className="flex items-center gap-1.5">
+                  <Icon name="bookmark" size={13} />
+                  {data.pages[card.id] === undefined
+                    ? t("source", {
+                        subject: data.subjectName ?? "",
+                        document: data.document!.title,
+                      })
+                    : t("sourcePage", {
+                        subject: data.subjectName ?? "",
+                        document: data.document!.title,
+                        page: data.pages[card.id]!,
+                      })}
+                </span>
+                <span className="font-mono">#{String(index + 1).padStart(2, "0")}</span>
+              </div>
               {editing?.id === card.id ? (
                 <form
                   onSubmit={(event) => void onSave(event)}
                   noValidate
-                  className="flex flex-col gap-2"
+                  className="flex flex-col gap-3 p-4"
                 >
                   <input
                     aria-label={t("frontField")}
@@ -144,12 +167,12 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                         setError(null);
                       }
                     }}
-                    className={buttonSecondary}
+                    className={`${inputClass} font-serif text-lg`}
                   />
                   <textarea
                     aria-label={t("backField")}
                     value={editing.back}
-                    rows={3}
+                    rows={4}
                     onChange={(event) => setEditing({ ...editing, back: event.target.value })}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
@@ -157,7 +180,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                         setError(null);
                       }
                     }}
-                    className={buttonSecondary}
+                    className={inputClass}
                   />
                   <div className="flex gap-2">
                     <button type="submit" className={buttonPrimary}>
@@ -176,12 +199,16 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                   </div>
                 </form>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <p data-front className="font-semibold">
-                    {card.front}
-                  </p>
-                  <p className="whitespace-pre-wrap text-ink">{card.back}</p>
-                  <div className="flex flex-wrap gap-2 text-sm">
+                <div className="flex flex-col">
+                  <div className="flex flex-col gap-4 p-5">
+                    <p data-front className="font-serif text-xl text-ink-black">
+                      {card.front}
+                    </p>
+                    <p className="whitespace-pre-wrap border-t border-dashed border-divider pt-4 text-sm leading-relaxed text-ink">
+                      {card.back}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-hairline bg-surface-low px-4 py-2 text-sm text-ink-muted">
                     <button
                       type="button"
                       aria-label={t("edit", { front: card.front })}
@@ -189,7 +216,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                         setError(null);
                         setEditing({ id: card.id, front: card.front, back: card.back });
                       }}
-                      className="underline"
+                      className="hover:text-ink hover:underline"
                     >
                       {t("editLabel")}
                     </button>
@@ -197,7 +224,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                       type="button"
                       aria-label={t("refresh", { front: card.front })}
                       onClick={() => void run(() => refreshFlashcard(card.id))}
-                      className="underline"
+                      className="hover:text-ink hover:underline"
                     >
                       {t("refreshLabel")}
                     </button>
@@ -205,8 +232,9 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                       type="button"
                       aria-label={t("delete", { front: card.front })}
                       onClick={() => void onDelete(card.id, card.front)}
-                      className="underline"
+                      className="ml-auto flex items-center gap-1.5 hover:text-error"
                     >
+                      <Icon name="trash" size={14} />
                       {t("deleteLabel")}
                     </button>
                   </div>

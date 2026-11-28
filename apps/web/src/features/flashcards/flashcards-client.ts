@@ -10,7 +10,13 @@ export type Flashcard = {
   back: string;
 };
 
-export type FlashcardsData = { document: DocumentItem | null; cards: Flashcard[] };
+export type FlashcardsData = {
+  document: DocumentItem | null;
+  subjectName: string | null;
+  cards: Flashcard[];
+  /** The 1-based page of the highlight behind each card, by card id; absent for free text. */
+  pages: Record<string, number>;
+};
 
 /** The document and its live flashcards, by front in pt-BR (`flashcard/screens`). */
 export function extractFlashcards(pulled: Pulled[], documentId: string): FlashcardsData {
@@ -24,7 +30,24 @@ export function extractFlashcards(pulled: Pulled[], documentId: string): Flashca
     .map((c) => c.data as Flashcard)
     .filter((c) => c.documentId === documentId)
     .sort((a, b) => a.front.localeCompare(b.front, "pt-BR"));
-  return { document, cards };
+  const live = <T>(entity: string) =>
+    pulled.filter((c) => c.entity === entity && c.op === "upsert").map((c) => c.data as T);
+  const subjectName =
+    live<{ id: string; name: string }>("subject").find((s) => s.id === document?.subjectId)?.name ??
+    null;
+  const nodes = new Map(
+    live<{ id: string; highlightId: string | null }>("outlineNode").map((n) => [n.id, n]),
+  );
+  const highlights = new Map(
+    live<{ id: string; pageIndex: number }>("highlight").map((h) => [h.id, h]),
+  );
+  const pages: Record<string, number> = {};
+  for (const card of cards) {
+    const node = card.sourceNodeId ? nodes.get(card.sourceNodeId) : undefined;
+    const highlight = node?.highlightId ? highlights.get(node.highlightId) : undefined;
+    if (highlight) pages[card.id] = highlight.pageIndex + 1;
+  }
+  return { document, subjectName, cards, pages };
 }
 
 export async function loadFlashcards(documentId: string): Promise<Result<FlashcardsData>> {
