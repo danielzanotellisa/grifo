@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { Failure } from "../../lib/api";
+import { Icon } from "../../components/icons";
+import { bannerError, buttonSecondary } from "../../components/styles";
 import { runExport, type ExportKind } from "./exports-client";
 
 const startDownload = (url: string) => window.location.assign(url);
@@ -70,17 +72,19 @@ export function ExportButton({
         type="button"
         disabled={working}
         onClick={() => void onClick()}
-        className="self-start rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-60"
+        data-badge={kind === "FLASHCARDS_APKG" ? ".apkg" : "PDF"}
+        className={`${buttonSecondary} self-start before:rounded-sm before:bg-surface-container before:px-1.5 before:py-0.5 before:font-mono before:text-[11px] before:font-medium before:text-ink-muted before:content-[attr(data-badge)]`}
       >
         {working ? t("working") : label}
+        <Icon name="download" size={15} className="text-ink-muted" />
       </button>
       {working ? (
-        <p role="status" className="text-sm text-neutral-600">
+        <p role="status" className="text-sm text-ink-muted">
           {t("generating")}
         </p>
       ) : null}
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}

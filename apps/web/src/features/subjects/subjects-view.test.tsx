@@ -19,6 +19,23 @@ beforeEach(() => {
 const names = () =>
   screen.queryAllByRole("listitem").map((item) => item.querySelector("[data-name]")?.textContent);
 
+describe("subjects view: the totals", () => {
+  it("[subject/screens#AC-1] says how many subjects and documents there are", async () => {
+    api.subjects = [
+      { id: "s-redes", name: "Redes" },
+      { id: "s-zoo", name: "Zoologia" },
+    ];
+    api.documents = [
+      { id: "d1", subjectId: "s-redes" },
+      { id: "d2", subjectId: "s-redes" },
+      { id: "d3", subjectId: "s-zoo" },
+    ];
+    renderPt(<SubjectsView />);
+
+    expect(await screen.findByText("2 matérias · 3 documentos")).toBeTruthy();
+  });
+});
+
 describe("subjects view", () => {
   it("[subject/screens#AC-1] lists the subjects by name with their document counts, ignoring the rest", async () => {
     api.subjects = [

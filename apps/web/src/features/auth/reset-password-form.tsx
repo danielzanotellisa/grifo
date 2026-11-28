@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { bannerError, buttonPrimary } from "../../components/styles";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
@@ -27,11 +28,16 @@ export function ResetPasswordForm({
   if (!token || linkError) {
     return (
       <section className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{t("reset.title")}</h1>
-        <p role="alert" className="text-sm text-red-700">
+        <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+          {t("reset.title")}
+        </h1>
+        <p role="alert" className={bannerError}>
           {t("errors.invalidToken")}
         </p>
-        <Link href="/forgot-password" className="text-sm underline">
+        <Link
+          href="/forgot-password"
+          className="text-sm font-medium text-ink underline underline-offset-4"
+        >
           {t("reset.askAgain")}
         </Link>
       </section>
@@ -58,26 +64,26 @@ export function ResetPasswordForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t("reset.title")}</h1>
+      <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+        {t("reset.title")}
+      </h1>
       <TextField
         id="new-password"
         label={t("reset.newPassword")}
         type="password"
+        icon="lock"
+        revealLabels={{ show: t("showPassword"), hide: t("hidePassword") }}
         autoComplete="new-password"
         value={password}
         onChange={setPassword}
         hint={t("passwordHint")}
       />
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={`${buttonPrimary} w-full`}>
         {pending ? t("reset.pending") : t("reset.submit")}
       </button>
     </form>

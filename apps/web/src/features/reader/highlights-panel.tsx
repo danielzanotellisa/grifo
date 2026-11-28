@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Icon } from "../../components/icons";
 import type { Category, HighlightItem } from "./highlights-client";
 
 const QUOTE_MAX = 120;
@@ -27,11 +28,17 @@ export function HighlightsPanel({
   return (
     <aside
       aria-label={t("panel")}
-      className="flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-l border-neutral-200 p-3"
+      className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-l border-hairline bg-surface p-4"
     >
-      <h2 className="text-sm font-semibold">{t("panel")}</h2>
+      <h2 className="flex items-center gap-2 font-serif text-lg font-semibold text-ink-black">
+        <Icon name="list" size={16} className="text-ink-muted" />
+        {t("panel")}
+        <span className="rounded-full bg-surface-container px-2 font-mono text-xs font-medium text-ink-muted">
+          {highlights.length}
+        </span>
+      </h2>
       {highlights.length === 0 ? (
-        <p className="text-sm text-neutral-500">{t("empty")}</p>
+        <p className="font-serif text-base italic text-ink-muted">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {highlights.map((highlight) => {
@@ -39,29 +46,29 @@ export function HighlightsPanel({
             return (
               <li
                 key={highlight.id}
-                className="flex flex-col gap-1 rounded-md border border-neutral-200 p-2"
+                className="flex flex-col gap-2 rounded-lg border border-hairline bg-paper p-3"
               >
                 <button
                   type="button"
                   aria-label={quote}
                   onClick={() => onGo(highlight)}
-                  className="flex items-start gap-2 text-left text-sm"
+                  className="flex items-start gap-2 text-left font-serif text-sm italic text-ink-black"
                 >
                   <span
                     aria-hidden
-                    className="mt-1 size-3 shrink-0 rounded-full"
+                    className="mt-1.5 size-2 shrink-0 rounded-full"
                     style={{ background: color(highlight.categoryId) }}
                   />
                   <span>{quote}</span>
                 </button>
-                <div className="flex items-center gap-2 text-xs text-neutral-500">
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <span>{t("page", { page: highlight.pageIndex + 1 })}</span>
                   <select
                     aria-label={t("categoryOf", { quote })}
                     value={highlight.categoryId}
                     disabled={busy}
                     onChange={(event) => onChangeCategory(highlight, event.target.value)}
-                    className="min-w-0 flex-1 rounded border border-neutral-300 px-1 py-0.5"
+                    className="min-w-0 flex-1 rounded-md border border-divider bg-paper px-1 py-0.5 text-ink"
                   >
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
@@ -74,9 +81,9 @@ export function HighlightsPanel({
                     aria-label={t("delete", { quote })}
                     disabled={busy}
                     onClick={() => onDelete(highlight)}
-                    className="rounded border border-neutral-300 px-2 py-0.5 text-red-700 disabled:opacity-50"
+                    className="flex size-6 items-center justify-center rounded-md border border-divider text-ink-muted hover:text-error disabled:opacity-50"
                   >
-                    ×
+                    <Icon name="trash" size={13} />
                   </button>
                 </div>
               </li>

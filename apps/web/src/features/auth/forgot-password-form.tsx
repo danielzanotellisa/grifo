@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { bannerError, bannerSuccess, buttonPrimary } from "../../components/styles";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
 import { requestPasswordReset } from "./auth-client";
@@ -36,11 +37,13 @@ export function ForgotPasswordForm() {
   if (sent !== null) {
     return (
       <section className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold">{t("forgot.title")}</h1>
-        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+          {t("forgot.title")}
+        </h1>
+        <p role="status" className={bannerSuccess}>
           {t("forgot.sent", { email: sent })}
         </p>
-        <Link href="/login" className="text-sm underline">
+        <Link href="/login" className="text-sm font-medium text-ink underline underline-offset-4">
           {t("forgot.backToSignIn")}
         </Link>
       </section>
@@ -49,29 +52,28 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t("forgot.title")}</h1>
-      <p className="text-sm text-neutral-600">{t("forgot.intro")}</p>
+      <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+        {t("forgot.title")}
+      </h1>
+      <p className="text-sm text-ink-muted">{t("forgot.intro")}</p>
       <TextField
         id="email"
         label={t("fields.email")}
         type="email"
+        icon="mail"
         autoComplete="email"
         value={email}
         onChange={setEmail}
       />
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={`${buttonPrimary} w-full`}>
         {pending ? t("forgot.pending") : t("forgot.submit")}
       </button>
-      <Link href="/login" className="text-sm underline">
+      <Link href="/login" className="text-sm font-medium text-ink underline underline-offset-4">
         {t("forgot.backToSignIn")}
       </Link>
     </form>

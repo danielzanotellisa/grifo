@@ -18,6 +18,7 @@ import {
   type OutlineRole,
 } from "./outline-tree";
 import { useOutlineFailureMessage } from "./use-outline-failure-message";
+import { buttonPrimary, buttonSecondary } from "../../components/styles";
 
 const ROLES: OutlineRole[] = ["TOPIC", "DEFINITION", "ITEM"];
 type Editing = { id: string; text: string; role: string };
@@ -179,17 +180,17 @@ export function OutlineView({ documentId }: { documentId: string }) {
     }
   }
 
-  if (data === null) return <p className="text-neutral-500">{t("loading")}</p>;
+  if (data === null) return <p className="text-ink-muted">{t("loading")}</p>;
   if (data.document === null) {
     return (
       <section className="flex flex-col gap-3">
         {error ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-sm text-error">
             {error}
           </p>
         ) : null}
         <p>{t("notFound")}</p>
-        <Link href="/" className="underline">
+        <Link href="/" className="font-medium underline underline-offset-4">
           {t("back")}
         </Link>
       </section>
@@ -200,16 +201,16 @@ export function OutlineView({ documentId }: { documentId: string }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <Link href={`/documents/${documentId}`} className="text-sm text-neutral-600 underline">
+        <Link href={`/documents/${documentId}`} className="text-sm text-ink-muted underline">
           {t("back")}
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
           {t("title")}: {data.document.title}
         </h1>
         <Link href={`/documents/${documentId}/flashcards`} className="text-sm underline">
           {tCard("title")}
         </Link>
-        <p className="text-sm text-neutral-500">{t("keys")}</p>
+        <p className="text-sm text-ink-muted">{t("keys")}</p>
         <ExportButton
           kind="SUMMARY_PDF"
           scope="DOCUMENT"
@@ -219,20 +220,20 @@ export function OutlineView({ documentId }: { documentId: string }) {
       </div>
 
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-error">
           {error}
         </p>
       ) : null}
 
       {rows.length === 0 ? (
-        <p className="text-neutral-600">{t("empty")}</p>
+        <p className="text-ink-muted">{t("empty")}</p>
       ) : (
         <ul
           role="tree"
           aria-label={t("tree", { title: data.document.title })}
           tabIndex={0}
           onKeyDown={onTreeKey}
-          className="flex flex-col rounded-md border border-neutral-200 outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+          className="flex flex-col rounded-md border border-hairline outline-none focus-visible:ring-2 focus-visible:ring-ink"
         >
           {rows.map(({ node, depth, topicLevel }) => {
             const role = roleOf(node);
@@ -247,13 +248,13 @@ export function OutlineView({ documentId }: { documentId: string }) {
                 data-node-id={node.id}
                 onClick={() => setSelectedId(node.id)}
                 style={{ paddingLeft: `${depth * 1.25}rem` }}
-                className={`flex flex-wrap items-center gap-2 py-1.5 pr-3 ${selected ? "bg-neutral-100" : ""}`}
+                className={`flex flex-wrap items-center gap-2 py-1.5 pr-3 ${selected ? "bg-surface-container" : ""}`}
               >
                 {color ? (
                   <span
                     aria-hidden
                     data-color={color}
-                    className="size-3 shrink-0 rounded-full"
+                    className="size-2.5 shrink-0 rounded-full"
                     style={{ background: color }}
                   />
                 ) : null}
@@ -275,13 +276,13 @@ export function OutlineView({ documentId }: { documentId: string }) {
                           setError(null);
                         }
                       }}
-                      className="min-w-48 flex-1 rounded-md border border-neutral-300 px-2 py-1"
+                      className="min-w-48 flex-1 rounded-md border border-divider px-2 py-1"
                     />
                     <select
                       aria-label={t("editRole")}
                       value={editing.role}
                       onChange={(event) => setEditing({ ...editing, role: event.target.value })}
-                      className="rounded-md border border-neutral-300 px-2 py-1"
+                      className={buttonSecondary}
                     >
                       {node.highlightId ? <option value="">{t("sameAsCategory")}</option> : null}
                       {ROLES.map((r) => (
@@ -290,10 +291,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
                         </option>
                       ))}
                     </select>
-                    <button
-                      type="submit"
-                      className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white"
-                    >
+                    <button type="submit" className={buttonPrimary}>
                       {t("save")}
                     </button>
                     <button
@@ -302,31 +300,40 @@ export function OutlineView({ documentId }: { documentId: string }) {
                         setEditing(null);
                         setError(null);
                       }}
-                      className="rounded-md border border-neutral-300 px-3 py-1 text-sm"
+                      className={buttonSecondary}
                     >
                       {t("cancel")}
                     </button>
                   </form>
                 ) : role === "TOPIC" ? (
-                  <span role="heading" aria-level={topicLevel} className="font-semibold">
+                  <span
+                    role="heading"
+                    aria-level={topicLevel}
+                    className="font-serif text-lg font-semibold text-ink-black"
+                  >
                     {textOf(node)}
                   </span>
                 ) : (
                   <>
                     {role === "DEFINITION" ? (
-                      <span className="rounded bg-yellow-100 px-1.5 text-xs text-yellow-900">
+                      <span className="rounded-md bg-warning-container px-1.5 py-0.5 text-xs font-medium text-on-warning-container">
                         {t("definition")}
                       </span>
                     ) : (
                       <span aria-hidden>•</span>
                     )}
-                    <span>{textOf(node)}</span>
+                    <span className={role === "DEFINITION" ? "font-serif text-base" : "text-sm"}>
+                      {textOf(node)}
+                    </span>
                   </>
                 )}
                 {editing?.id !== node.id && role === "DEFINITION" ? (
                   <span className="ml-auto flex items-center gap-2 text-sm">
                     {cardCount(node.id) > 0 ? (
-                      <Link href={`/documents/${documentId}/flashcards`} className="underline">
+                      <Link
+                        href={`/documents/${documentId}/flashcards`}
+                        className="font-medium underline underline-offset-4"
+                      >
                         {tCard("count", { count: cardCount(node.id) })}
                       </Link>
                     ) : null}
@@ -339,7 +346,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
                           setError(null);
                           setCarding({ nodeId: node.id, front: "" });
                         }}
-                        className="underline"
+                        className="font-medium underline underline-offset-4"
                       >
                         {tCard("create")}
                       </button>
@@ -365,12 +372,9 @@ export function OutlineView({ documentId }: { documentId: string }) {
                           setError(null);
                         }
                       }}
-                      className="min-w-48 flex-1 rounded-md border border-neutral-300 px-2 py-1"
+                      className="min-w-48 flex-1 rounded-md border border-divider px-2 py-1"
                     />
-                    <button
-                      type="submit"
-                      className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white"
-                    >
+                    <button type="submit" className={buttonPrimary}>
                       {tCard("createSubmit")}
                     </button>
                     <button
@@ -379,7 +383,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
                         setCarding(null);
                         setError(null);
                       }}
-                      className="rounded-md border border-neutral-300 px-3 py-1 text-sm"
+                      className={buttonSecondary}
                     >
                       {tCard("cancel")}
                     </button>
@@ -400,7 +404,7 @@ export function OutlineView({ documentId }: { documentId: string }) {
           aria-label={t("addRole")}
           value={addRole}
           onChange={(event) => setAddRole(event.target.value as OutlineRole)}
-          className="rounded-md border border-neutral-300 px-2 py-2"
+          className={buttonSecondary}
         >
           {ROLES.map((r) => (
             <option key={r} value={r}>
@@ -413,12 +417,9 @@ export function OutlineView({ documentId }: { documentId: string }) {
           value={addText}
           onChange={(event) => setAddText(event.target.value)}
           autoComplete="off"
-          className="min-w-60 flex-1 rounded-md border border-neutral-300 px-3 py-2"
+          className="min-w-60 flex-1 rounded-md border border-divider px-3 py-2"
         />
-        <button
-          type="submit"
-          className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white"
-        >
+        <button type="submit" className={buttonPrimary}>
           {t("add")}
         </button>
       </form>

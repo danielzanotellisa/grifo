@@ -14,6 +14,7 @@ import {
   type CategoryRole,
 } from "./categories-client";
 import { useCategoryFailureMessage } from "./use-category-failure-message";
+import { buttonPrimary, buttonSecondary } from "../../components/styles";
 
 const ROLES: CategoryRole[] = ["TOPIC", "DEFINITION", "ITEM", "IGNORE"];
 const SHORTCUTS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -133,20 +134,20 @@ export function CategoriesView() {
         autoComplete="off"
         onChange={(event) => change({ ...value, name: event.target.value })}
         onKeyDown={escape}
-        className="min-w-40 flex-1 rounded-md border border-neutral-300 px-2 py-1"
+        className="min-w-40 flex-1 rounded-md border border-divider px-2 py-1"
       />
       <input
         type="color"
         aria-label={labels.color}
         value={value.color}
         onChange={(event) => change({ ...value, color: event.target.value })}
-        className="h-8 w-10 rounded-md border border-neutral-300"
+        className="h-8 w-10 rounded-md border border-divider"
       />
       <select
         aria-label={labels.role}
         value={value.role}
         onChange={(event) => change({ ...value, role: event.target.value as CategoryRole })}
-        className="rounded-md border border-neutral-300 px-2 py-1"
+        className={buttonSecondary}
       >
         {ROLES.map((role) => (
           <option key={role} value={role}>
@@ -163,7 +164,7 @@ export function CategoriesView() {
             shortcut: event.target.value === "" ? null : Number(event.target.value),
           })
         }
-        className="rounded-md border border-neutral-300 px-2 py-1"
+        className={buttonSecondary}
       >
         <option value="">{t("noShortcut")}</option>
         {SHORTCUTS.map((digit) => (
@@ -175,11 +176,13 @@ export function CategoriesView() {
     </>
   );
 
-  if (categories === null) return <p className="text-neutral-500">{t("loading")}</p>;
+  if (categories === null) return <p className="text-ink-muted">{t("loading")}</p>;
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+      <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
+        {t("title")}
+      </h1>
 
       <form
         onSubmit={(event) => void onCreate(event)}
@@ -197,32 +200,28 @@ export function CategoriesView() {
           },
           false,
         )}
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className={buttonPrimary}>
           {t("create")}
         </button>
       </form>
 
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-error">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="text-sm text-neutral-700">
+        <p role="status" className="text-sm text-ink">
           {notice}
         </p>
       ) : null}
 
       {categories.length === 0 ? (
-        <p className="text-neutral-600">{t("empty")}</p>
+        <p className="text-ink-muted">{t("empty")}</p>
       ) : (
         <ul
           aria-label={t("list")}
-          className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200"
+          className="flex flex-col divide-y divide-hairline rounded-md border border-hairline"
         >
           {categories.map((category, index) => (
             <li key={category.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
@@ -243,11 +242,7 @@ export function CategoriesView() {
                     },
                     true,
                   )}
-                  <button
-                    type="submit"
-                    disabled={pending}
-                    className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white disabled:opacity-60"
-                  >
+                  <button type="submit" disabled={pending} className={buttonPrimary}>
                     {t("save")}
                   </button>
                   <button
@@ -256,7 +251,7 @@ export function CategoriesView() {
                       setEditing(null);
                       setError(null);
                     }}
-                    className="rounded-md border border-neutral-300 px-3 py-1 text-sm"
+                    className={buttonSecondary}
                   >
                     {t("cancel")}
                   </button>
@@ -272,11 +267,11 @@ export function CategoriesView() {
                   <span data-name className="font-medium">
                     {category.name}
                   </span>
-                  <span className="text-sm text-neutral-600">
+                  <span className="text-sm text-ink-muted">
                     {t(`roles.${category.role as CategoryRole}`)}
                   </span>
                   {category.shortcut ? (
-                    <kbd className="rounded border border-neutral-300 px-1.5 text-xs">
+                    <kbd className="rounded border border-divider px-1.5 text-xs">
                       {category.shortcut}
                     </kbd>
                   ) : null}
@@ -338,7 +333,7 @@ export function CategoriesView() {
                         onChange={(event) =>
                           setMoving({ id: category.id, target: event.target.value })
                         }
-                        className="rounded-md border border-neutral-300 px-2 py-1"
+                        className={buttonSecondary}
                       >
                         {categories
                           .filter((c) => c.id !== category.id)
@@ -352,14 +347,14 @@ export function CategoriesView() {
                         type="button"
                         disabled={pending}
                         onClick={() => void onMoveAndDelete(category)}
-                        className="rounded-md bg-neutral-900 px-3 py-1 text-white disabled:opacity-60"
+                        className={buttonPrimary}
                       >
                         {t("moveAndDelete")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setMoving(null)}
-                        className="rounded-md border border-neutral-300 px-3 py-1"
+                        className={buttonSecondary}
                       >
                         {t("cancel")}
                       </button>

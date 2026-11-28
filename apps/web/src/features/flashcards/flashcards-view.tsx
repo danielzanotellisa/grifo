@@ -13,6 +13,7 @@ import {
 } from "./flashcards-client";
 import { ExportButton } from "../exports/export-button";
 import { useFlashcardFailureMessage } from "./use-flashcard-failure-message";
+import { buttonPrimary, buttonSecondary } from "../../components/styles";
 
 type Editing = { id: string; front: string; back: string };
 
@@ -71,12 +72,12 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
     if (await run(() => removeFlashcard(id))) setNotice(t("movedToTrash", { front }));
   }
 
-  if (data === null) return <p className="text-neutral-500">{t("loading")}</p>;
+  if (data === null) return <p className="text-ink-muted">{t("loading")}</p>;
   if (data.document === null) {
     return (
       <section className="flex flex-col gap-3">
         {error ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="text-sm text-error">
             {error}
           </p>
         ) : null}
@@ -92,10 +93,10 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <Link href={`/documents/${documentId}`} className="text-sm text-neutral-600 underline">
+        <Link href={`/documents/${documentId}`} className="text-sm text-ink-muted underline">
           {t("back")}
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
           {t("title")}: {data.document.title}
         </h1>
         <Link href={`/documents/${documentId}/summary`} className="text-sm underline">
@@ -110,22 +111,22 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
       </div>
 
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-error">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="text-sm text-neutral-700">
+        <p role="status" className="text-sm text-ink">
           {notice}
         </p>
       ) : null}
 
       {data.cards.length === 0 ? (
-        <p className="text-neutral-600">{t("empty")}</p>
+        <p className="text-ink-muted">{t("empty")}</p>
       ) : (
         <ul aria-label={t("list")} className="flex flex-col gap-3">
           {data.cards.map((card) => (
-            <li key={card.id} className="rounded-md border border-neutral-200 p-3">
+            <li key={card.id} className="rounded-md border border-hairline p-3">
               {editing?.id === card.id ? (
                 <form
                   onSubmit={(event) => void onSave(event)}
@@ -143,7 +144,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                         setError(null);
                       }
                     }}
-                    className="rounded-md border border-neutral-300 px-2 py-1"
+                    className={buttonSecondary}
                   />
                   <textarea
                     aria-label={t("backField")}
@@ -156,13 +157,10 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                         setError(null);
                       }
                     }}
-                    className="rounded-md border border-neutral-300 px-2 py-1"
+                    className={buttonSecondary}
                   />
                   <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="rounded-md bg-neutral-900 px-3 py-1 text-sm text-white"
-                    >
+                    <button type="submit" className={buttonPrimary}>
                       {t("save")}
                     </button>
                     <button
@@ -171,7 +169,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                         setEditing(null);
                         setError(null);
                       }}
-                      className="rounded-md border border-neutral-300 px-3 py-1 text-sm"
+                      className={buttonSecondary}
                     >
                       {t("cancel")}
                     </button>
@@ -182,7 +180,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
                   <p data-front className="font-semibold">
                     {card.front}
                   </p>
-                  <p className="whitespace-pre-wrap text-neutral-800">{card.back}</p>
+                  <p className="whitespace-pre-wrap text-ink">{card.back}</p>
                   <div className="flex flex-wrap gap-2 text-sm">
                     <button
                       type="button"

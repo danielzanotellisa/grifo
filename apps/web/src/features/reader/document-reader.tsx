@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { pullAll, request, type Failure, type Result } from "../../lib/api";
+import { Icon } from "../../components/icons";
+import { bannerError } from "../../components/styles";
 import type { DocumentItem } from "../documents/documents-client";
 import { ExportButton } from "../exports/export-button";
 import { CategoriesBar } from "./categories-bar";
@@ -217,7 +219,7 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
   const toSubject = (doc: DocumentItem) =>
     doc.subjectId ? { href: `/subjects/${doc.subjectId}`, label: t("backToSubject") } : toSubjects;
 
-  if (phase.kind === "loading") return <p className="p-8 text-neutral-500">{t("loading")}</p>;
+  if (phase.kind === "loading") return <p className="p-8 text-ink-muted">{t("loading")}</p>;
   if (phase.kind === "notFound") return message(t("notFound"), toSubjects);
   if (phase.kind === "notReady") {
     const text =
@@ -233,22 +235,29 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
 
   const state = surface.status === "ready" ? surface : null;
   const button =
-    "rounded-md border border-neutral-300 px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-neutral-900 disabled:opacity-40";
+    "inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm text-ink hover:bg-sunken disabled:opacity-40";
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col bg-surface">
       <div
         role="toolbar"
         aria-label={phase.doc.title}
-        className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2"
+        className="flex flex-wrap items-center gap-3 border-b border-hairline bg-surface-low px-4 py-2"
       >
-        <Link href={toSubject(phase.doc).href} className="text-sm text-neutral-600 underline">
+        <Link
+          href={toSubject(phase.doc).href}
+          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
+        >
+          <Icon name="arrowBack" size={15} />
           {t("backToSubject")}
         </Link>
-        <h1 className="min-w-0 flex-1 truncate text-base font-semibold">{phase.doc.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate font-serif text-base font-semibold text-ink-black">
+          {phase.doc.title}
+        </h1>
         <Link
           href={`/documents/${documentId}/summary`}
-          className="text-sm text-neutral-600 underline"
+          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
         >
+          <Icon name="list" size={15} />
           {t("summary")}
         </Link>
         <ExportButton
@@ -283,9 +292,9 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
                   setTypedPage(null);
                   setPageError(null);
                 }}
-                className="w-14 rounded-md border border-neutral-300 px-2 py-1 text-center text-sm"
+                className="w-14 rounded-md border border-divider bg-paper px-2 py-1 text-center font-mono text-sm"
               />
-              <span className="text-sm text-neutral-600">
+              <span className="font-mono text-sm text-ink-muted">
                 {t("page", { page: state.currentPage, total: state.pageCount })}
               </span>
             </form>
@@ -307,7 +316,7 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
             >
               −
             </button>
-            <span className="w-12 text-center text-sm tabular-nums">
+            <span className="w-12 text-center font-mono text-sm tabular-nums text-ink">
               {t("zoomLevel", { percent: Math.round(state.zoom * 100) })}
             </span>
             <button
@@ -331,40 +340,40 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
         ) : null}
       </div>
       {pageError ? (
-        <p role="alert" className="px-4 py-1 text-sm text-red-700">
+        <p role="alert" className={`${bannerError} mx-4 my-1`}>
           {pageError}
         </p>
       ) : null}
       {surface.status === "loading" ? (
-        <p className="px-4 py-2 text-sm text-neutral-500">{t("loading")}</p>
+        <p className="px-4 py-2 text-sm text-ink-muted">{t("loading")}</p>
       ) : null}
       {phase.doc.hasText === false ? (
         <p
           role="note"
-          className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+          className="border-b border-hairline bg-warning-container px-4 py-2 text-sm text-on-warning-container"
         >
           {t("noText")}
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2">
+      <div className="flex flex-wrap items-center gap-3 border-b border-hairline bg-surface-low px-4 py-2">
         <CategoriesBar
           categories={categories}
           enabled={selection !== null && !marking}
           onChoose={mark}
         />
         {notice ? (
-          <p role="status" className="text-sm text-neutral-700">
+          <p role="status" className="text-sm text-ink-muted">
             {notice}
           </p>
         ) : null}
         {markError ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className={bannerError}>
             {markError}
           </p>
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1">
-        <div className="relative min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1 bg-surface-dim">
           <Surface
             source={source(phase.url)}
             onState={setSurface}

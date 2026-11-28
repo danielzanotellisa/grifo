@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { bannerError, buttonPrimary } from "../../components/styles";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
 import { signUp } from "./auth-client";
@@ -61,9 +62,11 @@ export function SignUpForm() {
   if (sentTo) {
     return (
       <section className="flex flex-col gap-3">
-        <h1 className="text-2xl font-semibold">{t("signUp.confirmationTitle")}</h1>
+        <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+          {t("signUp.confirmationTitle")}
+        </h1>
         <p role="status">{t("signUp.confirmationBody", { email: sentTo })}</p>
-        <Link href="/login" className="underline">
+        <Link href="/login" className="font-medium text-ink underline underline-offset-4">
           {t("signUp.toSignIn")}
         </Link>
       </section>
@@ -72,10 +75,13 @@ export function SignUpForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t("signUp.title")}</h1>
+      <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+        {t("signUp.title")}
+      </h1>
       <TextField
         id="name"
         label={t("fields.name")}
+        icon="user"
         autoComplete="name"
         value={values.name}
         onChange={set("name")}
@@ -86,6 +92,7 @@ export function SignUpForm() {
         id="email"
         label={t("fields.email")}
         type="email"
+        icon="mail"
         autoComplete="email"
         value={values.email}
         onChange={set("email")}
@@ -96,6 +103,8 @@ export function SignUpForm() {
         id="password"
         label={t("fields.password")}
         type="password"
+        icon="lock"
+        revealLabels={{ show: t("showPassword"), hide: t("hidePassword") }}
         autoComplete="new-password"
         value={values.password}
         onChange={set("password")}
@@ -104,20 +113,16 @@ export function SignUpForm() {
         inputRef={refs.password}
       />
       {formError ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {formError}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={`${buttonPrimary} w-full`}>
         {pending ? t("signUp.pending") : t("signUp.submit")}
       </button>
-      <p className="text-sm text-neutral-600">
+      <p className="text-center text-sm text-ink-muted">
         {t("signUp.hasAccount")}{" "}
-        <Link href="/login" className="underline">
+        <Link href="/login" className="font-medium text-ink underline underline-offset-4">
           {t("signUp.toSignIn")}
         </Link>
       </p>
