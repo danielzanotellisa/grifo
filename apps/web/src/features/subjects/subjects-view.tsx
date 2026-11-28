@@ -3,6 +3,15 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Icon } from "../../components/icons";
+import { Notice } from "../../components/notice";
+import {
+  bannerError,
+  buttonPrimary,
+  buttonSecondary,
+  cardClass,
+  inputClass,
+} from "../../components/styles";
 import {
   createSubject,
   deleteSubject,
@@ -139,12 +148,28 @@ export function SubjectsView() {
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+    <section className="flex flex-col gap-8">
+      <header className="flex flex-col gap-2">
+        {subjects !== null && subjects.length > 0 ? (
+          <p className="font-mono text-xs uppercase tracking-wider text-ink-muted">
+            {t("stats", {
+              subjects: subjects.length,
+              documents: subjects.reduce((sum, subject) => sum + subject.documentCount, 0),
+            })}
+          </p>
+        ) : null}
+        <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
+          {t("title")}
+        </h1>
+      </header>
 
-      <form onSubmit={onCreate} noValidate className="flex flex-wrap items-end gap-3">
-        <div className="flex min-w-60 flex-1 flex-col gap-1">
-          <label htmlFor="new-subject" className="text-sm font-medium">
+      <form
+        onSubmit={onCreate}
+        noValidate
+        className={`${cardClass} flex flex-wrap items-end gap-3 p-5`}
+      >
+        <div className="flex min-w-60 flex-1 flex-col gap-1.5">
+          <label htmlFor="new-subject" className="text-sm font-medium text-ink-black">
             {t("newLabel")}
           </label>
           <input
@@ -153,37 +178,33 @@ export function SubjectsView() {
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
             autoComplete="off"
-            className="rounded-md border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/20"
+            className={inputClass}
           />
         </div>
-        <button
-          type="submit"
-          disabled={pending === "create"}
-          className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending === "create"} className={buttonPrimary}>
+          <Icon name="add" size={16} />
           {pending === "create" ? t("creating") : t("create")}
         </button>
       </form>
 
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}
-      {notice ? (
-        <p role="status" className="text-sm text-neutral-700">
-          {notice}
-        </p>
-      ) : null}
+      {notice ? <Notice icon="trash">{notice}</Notice> : null}
 
       {subjects === null ? (
-        <p className="text-neutral-500">{t("loading")}</p>
+        <p className="text-ink-muted">{t("loading")}</p>
       ) : subjects.length === 0 ? (
-        <p className="text-neutral-600">{t("empty")}</p>
+        <p className="font-serif text-lg italic text-ink-muted">{t("empty")}</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200">
-          {subjects.map((subject) => (
-            <li key={subject.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+        <ul className="flex flex-col divide-y divide-hairline border-y border-hairline">
+          {subjects.map((subject, index) => (
+            <li key={subject.id} className="flex flex-wrap items-center gap-3 py-4">
+              <span aria-hidden className="w-8 shrink-0 font-mono text-xs text-ink-muted">
+                {String(index + 1).padStart(2, "0")}.
+              </span>
               {renaming?.id === subject.id ? (
                 <form
                   onSubmit={onRename}
@@ -201,34 +222,34 @@ export function SubjectsView() {
                     onChange={(event) => setRenaming({ id: subject.id, value: event.target.value })}
                     onKeyDown={onRenameKey}
                     autoComplete="off"
-                    className="min-w-48 flex-1 rounded-md border border-neutral-300 px-3 py-1.5"
+                    className={`${inputClass} min-w-48 flex-1 font-serif text-lg`}
                   />
                   <button
                     type="submit"
                     disabled={pending === `rename-${subject.id}`}
-                    className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-60"
+                    className={buttonPrimary}
                   >
                     {t("save")}
                   </button>
                   <button
                     type="button"
                     onClick={() => onRenameKey({ key: "Escape" } as KeyboardEvent)}
-                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+                    className={buttonSecondary}
                   >
                     {t("cancel")}
                   </button>
                 </form>
               ) : (
                 <>
-                  <span data-name className="flex-1 font-medium">
+                  <span data-name className="flex-1 font-serif text-xl text-ink-black">
                     <Link
                       href={`/subjects/${subject.id}`}
-                      className="underline-offset-2 hover:underline"
+                      className="underline-offset-4 hover:underline"
                     >
                       {subject.name}
                     </Link>
                   </span>
-                  <span className="text-sm text-neutral-500">
+                  <span className="text-sm text-ink-muted">
                     {t("documentCount", { count: subject.documentCount })}
                   </span>
                   <button
@@ -240,7 +261,7 @@ export function SubjectsView() {
                       setError(null);
                       setRenaming({ id: subject.id, value: subject.name });
                     }}
-                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-60"
+                    className={`${buttonSecondary} h-8 px-3`}
                   >
                     {t("rename", { name: "" }).trim()}
                   </button>
@@ -249,7 +270,7 @@ export function SubjectsView() {
                     aria-label={t("delete", { name: subject.name })}
                     disabled={pending !== null}
                     onClick={() => void onDelete(subject)}
-                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-60"
+                    className={`${buttonSecondary} h-8 px-3 text-error`}
                   >
                     {t("delete", { name: "" }).trim()}
                   </button>

@@ -96,7 +96,8 @@
       "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
       "generic": "Algo deu errado. Tente de novo.",
       "loadFailed": "Não foi possível carregar suas matérias."
-    }
+    },
+    "stats": "{subjects, plural, one {# matéria} other {# matérias}} · {documents, plural, one {# documento} other {# documentos}}"
   },
   "Trash": {
     "title": "Lixeira",
@@ -163,7 +164,8 @@
     },
     "summary": "Resumo",
     "flashcards": "Flashcards",
-    "noText": "Sem texto selecionável"
+    "noText": "Sem texto selecionável",
+    "count": "{count, plural, =0 {Nenhum documento} one {# documento} other {# documentos}}"
   },
   "Reader": {
     "loading": "Carregando documento…",

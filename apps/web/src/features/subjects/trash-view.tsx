@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { Icon } from "../../components/icons";
+import { bannerError, buttonSecondary } from "../../components/styles";
 import { loadTrash, restoreTrashItem, type TrashEntry } from "./subjects-client";
 import { useFailureMessage } from "./use-failure-message";
 
@@ -49,25 +52,38 @@ export function TrashView() {
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+      <header className="flex flex-col gap-2">
+        <Link
+          href="/"
+          className="text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+        >
+          ← {t("back")}
+        </Link>
+        <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
+          {t("title")}
+        </h1>
+      </header>
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}
       {items === null ? (
-        <p className="text-neutral-500">{t("loading")}</p>
+        <p className="text-ink-muted">{t("loading")}</p>
       ) : items.length === 0 ? (
-        <p className="text-neutral-600">{t("empty")}</p>
+        <p className="flex items-center gap-2 font-serif text-lg italic text-ink-muted">
+          <Icon name="trash" size={18} />
+          {t("empty")}
+        </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200">
+        <ul className="flex flex-col divide-y divide-hairline border-y border-hairline">
           {items.map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <span className="flex-1 font-medium">{item.label}</span>
-              <span className="rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
+            <li key={item.id} className="flex flex-wrap items-center gap-3 py-3.5">
+              <span className="flex-1 font-serif text-lg text-ink-black">{item.label}</span>
+              <span className="rounded-md bg-surface-container px-2 py-0.5 text-xs font-medium text-ink-muted">
                 {isKind(item.entity) ? t(`kinds.${item.entity}`) : item.entity}
               </span>
-              <span className="text-sm text-neutral-500">
+              <span className="text-sm text-ink-muted">
                 {t("deletedOn", {
                   date: format.dateTime(new Date(item.deletedAt), { dateStyle: "medium" }),
                 })}
@@ -77,8 +93,9 @@ export function TrashView() {
                 aria-label={t("restore", { label: item.label })}
                 disabled={pending !== null}
                 onClick={() => void restore(item)}
-                className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-60"
+                className={`${buttonSecondary} h-8 gap-1.5 px-3`}
               >
+                <Icon name="restore" size={14} />
                 {t("restore", { label: "" }).trim()}
               </button>
             </li>

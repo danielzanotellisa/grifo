@@ -23,6 +23,15 @@ import {
   type SubjectPage,
 } from "./documents-client";
 import { ExportButton } from "../exports/export-button";
+import { Icon } from "../../components/icons";
+import { Notice } from "../../components/notice";
+import {
+  bannerError,
+  buttonPrimary,
+  buttonSecondary,
+  cardClass,
+  inputClass,
+} from "../../components/styles";
 import { useDocumentFailureMessage } from "./use-document-failure-message";
 
 type Importing = { current: number; total: number; name: string };
@@ -160,6 +169,15 @@ export function SubjectDocumentsView({
     }
   }
 
+  function statusClass(doc: DocumentItem): string {
+    const base = "rounded-md px-2 py-0.5 text-xs font-medium ";
+    if (doc.status === "READY") return base + "bg-success-container text-on-success-container";
+    if (doc.status === "REJECTED" || doc.status === "QUARANTINED") {
+      return base + "bg-error-container text-on-error-container";
+    }
+    return base + "bg-warning-container text-on-warning-container";
+  }
+
   function statusLabel(doc: DocumentItem): string {
     switch (doc.status) {
       case "UPLOADED":
@@ -179,19 +197,19 @@ export function SubjectDocumentsView({
     }
   }
 
-  if (page === null) return <p className="text-neutral-500">{t("loading")}</p>;
+  if (page === null) return <p className="text-ink-muted">{t("loading")}</p>;
   if (page.subject === null) {
     return (
       <section className="flex flex-col gap-3">
         {problems.length > 0 ? (
-          <div role="alert" className="text-sm text-red-700">
+          <div role="alert" className={bannerError}>
             {problems.map((message) => (
               <p key={message}>{message}</p>
             ))}
           </div>
         ) : null}
         <p>{t("notFound")}</p>
-        <Link href="/" className="underline">
+        <Link href="/" className="text-sm underline underline-offset-4">
           {t("back")}
         </Link>
       </section>
@@ -199,28 +217,25 @@ export function SubjectDocumentsView({
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <Link href="/" className="text-sm text-neutral-600 underline">
-          {t("back")}
+    <section className="flex flex-col gap-8">
+      <header className="flex flex-col gap-2">
+        <Link
+          href="/"
+          className="text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+        >
+          ← {t("back")}
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">{page.subject.name}</h1>
-      </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
+            {page.subject.name}
+          </h1>
+          <p className="font-mono text-xs uppercase tracking-wider text-ink-muted">
+            {t("count", { count: documents.length })}
+          </p>
+        </div>
+      </header>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="import-pdfs" className="text-sm font-medium">
-          {t("import")}
-        </label>
-        <input
-          id="import-pdfs"
-          type="file"
-          accept="application/pdf"
-          multiple
-          disabled={importing !== null}
-          onChange={(event) => void onChoose(event)}
-          className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-white disabled:opacity-60"
-        />
-        <p className="text-sm text-neutral-500">{t("importHint")}</p>
+      <div className="flex flex-wrap gap-3">
         <ExportButton
           kind="FLASHCARDS_APKG"
           scope="SUBJECT"
@@ -233,32 +248,51 @@ export function SubjectDocumentsView({
           scopeId={subjectId}
           label={tExport("summarySubjectLabel")}
         />
+      </div>
+
+      <div className={`${cardClass} flex flex-col gap-3 border-dashed p-5`}>
+        <label
+          htmlFor="import-pdfs"
+          className="flex items-center gap-2 font-serif text-lg text-ink-black"
+        >
+          <Icon name="upload" size={18} className="text-ink-muted" />
+          {t("import")}
+        </label>
+        <input
+          id="import-pdfs"
+          type="file"
+          accept="application/pdf"
+          multiple
+          disabled={importing !== null}
+          onChange={(event) => void onChoose(event)}
+          className="text-sm text-ink file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-ink file:px-4 file:py-2 file:text-sm file:font-medium file:text-surface disabled:opacity-60"
+        />
+        <p className="text-sm text-ink-muted">{t("importHint")}</p>
         {importing ? (
-          <p role="status" className="text-sm text-neutral-700">
+          <p role="status" className="text-sm text-ink">
             {t("importing", importing)}
           </p>
         ) : null}
       </div>
 
       {problems.length > 0 ? (
-        <div role="alert" className="flex flex-col gap-1 text-sm text-red-700">
+        <div role="alert" className={`${bannerError} flex-col gap-1`}>
           {problems.map((message) => (
             <p key={message}>{message}</p>
           ))}
         </div>
       ) : null}
-      {notice ? (
-        <p role="status" className="text-sm text-neutral-700">
-          {notice}
-        </p>
-      ) : null}
+      {notice ? <Notice icon="trash">{notice}</Notice> : null}
 
       {documents.length === 0 ? (
-        <p className="text-neutral-600">{t("empty")}</p>
+        <p className="font-serif text-lg italic text-ink-muted">{t("empty")}</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200">
+        <ul className="flex flex-col gap-3">
           {documents.map((doc) => (
-            <li key={doc.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <li
+              key={doc.id}
+              className={`${cardClass} flex flex-wrap items-center gap-x-4 gap-y-2 p-4`}
+            >
               {renaming?.id === doc.id ? (
                 <form
                   onSubmit={(event) => void onRename(event, doc)}
@@ -276,30 +310,30 @@ export function SubjectDocumentsView({
                     onChange={(event) => setRenaming({ id: doc.id, value: event.target.value })}
                     onKeyDown={onRenameKey}
                     autoComplete="off"
-                    className="min-w-48 flex-1 rounded-md border border-neutral-300 px-3 py-1.5"
+                    className={`${inputClass} min-w-48 flex-1 font-serif text-lg`}
                   />
                   <button
                     type="submit"
                     disabled={pending === `rename-${doc.id}`}
-                    className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-60"
+                    className={buttonPrimary}
                   >
                     {t("save")}
                   </button>
                   <button
                     type="button"
                     onClick={() => onRenameKey({ key: "Escape" } as KeyboardEvent)}
-                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+                    className={buttonSecondary}
                   >
                     {t("cancel")}
                   </button>
                 </form>
               ) : (
                 <>
-                  <span data-title className="min-w-40 flex-1 font-medium">
+                  <span data-title className="min-w-40 flex-1 font-serif text-xl text-ink-black">
                     {doc.status === "READY" ? (
                       <Link
                         href={`/documents/${doc.id}`}
-                        className="underline-offset-2 hover:underline"
+                        className="underline-offset-4 hover:underline"
                       >
                         {doc.title}
                       </Link>
@@ -307,24 +341,30 @@ export function SubjectDocumentsView({
                       doc.title
                     )}
                   </span>
-                  <span className="text-sm text-neutral-700">{statusLabel(doc)}</span>
+                  <span className={statusClass(doc)}>{statusLabel(doc)}</span>
                   {doc.status === "READY" && doc.hasText === false ? (
-                    <span className="rounded bg-amber-100 px-1.5 text-xs text-amber-900">
+                    <span className="rounded-md bg-warning-container px-2 py-0.5 text-xs font-medium text-on-warning-container">
                       {t("noText")}
                     </span>
                   ) : null}
                   {doc.status === "READY" ? (
-                    <Link href={`/documents/${doc.id}/summary`} className="text-sm underline">
+                    <Link
+                      href={`/documents/${doc.id}/summary`}
+                      className={`${buttonSecondary} h-8 px-3`}
+                    >
                       {t("summary")}
                     </Link>
                   ) : null}
                   {doc.status === "READY" ? (
-                    <Link href={`/documents/${doc.id}/flashcards`} className="text-sm underline">
+                    <Link
+                      href={`/documents/${doc.id}/flashcards`}
+                      className={`${buttonSecondary} h-8 px-3`}
+                    >
                       {t("flashcards")}
                     </Link>
                   ) : null}
                   {doc.status === "READY" && doc.pageCount ? (
-                    <span className="text-sm text-neutral-500">
+                    <span className="font-mono text-xs text-ink-muted">
                       {t("pages", { count: doc.pageCount })}
                     </span>
                   ) : null}
@@ -336,7 +376,7 @@ export function SubjectDocumentsView({
                       setProblems([]);
                       setRenaming({ id: doc.id, value: doc.title });
                     }}
-                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-60"
+                    className={`${buttonSecondary} h-8 px-3`}
                   >
                     {t("rename", { title: "" }).trim()}
                   </button>
@@ -351,7 +391,7 @@ export function SubjectDocumentsView({
                         () => setNotice(t("movedToTrash", { title: doc.title })),
                       )
                     }
-                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-60"
+                    className={`${buttonSecondary} h-8 px-3 text-error`}
                   >
                     {t("delete", { title: "" }).trim()}
                   </button>
