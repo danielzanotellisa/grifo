@@ -62,7 +62,13 @@
       "submit": "Salvar nova senha",
       "pending": "Salvando…",
       "askAgain": "Pedir um novo link"
-    }
+    },
+    "brand": {
+      "name": "GRIFO",
+      "tagline": "Seu caderno de estudos, resumos e flashcards."
+    },
+    "showPassword": "Mostrar caracteres",
+    "hidePassword": "Ocultar caracteres"
   },
   "Subjects": {
     "title": "Matérias",

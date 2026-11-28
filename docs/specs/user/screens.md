@@ -22,6 +22,7 @@ The first screens a person uses: create an account, confirm the email, sign in a
 5. While a request is pending the submit button is disabled, so a second click or Enter sends nothing. The form submits with Enter.
 6. Accessibility: every field has a visible label, the right `autocomplete` (`name`, `email`, `new-password`, `current-password`), errors are announced (`role="alert"`) and the first field with an error takes focus.
 7. Out of this slice: forgot password, resending the verification email, deleting the account from the UI, Google.
+8. A password field of the sign-up, sign-in, reset and deletion forms has a button that shows or hides the typed characters ("Mostrar caracteres" / "Ocultar caracteres"; the names avoid the word of the label). It changes only how the field is shown, and never sends the form.
 
 ## Acceptance criteria
 - [ ] **AC-1** Given valid fields, when the sign-up form is sent, then one request goes out with the trimmed name and email, the password and `callbackURL`, and the screen shows the confirmation message with the email and no form.
@@ -33,6 +34,7 @@ The first screens a person uses: create an account, confirm the email, sign in a
 - [ ] **AC-7** Given a request with no valid session, then the home path answers a redirect to `/login`; given a valid session, then it shows the email of the person, and signing out ends the session and goes to `/login`.
 - [ ] **AC-8** Given a sign-up made with `callbackURL: "/login?verified=1"`, when the verification link of the email is opened, then the answer is a redirect to `/login?verified=1` and the email is verified.
 - [ ] **AC-9** Given a form with a request pending, then its submit button is disabled and a second submit sends nothing; given any field, then it has an accessible name and the right `autocomplete`.
+- [ ] **AC-10** Given a password field with a typed value, when its show button is used, then the characters are shown and the button offers to hide them, and using it again hides them; the form is not sent.
 
 ## Open questions
 - Resending the verification email and the forgot-password screens are the next slice.

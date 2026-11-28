@@ -1,3 +1,4 @@
+import { AuthFrame } from "../../features/auth/auth-frame";
 import { ResetPasswordForm } from "../../features/auth/reset-password-form";
 
 export default async function ResetPasswordPage({
@@ -7,8 +8,8 @@ export default async function ResetPasswordPage({
 }) {
   const { token, error } = await searchParams;
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-8">
+    <AuthFrame>
       <ResetPasswordForm token={token} error={error} />
-    </main>
+    </AuthFrame>
   );
 }

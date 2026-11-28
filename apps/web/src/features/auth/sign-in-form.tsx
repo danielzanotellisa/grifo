@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { bannerError, bannerSuccess, buttonPrimary } from "../../components/styles";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
@@ -62,19 +63,21 @@ export function SignInForm({ verified, reset = false }: { verified: boolean; res
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t("signIn.title")}</h1>
+      <h1 className="font-serif text-2xl font-semibold tracking-tight text-ink-black">
+        {t("signIn.title")}
+      </h1>
       {verified ? (
-        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p role="status" className={bannerSuccess}>
           {t("signIn.verified")}
         </p>
       ) : null}
       {reset ? (
-        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p role="status" className={bannerSuccess}>
           {t("signIn.passwordChanged")}
         </p>
       ) : null}
       {resent ? (
-        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p role="status" className={bannerSuccess}>
           {t("signIn.resent", { email: resent })}
         </p>
       ) : null}
@@ -82,6 +85,7 @@ export function SignInForm({ verified, reset = false }: { verified: boolean; res
         id="email"
         label={t("fields.email")}
         type="email"
+        icon="mail"
         autoComplete="email"
         value={values.email}
         onChange={(email) => setValues((v) => ({ ...v, email }))}
@@ -90,13 +94,23 @@ export function SignInForm({ verified, reset = false }: { verified: boolean; res
         id="password"
         label={t("fields.password")}
         type="password"
+        icon="lock"
+        revealLabels={{ show: t("showPassword"), hide: t("hidePassword") }}
+        labelAction={
+          <Link
+            href="/forgot-password"
+            className="text-xs text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+          >
+            {t("signIn.forgot")}
+          </Link>
+        }
         autoComplete="current-password"
         value={values.password}
         onChange={(password) => setValues((v) => ({ ...v, password }))}
         inputRef={passwordRef}
       />
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className={bannerError}>
           {error}
         </p>
       ) : null}
@@ -105,24 +119,17 @@ export function SignInForm({ verified, reset = false }: { verified: boolean; res
           type="button"
           onClick={() => void onResend()}
           disabled={pending}
-          className="self-start text-sm underline disabled:opacity-60"
+          className="self-start text-sm font-medium text-ink underline underline-offset-4 disabled:opacity-60"
         >
           {t("signIn.resend")}
         </button>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={`${buttonPrimary} w-full`}>
         {pending ? t("signIn.pending") : t("signIn.submit")}
       </button>
-      <Link href="/forgot-password" className="text-sm underline">
-        {t("signIn.forgot")}
-      </Link>
-      <p className="text-sm text-neutral-600">
+      <p className="text-center text-sm text-ink-muted">
         {t("signIn.noAccount")}{" "}
-        <Link href="/signup" className="underline">
+        <Link href="/signup" className="font-medium text-ink underline underline-offset-4">
           {t("signIn.toSignUp")}
         </Link>
       </p>

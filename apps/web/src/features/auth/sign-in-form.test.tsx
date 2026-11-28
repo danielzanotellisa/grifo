@@ -144,3 +144,20 @@ describe("sign-in form: password reset and confirmation e-mail", () => {
     expect(screen.queryByRole("button", { name: "Reenviar e-mail de confirmação" })).toBeNull();
   });
 });
+
+describe("sign-in form: showing the password", () => {
+  it("[user/screens#AC-10] shows and hides the typed password without sending the form", async () => {
+    const user = userEvent.setup();
+    renderPt(<SignInForm verified={false} />);
+    const field = screen.getByLabelText("Senha") as HTMLInputElement;
+    await user.type(field, "senha-bem-forte-123");
+
+    expect(field.type).toBe("password");
+    await user.click(screen.getByRole("button", { name: "Mostrar caracteres" }));
+    expect(field.type).toBe("text");
+    expect(field.value).toBe("senha-bem-forte-123");
+    await user.click(screen.getByRole("button", { name: "Ocultar caracteres" }));
+    expect(field.type).toBe("password");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

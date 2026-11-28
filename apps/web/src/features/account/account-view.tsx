@@ -10,6 +10,7 @@ import { useAccountErrorMessage } from "../auth/use-account-error-message";
 /** The e-mail of the person and the deletion of the account (`user/account-screens`). */
 export function AccountView({ email }: { email: string }) {
   const t = useTranslations("Account");
+  const tAuth = useTranslations("Auth");
   const errorMessage = useAccountErrorMessage({ wrongPassword: true });
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -54,6 +55,7 @@ export function AccountView({ email }: { email: string }) {
           id="current-password"
           label={t("currentPassword")}
           type="password"
+          revealLabels={{ show: tAuth("showPassword"), hide: tAuth("hidePassword") }}
           autoComplete="current-password"
           value={password}
           onChange={setPassword}
