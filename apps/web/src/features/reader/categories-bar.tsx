@@ -22,16 +22,18 @@ export function CategoriesBar({
           type="button"
           disabled={!enabled}
           onClick={() => onChoose(category.id)}
-          className="flex items-center gap-1.5 rounded-md border border-neutral-300 px-2 py-1 text-sm disabled:opacity-50"
+          className="flex h-6 items-center gap-1.5 rounded-md border border-hairline bg-paper px-2 text-sm text-ink hover:bg-surface-container disabled:opacity-60"
         >
           <span
             aria-hidden
-            className="size-3 rounded-full"
+            className="size-2 rounded-full"
             style={{ background: category.color }}
           />
           {category.name}
           {category.shortcut ? (
-            <kbd className="text-xs text-neutral-500">{category.shortcut}</kbd>
+            <kbd className="rounded-sm bg-surface-container px-1 font-mono text-[11px] text-ink-muted">
+              {category.shortcut}
+            </kbd>
           ) : null}
         </button>
       ))}

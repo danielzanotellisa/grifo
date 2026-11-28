@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
 import { deleteAccount } from "../auth/auth-client";
+import { bannerError, cardClass } from "../../components/styles";
 import { TextField } from "../auth/text-field";
 import { useAccountErrorMessage } from "../auth/use-account-error-message";
 
@@ -39,7 +40,9 @@ export function AccountView({ email }: { email: string }) {
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+      <h1 className="font-serif text-4xl font-semibold tracking-tight text-ink-black">
+        {t("title")}
+      </h1>
       <p>
         {t("email")}: <span className="font-medium">{email}</span>
       </p>
@@ -47,10 +50,12 @@ export function AccountView({ email }: { email: string }) {
       <form
         onSubmit={onSubmit}
         noValidate
-        className="flex max-w-md flex-col gap-4 rounded-md border border-red-200 p-4"
+        className={`${cardClass} flex max-w-md flex-col gap-4 border-error/30 p-5`}
       >
-        <h2 className="text-lg font-semibold text-red-800">{t("deleteTitle")}</h2>
-        <p className="text-sm text-neutral-700">{t("deleteWarning")}</p>
+        <h2 className="font-serif text-xl font-semibold text-on-error-container">
+          {t("deleteTitle")}
+        </h2>
+        <p className="text-sm text-ink">{t("deleteWarning")}</p>
         <TextField
           id="current-password"
           label={t("currentPassword")}
@@ -61,14 +66,14 @@ export function AccountView({ email }: { email: string }) {
           onChange={setPassword}
         />
         {error ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className={bannerError}>
             {error}
           </p>
         ) : null}
         <button
           type="submit"
           disabled={pending}
-          className="self-start rounded-md bg-red-700 px-4 py-2 font-medium text-white disabled:opacity-60"
+          className="inline-flex h-9 items-center self-start rounded-md bg-error px-4 text-sm font-medium text-paper hover:opacity-90 disabled:opacity-60"
         >
           {t("delete")}
         </button>

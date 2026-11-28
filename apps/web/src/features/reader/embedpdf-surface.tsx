@@ -206,7 +206,7 @@ function HighlightLayer({
                 width: at.width,
                 height: at.height,
                 background: highlight.color,
-                opacity: 0.4,
+                opacity: 0.3,
                 mixBlendMode: "multiply",
               }}
             />
@@ -242,7 +242,7 @@ export default function EmbedPdfSurface({
       <div
         ref={areaRef}
         tabIndex={0}
-        className="h-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+        className="h-full outline-none focus-visible:ring-2 focus-visible:ring-ink"
       >
         <DocumentGate
           error={() => <Failed onState={onState} />}

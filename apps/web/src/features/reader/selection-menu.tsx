@@ -19,7 +19,7 @@ export function SelectionMenu({
       role="menu"
       aria-label={t("menu")}
       style={{ left: anchor.x, top: anchor.y }}
-      className="absolute z-10 flex -translate-x-1/2 flex-col rounded-md border border-neutral-200 bg-white p-1 shadow-lg"
+      className="absolute z-10 flex -translate-x-1/2 flex-col rounded-lg border border-divider bg-paper p-1 shadow-popover"
     >
       {categories.map((category) => (
         <button
@@ -27,16 +27,18 @@ export function SelectionMenu({
           type="button"
           role="menuitem"
           onClick={() => onChoose(category.id)}
-          className="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm hover:bg-neutral-100"
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-ink hover:bg-surface-container"
         >
           <span
             aria-hidden
-            className="size-3 rounded-full"
+            className="size-2 rounded-full"
             style={{ background: category.color }}
           />
           {category.name}
           {category.shortcut ? (
-            <kbd className="ml-auto text-xs text-neutral-500">{category.shortcut}</kbd>
+            <kbd className="ml-auto rounded-sm bg-surface-container px-1 font-mono text-[11px] text-ink-muted">
+              {category.shortcut}
+            </kbd>
           ) : null}
         </button>
       ))}
