@@ -4,6 +4,9 @@
 - Blocks: `FLASHCARDS_APKG` export
 - Related: ADR 0027, specs `flashcard`, `deck`, `export`
 
+## Progress
+- 2026-11-28: the generator and the export (spec `export/apkg`) are merged-ready; step 1 is done. Steps 2 and 3, the import checks by hand, are still open.
+
 ## Work
 1. Write the generator (sql.js + fflate) producing `collection.anki2` + `media`, following the layout genanki produces. Unit-test the SQLite contents.
 2. Verify by hand with a 3-deck subject export:

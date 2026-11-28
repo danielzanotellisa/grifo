@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "../src/fixtures";
 import { pdfBytes, writeFileIn } from "../src/pdfs";
 
-test("[flashcard/screens#AC-9] a Definição passage becomes a flashcard that is edited, updated from the summary and deleted", async ({
+test("[flashcard/screens#AC-9] [export/apkg#AC-9] a Definição passage becomes a flashcard that is edited, updated from the summary, exported to Anki and deleted", async ({
   signedIn: page,
 }, testInfo) => {
   await page.goto("/");
@@ -74,6 +75,16 @@ test("[flashcard/screens#AC-9] a Definição passage becomes a flashcard that is
     .getByRole("button", { name: /^Atualizar pelo resumo/ })
     .click();
   await expect(cards.first()).toContainText("Texto novo do resumo");
+
+  // export the deck: the browser downloads an .apkg (a zip)
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Exportar para Anki" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("Texto.apkg");
+  const bytes = readFileSync((await download.path())!);
+  expect(bytes.subarray(0, 2).toString()).toBe("PK");
+  expect(bytes.byteLength).toBeGreaterThan(1000);
 
   // delete
   await cards

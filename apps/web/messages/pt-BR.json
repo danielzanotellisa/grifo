@@ -254,5 +254,19 @@
     "create": "Criar flashcard",
     "createSubmit": "Criar",
     "count": "{count, plural, one {# flashcard} other {# flashcards}}"
+  },
+  "Exports": {
+    "working": "Gerando…",
+    "generating": "Gerando o arquivo. Isso leva alguns segundos.",
+    "documentLabel": "Exportar para Anki",
+    "subjectLabel": "Exportar flashcards (Anki)",
+    "errors": {
+      "failed": "Não foi possível gerar o arquivo. Tente de novo.",
+      "notFound": "Esse item não existe mais.",
+      "rateLimited": "Muitas tentativas. Tente de novo em {seconds, plural, one {# segundo} other {# segundos}}.",
+      "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
+      "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
+      "generic": "Algo deu errado. Tente de novo."
+    }
   }
 }

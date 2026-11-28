@@ -258,3 +258,31 @@ describe("flashcards page: editing, updating and deleting", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
   });
 });
+
+describe("flashcards page: the export", () => {
+  beforeEach(() => {
+    api.flashcards = [card("f1", "Roteador", "Texto")];
+  });
+
+  it("[export/apkg#AC-8] exports the deck of this document", async () => {
+    api.exportAnswers = [{ status: "RUNNING", error: null }]; // the page does not navigate in jsdom
+    const user = userEvent.setup();
+    await open();
+
+    await user.click(screen.getByRole("button", { name: "Exportar para Anki" }));
+
+    await waitFor(() =>
+      expect(api.exportRequests).toEqual([
+        { kind: "FLASHCARDS_APKG", scope: "DOCUMENT", scopeId: "d1" },
+      ]),
+    );
+  });
+
+  it("[export/apkg#AC-8] offers no export for a document that is not ready", async () => {
+    api.documents = [{ id: "d1", subjectId: "s1", title: "Aula 1", status: "VALIDATING" }];
+    renderPt(<FlashcardsView documentId="d1" />);
+    await screen.findByText("Este documento ainda está sendo preparado.");
+
+    expect(screen.queryByRole("button", { name: "Exportar para Anki" })).toBeNull();
+  });
+});

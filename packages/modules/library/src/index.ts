@@ -14,3 +14,5 @@ export type { InspectResult, PdfInspector, RejectCode } from "./infra/document-v
 export { createDeepScan } from "./infra/deep-scan";
 export type { ScanResult, Scanner } from "./infra/deep-scan";
 export { createLibraryPurgeParticipant } from "./infra/purge";
+export { deckDocuments } from "./infra/deck-documents";
+export type { DeckDocument, DeckScope as DeckDocumentsScope } from "./infra/deck-documents";

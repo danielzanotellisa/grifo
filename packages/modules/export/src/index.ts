@@ -7,3 +7,6 @@ export type { SafeHtml } from "./render/html";
 export { escapeHtml, html, rawHtml } from "./render/html";
 export { renderPdf } from "./render/gotenberg";
 export { createExportPurgeParticipant } from "./infra/purge";
+export { createExports } from "./infra/exports";
+export type { ExportRequest, ExportStatusView } from "./infra/exports";
+export { generateApkg } from "./apkg/generate";

@@ -11,6 +11,7 @@ import {
   removeFlashcard,
   type FlashcardsData,
 } from "./flashcards-client";
+import { ExportDeckButton } from "../exports/export-deck-button";
 import { useFlashcardFailureMessage } from "./use-flashcard-failure-message";
 
 type Editing = { id: string; front: string; back: string };
@@ -18,6 +19,7 @@ type Editing = { id: string; front: string; back: string };
 /** The flashcards of a document: edit, update from the summary, delete (`flashcard/screens`). */
 export function FlashcardsView({ documentId }: { documentId: string }) {
   const t = useTranslations("Flashcards");
+  const tExport = useTranslations("Exports");
   const failureMessage = useFlashcardFailureMessage();
   const [data, setData] = useState<FlashcardsData | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -99,6 +101,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
         <Link href={`/documents/${documentId}/summary`} className="text-sm underline">
           {t("toSummary")}
         </Link>
+        <ExportDeckButton scope="DOCUMENT" scopeId={documentId} label={tExport("documentLabel")} />
       </div>
 
       {error ? (

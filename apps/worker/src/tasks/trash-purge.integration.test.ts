@@ -396,6 +396,7 @@ describe("the purge task in the worker", () => {
     const list = createTaskList({
       validateDocument: noop,
       deepScan: noop,
+      exportRender: noop,
       purge: task,
       sendEmail: noop,
       expireMail: noop,

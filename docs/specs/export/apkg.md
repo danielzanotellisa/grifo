@@ -11,7 +11,7 @@ The first export kind to be built: `FLASHCARDS_APKG`. The user asks for the deck
 ## Operations
 | Operation | Input | Rules | Errors (`code`) |
 | --- | --- | --- | --- |
-| `POST /api/exports` | `{ kind: "FLASHCARDS_APKG", scope: "DOCUMENT" \| "SUBJECT", scopeId }` | Same-origin check. Creates the `Export` row (`QUEUED`) and enqueues `export.render` in one transaction; answers 202 `{ id }`. | `UNAUTHENTICATED` 401, `INVALID_INPUT` 400 (other kind or scope), `NOT_FOUND` 404 (scope missing, deleted or of another user) |
+| `POST /api/exports` | `{ kind: "FLASHCARDS_APKG", scope: "DOCUMENT" \| "SUBJECT", scopeId }` | Same-origin check. Creates the `Export` row (`QUEUED`) and enqueues `export.render` in one transaction; answers 202 `{ id }`. | `UNAUTHENTICATED` 401, `VALIDATION_FAILED` 400 (other kind or scope), `NOT_FOUND` 404 (scope missing, deleted or of another user) |
 | `GET /api/exports/{id}` | — | `{ id, status, error }`, plus `downloadUrl` (presigned, short-lived, file name `<scope name>.apkg`) once `SUCCEEDED`. | `UNAUTHENTICATED` 401, `NOT_FOUND` 404 (also another user's) |
 | `export.render` job | `{ ownerId, exportId }` | Reads in one transaction, builds the package, writes it to the `derived` bucket at a key derived from the export id, marks `SUCCEEDED`. An unexpected failure retries; on the last attempt the export becomes `FAILED` with `{ code: "EXPORT_FAILED" }`. | |
 
