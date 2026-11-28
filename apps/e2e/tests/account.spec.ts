@@ -46,7 +46,7 @@ test("[user/account-screens#AC-7] the account is deleted with its password and c
   await page.goto("/");
   await page.getByRole("link", { name: "Conta" }).click();
   await expect(page).toHaveURL(/\/account$/);
-  await expect(page.getByText(account.email)).toBeVisible();
+  await expect(page.getByRole("main").getByText(account.email)).toBeVisible();
 
   await page.getByLabel("Senha atual").fill("senha-errada-123");
   await page.getByRole("button", { name: "Excluir minha conta" }).click();
