@@ -279,3 +279,31 @@ describe("reader: the summary link", () => {
     expect(within(screen.getByRole("toolbar")).getByRole("link", { name: "Resumo" })).toBe(link);
   });
 });
+
+describe("reader: a document without selectable text", () => {
+  const notice = /Este PDF é uma imagem escaneada e não tem texto selecionável/;
+
+  it("[document/textless#AC-5] warns about a scanned document and still opens it", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Escaneado", status: "READY", hasText: false },
+    ];
+
+    await opened();
+
+    expect(screen.getByText(notice)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Escaneado" })).toBeTruthy();
+  });
+
+  it.each([[true], [null]])(
+    "[document/textless#AC-5] shows no notice when hasText is %s",
+    async (hasText) => {
+      api.documents = [
+        { id: "d1", subjectId: "s-redes", title: "Aula 1", status: "READY", hasText },
+      ];
+
+      await opened();
+
+      expect(screen.queryByText(notice)).toBeNull();
+    },
+  );
+});

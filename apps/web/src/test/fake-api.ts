@@ -41,6 +41,7 @@ type Doc = {
   title?: string;
   status?: string;
   pageCount?: number | null;
+  hasText?: boolean | null;
   rejectCode?: string | null;
 };
 type TrashItem = {
@@ -191,6 +192,7 @@ export class FakeApi {
           title: d.title ?? d.id,
           status: d.status ?? "READY",
           pageCount: d.pageCount === undefined ? 1 : d.pageCount,
+          hasText: d.hasText === undefined ? null : d.hasText,
           rejectCode: d.rejectCode ?? null,
         },
       })),

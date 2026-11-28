@@ -40,3 +40,28 @@ export const encryptedPdf = (): Buffer =>
 
 export const truncatedPdf = (): Buffer =>
   Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog", "latin1");
+
+/** A PDF with `pageCount` pages where `texts[n]` (1-based) is the only text drawn on page n. */
+export const textPdf = (pageCount: number, texts: Record<number, string>): Buffer => {
+  const withText = Array.from({ length: pageCount }, (_, i) => i + 1).filter(
+    (n) => texts[n] !== undefined,
+  );
+  // 1 catalog, 2 pages, 3 font, 4.. the pages, then one content stream per page that has text
+  const streamOf = (n: number) => 4 + pageCount + withText.indexOf(n);
+  const pageObjects = Array.from({ length: pageCount }, (_, i) =>
+    texts[i + 1] === undefined
+      ? "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] >>"
+      : `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents ${streamOf(i + 1)} 0 R /Resources << /Font << /F1 3 0 R >> >> >>`,
+  );
+  const streams = withText.map((n) => {
+    const body = `BT /F1 12 Tf 20 100 Td (${texts[n]}) Tj ET`;
+    return `<< /Length ${body.length} >>\nstream\n${body}\nendstream`;
+  });
+  return wrap([
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    `<< /Type /Pages /Kids [${pageObjects.map((_, i) => `${4 + i} 0 R`).join(" ")}] /Count ${pageCount} >>`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ...pageObjects,
+    ...streams,
+  ]);
+};

@@ -17,6 +17,7 @@ A PDF the user imported into a subject. The original file never changes; highlig
 | status | enum | See lifecycle. |
 | pageCount | int? | Set by validation. |
 | riskFlags | json | Counts of active-content keys, a lower bound (informational, ADR 0037). |
+| hasText | bool? | Set by validation: false for a scanned PDF with no text layer; null = not checked (`document/textless`). |
 | rejectCode | text? | Why the document is `REJECTED` (`PDF_INVALID`, `PDF_ENCRYPTED`, `VALIDATION_FAILED`) or `QUARANTINED` (`MALWARE_DETECTED`); null otherwise. |
 
 ## Invariants

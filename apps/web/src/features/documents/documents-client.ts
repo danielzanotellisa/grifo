@@ -7,6 +7,7 @@ export type DocumentItem = {
   title: string;
   status: string;
   pageCount: number | null;
+  hasText?: boolean | null;
   rejectCode: string | null;
 };
 export type SubjectPage = {

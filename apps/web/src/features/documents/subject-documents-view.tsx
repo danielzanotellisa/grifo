@@ -308,6 +308,11 @@ export function SubjectDocumentsView({
                     )}
                   </span>
                   <span className="text-sm text-neutral-700">{statusLabel(doc)}</span>
+                  {doc.status === "READY" && doc.hasText === false ? (
+                    <span className="rounded bg-amber-100 px-1.5 text-xs text-amber-900">
+                      {t("noText")}
+                    </span>
+                  ) : null}
                   {doc.status === "READY" ? (
                     <Link href={`/documents/${doc.id}/summary`} className="text-sm underline">
                       {t("summary")}

@@ -1,6 +1,7 @@
 import { ownedColumns, softDeleteCheck } from "@app/platform";
 import {
   bigint,
+  boolean,
   char,
   index,
   integer,
@@ -52,6 +53,7 @@ export const documents = library.table(
     title: text("title").notNull(),
     status: documentStatus("status").notNull().default("UPLOADED"),
     pageCount: integer("page_count"),
+    hasText: boolean("has_text"), // null = not checked (`document/textless`)
     riskFlags: jsonb("risk_flags").$type<RiskFlags>().notNull().default({}),
     rejectCode: text("reject_code"),
   },

@@ -13,7 +13,14 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createValidateDocumentTask } from "./document-validate";
-import { encryptedPdf, javascriptPdf, openActionPdf, plainPdf, truncatedPdf } from "./pdf-fixtures";
+import {
+  encryptedPdf,
+  javascriptPdf,
+  openActionPdf,
+  plainPdf,
+  textPdf,
+  truncatedPdf,
+} from "./pdf-fixtures";
 import { inspectPdf } from "./pdf-inspect";
 
 const appPool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -60,7 +67,7 @@ const validated = async (bytes: Buffer) => {
   await task({ ownerId: owner, documentId }, attempt());
   const [row] = (
     await admin.query(
-      `select status, reject_code, page_count, risk_flags from library.documents where id = $1`,
+      `select status, reject_code, page_count, risk_flags, has_text from library.documents where id = $1`,
       [documentId],
     )
   ).rows;
@@ -130,6 +137,40 @@ describe("document.validate with real PDFs", () => {
       ])
     ).rows;
     expect(row).toEqual({ status: "REJECTED", reject_code: "VALIDATION_FAILED" });
+  });
+
+  it("[document/textless#AC-1] records whether the document has a text layer", async () => {
+    const withText = await validated(textPdf(2, { 1: "Primeira linha do texto" }));
+    const scanned = await validated(plainPdf(2));
+
+    expect(withText.row).toMatchObject({ status: "READY", has_text: true });
+    expect(scanned.row).toMatchObject({ status: "READY", has_text: false });
+  });
+
+  it("[document/textless#AC-2] finds text that is only on a page on the last page of a long document, and ignores a trace of it", async () => {
+    const late = await validated(textPdf(25, { 25: "Texto só na última página" }));
+    const trace = await validated(textPdf(3, { 1: "abc" }));
+
+    expect(late.row.has_text).toBe(true);
+    expect(trace.row.has_text).toBe(false);
+  });
+
+  it("[document/textless#AC-3] delivers hasText in a pull and refuses a client that sends it", async () => {
+    const { owner, documentId } = await uploaded(textPdf(1, { 1: "Texto de verdade aqui" }));
+    await task({ ownerId: owner, documentId }, attempt());
+
+    const { changes } = await engine.pull(db, owner, 0);
+    const sent = await engine.push(db, owner, [
+      {
+        mutationId: newId(),
+        entity: "document",
+        op: "upsert",
+        data: { id: documentId, subjectId: newId(), title: "x", hasText: false },
+      },
+    ]);
+
+    expect(changes.find((c) => c.entityId === documentId)?.data).toMatchObject({ hasText: true });
+    expect(sent.results[0]).toMatchObject({ status: "rejected", code: "DOCUMENT_INVALID" });
   });
 
   it("refuses a payload that is not made of ids", async () => {

@@ -548,3 +548,19 @@ describe("subject page: the summaries export", () => {
     );
   });
 });
+
+describe("subject page: documents without selectable text", () => {
+  it("[document/textless#AC-4] flags only a ready document whose hasText is false", async () => {
+    api.documents = [
+      { id: "d1", subjectId: "s-redes", title: "Escaneado", status: "READY", hasText: false },
+      { id: "d2", subjectId: "s-redes", title: "Com texto", status: "READY", hasText: true },
+      { id: "d3", subjectId: "s-redes", title: "Antigo", status: "READY", hasText: null },
+      { id: "d4", subjectId: "s-redes", title: "Validando", status: "VALIDATING", hasText: false },
+    ];
+    view();
+    await screen.findByText("Escaneado");
+
+    expect(screen.getAllByText("Sem texto selecionável")).toHaveLength(1);
+    expect(within(item("Escaneado")).getByText("Sem texto selecionável")).toBeTruthy();
+  });
+});
