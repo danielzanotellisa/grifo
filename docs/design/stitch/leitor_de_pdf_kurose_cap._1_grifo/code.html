@@ -1,0 +1,416 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leitor: Kurose_Capitulo_1_Introducao.pdf — Grifo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: '#fef9f0',
+            'surface-dim': '#ded9d1',
+            'surface-container-low': '#f8f3ea',
+            'surface-container': '#f2ede4',
+            'surface-container-high': '#ece7de',
+            'surface-container-highest': '#e6e1d8',
+            'on-surface': '#2d2b28',
+            'on-surface-variant': '#625f5a',
+            outline: '#cac5bc',
+            'outline-variant': '#e0dbd2',
+            primary: '#2d2b28',
+            'primary-hover': '#1a1917',
+            cat: {
+              topico: '#4F8EF7',
+              definicao: '#F7D04F',
+              exemplo: '#5BC17F',
+              importante: '#F06A6A'
+            }
+          },
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          boxShadow: {
+            'paper': '0 4px 20px -2px rgba(45, 43, 40, 0.08), 0 2px 6px -1px rgba(45, 43, 40, 0.04)',
+            'float': '0 12px 32px -4px rgba(45, 43, 40, 0.16), 0 4px 12px -2px rgba(45, 43, 40, 0.08)'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#ece7de] text-on-surface font-sans antialiased h-screen overflow-hidden flex flex-col selection:bg-cat-definicao/30">
+
+  <!-- BANDA 1: BARRA SUPERIOR (TOOLBAR DO LEITOR) -->
+  <header class="h-14 bg-surface border-b border-outline-variant px-5 flex items-center justify-between shrink-0 shadow-sm z-30">
+    <!-- Esquerda: Voltar à matéria + Logo + Título do Documento -->
+    <div class="flex items-center gap-4 min-w-0">
+      <a href="/subjects/redes-computadores" class="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors py-1 px-2.5 rounded-lg hover:bg-surface-container shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        <span>Voltar à matéria</span>
+      </a>
+
+      <div class="h-4 w-px bg-outline-variant shrink-0"></div>
+
+      <div class="flex items-center gap-2.5 min-w-0">
+        
+        <h1 class="font-serif font-bold text-base text-on-surface truncate max-w-xs md:max-w-md" title="Kurose_Capitulo_1_Introducao.pdf">
+          Kurose_Capitulo_1_Introducao.pdf
+        </h1>
+      </div>
+
+      <div class="h-4 w-px bg-outline-variant shrink-0"></div>
+
+      <a href="/documents/kurose-cap-1/summary" class="inline-flex items-center gap-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface transition-colors py-1 px-2.5 rounded-lg hover:bg-surface-container shrink-0">
+        <svg class="w-4 h-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+        <span>Resumo</span>
+      </a>
+    </div>
+
+    <!-- Centro/Direita: Controles de Navegação de Página e Zoom -->
+    <div class="flex items-center gap-3 shrink-0">
+      <!-- Navegação de página -->
+      <div class="flex items-center bg-surface-container-low border border-outline-variant rounded-xl p-0.5 shadow-sm">
+        <button aria-label="Página anterior" class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        
+        <div class="flex items-center px-2 text-xs font-medium text-on-surface">
+          <input type="number" aria-label="Ir para a página" value="3" min="1" max="48" class="w-8 text-center bg-surface border border-outline-variant/80 rounded-md py-0.5 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-on-surface mr-1 text-on-surface font-semibold">
+          <span class="text-on-surface-variant">de 48</span>
+        </div>
+
+        <button aria-label="Próxima página" class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+
+      <div class="h-4 w-px bg-outline-variant"></div>
+
+      <!-- Controles de zoom -->
+      <div class="flex items-center bg-surface-container-low border border-outline-variant rounded-xl p-0.5 shadow-sm">
+        <button aria-label="Diminuir zoom" class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+        </button>
+
+        <span class="px-2.5 text-xs font-mono font-medium text-on-surface min-w-[3.5rem] text-center">100%</span>
+
+        <button aria-label="Aumentar zoom" class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface rounded-lg transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        </button>
+      </div>
+
+      <button class="px-3 py-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface bg-surface-container-low hover:bg-surface border border-outline-variant rounded-xl transition-colors shadow-sm">
+        Ajustar à largura
+      </button>
+    </div>
+  </header>
+
+  <!-- BANDA 2: RÉGUA DE CATEGORIAS DE MARCAÇÃO -->
+  <div class="h-11 bg-surface-container-low/95 border-b border-outline-variant px-6 flex items-center justify-between shrink-0 backdrop-blur-sm z-20">
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mr-2">Categorias de Estudo:</span>
+
+      <!-- Chip 1: Tópico -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface rounded-full border border-cat-topico/40 shadow-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-cat-topico shadow-xs"></span>
+        <span class="text-xs font-medium text-on-surface">Tópico</span>
+        <span class="w-4 h-4 rounded-full bg-cat-topico/15 text-cat-topico font-mono text-[10px] font-bold flex items-center justify-center">1</span>
+      </div>
+
+      <!-- Chip 2: Definição -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface rounded-full border border-cat-definicao/60 shadow-xs ring-1 ring-cat-definicao/30">
+        <span class="w-2.5 h-2.5 rounded-full bg-cat-definicao shadow-xs"></span>
+        <span class="text-xs font-medium text-on-surface">Definição</span>
+        <span class="w-4 h-4 rounded-full bg-cat-definicao/25 text-[#9a7004] font-mono text-[10px] font-bold flex items-center justify-center">2</span>
+      </div>
+
+      <!-- Chip 3: Exemplo -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface rounded-full border border-cat-exemplo/40 shadow-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-cat-exemplo shadow-xs"></span>
+        <span class="text-xs font-medium text-on-surface">Exemplo</span>
+        <span class="w-4 h-4 rounded-full bg-cat-exemplo/15 text-[#2f834d] font-mono text-[10px] font-bold flex items-center justify-center">3</span>
+      </div>
+
+      <!-- Chip 4: Importante -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface rounded-full border border-cat-importante/40 shadow-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-cat-importante shadow-xs"></span>
+        <span class="text-xs font-medium text-on-surface">Importante</span>
+        <span class="w-4 h-4 rounded-full bg-cat-importante/15 text-cat-importante font-mono text-[10px] font-bold flex items-center justify-center">4</span>
+      </div>
+    </div>
+
+    <!-- Indicador de Status do Leitor EmbedPDF -->
+    <div class="flex items-center gap-2 text-xs text-on-surface-variant">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      <span class="text-[11px] font-mono">EmbedPDF WebAssembly Ativo</span>
+    </div>
+  </div>
+
+  <!-- ÁREA PRINCIPAL: VISUALIZADOR DE PDF + PAINEL DE MARCAÇÕES -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- BANDA 3: ÁREA DO DOCUMENTO PDF (Scroll vertical centrado) -->
+    <main class="flex-1 overflow-y-auto p-8 flex justify-center relative bg-[#ded9d1]/40 scroll-smooth">
+      
+      <!-- Folha do PDF (Página 3 de 48) - Estilo papel editorial -->
+      <div class="w-[740px] min-h-[1040px] bg-white rounded-2xl shadow-paper border border-black/5 p-16 relative text-on-surface select-text mb-12">
+        
+        <!-- Cabeçalho de página do livro/PDF -->
+        <div class="flex justify-between items-center text-[11px] text-on-surface-variant font-mono border-b border-outline-variant/60 pb-3 mb-10">
+          <span>CAPÍTULO 1 • REDES DE COMPUTADORES E A INTERNET</span>
+          <span>PÁG. 3</span>
+        </div>
+
+        <!-- Conteúdo do PDF diagramado com fidelidade acadêmica -->
+        <div class="space-y-6 text-[15px] leading-[1.75] text-[#2d2b28]">
+          <h2 class="font-serif text-2xl font-bold text-[#1f1e1c] tracking-tight border-b border-outline-variant/40 pb-2">
+            1.2 O Núcleo da Rede: Comutação de Pacotes vs. Circuitos
+          </h2>
+
+          <p>
+            Na infraestrutura física de telecomunicações moderna, os dados que trafegam entre sistemas finais não são transmitidos como um fluxo contínuo e indivisível de sinal analógico. Em vez disso, o sistema de origem fragmenta mensagens de aplicação longas em pedaços menores de dados conhecidos como <mark class="bg-cat-topico/25 text-[#1a4488] px-1 py-0.5 rounded font-semibold border-b-2 border-cat-topico">pacotes de rede</mark>.
+          </p>
+
+          <!-- TRECHO COM A MARCAÇÃO ATIVA E MENU FLUTUANTE EXIBIDO -->
+          <div class="relative my-4">
+            <p>
+              Entre a origem e o destino, cada pacote viaja através de enlaces de comunicação e comutadores de pacotes (dos quais há dois tipos principais: roteadores e comutadores de enlace de dados).
+              <!-- Trecho selecionado com destaque amarelo translúcido -->
+              <span class="bg-cat-definicao/40 text-[#2d2b28] px-1.5 py-1 rounded-md border-b-2 border-cat-definicao font-medium shadow-xs">
+                A comutação de pacotes é a técnica de transmissão na qual os dados são divididos em pacotes formatados antes de serem enviados pela rede, utilizando transmissão do tipo armazena-e-reenvia (store-and-forward) em cada roteador.
+              </span>
+              Este mecanismo garante que um comutador só comece a transmitir o primeiro bit de um pacote após ter recebido a sua totalidade na fila de entrada.
+            </p>
+
+            <!-- MENU FLUTUANTE DE SELEÇÃO: "Marcar seleção" (Aparece junto ao texto selecionado) -->
+            <div class="absolute -top-14 left-1/3 z-40 bg-surface border border-outline rounded-2xl shadow-float p-1.5 flex items-center gap-1 animate-in fade-in zoom-in-95 duration-150">
+              <span class="text-[11px] font-semibold text-on-surface-variant px-2">Marcar seleção:</span>
+
+              <button class="flex items-center gap-1.5 px-2.5 py-1 hover:bg-cat-topico/15 rounded-xl transition-colors text-xs font-medium text-on-surface">
+                <span class="w-2.5 h-2.5 rounded-full bg-cat-topico"></span>
+                <span>Tópico</span>
+                <span class="text-[10px] font-mono text-on-surface-variant font-bold ml-0.5">1</span>
+              </button>
+
+              <button class="flex items-center gap-1.5 px-2.5 py-1 bg-cat-definicao/20 ring-1 ring-cat-definicao rounded-xl transition-colors text-xs font-semibold text-on-surface shadow-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-cat-definicao"></span>
+                <span>Definição</span>
+                <span class="text-[10px] font-mono text-[#9a7004] font-bold ml-0.5">2</span>
+              </button>
+
+              <button class="flex items-center gap-1.5 px-2.5 py-1 hover:bg-cat-exemplo/15 rounded-xl transition-colors text-xs font-medium text-on-surface">
+                <span class="w-2.5 h-2.5 rounded-full bg-cat-exemplo"></span>
+                <span>Exemplo</span>
+                <span class="text-[10px] font-mono text-on-surface-variant font-bold ml-0.5">3</span>
+              </button>
+
+              <button class="flex items-center gap-1.5 px-2.5 py-1 hover:bg-cat-importante/15 rounded-xl transition-colors text-xs font-medium text-on-surface">
+                <span class="w-2.5 h-2.5 rounded-full bg-cat-importante"></span>
+                <span>Importante</span>
+                <span class="text-[10px] font-mono text-on-surface-variant font-bold ml-0.5">4</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Trecho com outra marcação: Importante (Vermelho suave) -->
+          <p>
+            Consequentemente, surge uma característica fundamental que difere a comutação de pacotes da telefonia clássica:
+            <span class="bg-cat-importante/20 text-[#2d2b28] px-1 py-0.5 rounded border-b-2 border-cat-importante">
+              Perda de pacotes e fila em buffers de roteadores sob congestionamento severo.
+            </span>
+            Se a taxa de chegada de bits exceder a capacidade de vazão do enlace de saída durante um intervalo de tempo crítico, os pacotes em excesso aguardarão na memória do buffer.
+          </p>
+
+          <!-- Trecho com outra marcação: Exemplo (Verde suave) -->
+          <div class="p-4 bg-surface-container-low rounded-xl border-l-4 border-cat-exemplo text-sm">
+            <span class="font-semibold text-xs text-[#2f834d] block uppercase tracking-wider mb-1">Exemplo Prático (Marcado na página):</span>
+            <span class="bg-cat-exemplo/20 px-1 py-0.5 rounded">
+              Um arquivo de 10 Megabits transmitido através de dois roteadores em enlaces de 5 Mbps sofrerá um atraso de transmissão acumulado de pelo menos 6 segundos.
+            </span>
+          </div>
+
+          <p class="text-on-surface-variant text-sm italic pt-4">
+            Nota de rodapé da edição: Kurose &amp; Ross, Redes de Computadores e a Internet — Uma Abordagem Top-Down, 8ª edição, Seção 1.2.
+          </p>
+        </div>
+
+        <!-- Rodapé do PDF -->
+        <div class="absolute bottom-6 left-16 right-16 flex justify-between items-center text-[10px] text-on-surface-variant/70 font-mono border-t border-outline-variant/40 pt-3">
+          <span>Grifo • Sistema de Anotação &amp; Síntese</span>
+          <span>DOCUMENTO: #KUROSE-01-NET</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- BANDA 4: PAINEL LATERAL DIREITO "MARCAÇÕES" (Largura fixa ~19rem / 300px, scroll independente) -->
+    <aside class="w-80 bg-surface border-l border-outline-variant flex flex-col shrink-0 z-10 shadow-sm">
+      <!-- Topo do Painel de Marcações -->
+      <div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-low/50">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 11h.01M7 15h.01M10 7h7M10 11h7M10 15h7M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
+          <h3 class="font-serif font-bold text-sm text-on-surface">Marcações</h3>
+          <span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-[11px] font-mono font-semibold text-on-surface-variant">4</span>
+        </div>
+
+        <span class="text-[11px] text-on-surface-variant">Por ordem de página</span>
+      </div>
+
+      <!-- Notificação reversível de exclusão de marcação (especificação Grifo) -->
+      <div class="mx-3 mt-3 p-2.5 bg-surface-container-highest/70 border border-outline-variant rounded-xl flex items-center justify-between text-xs">
+        <span class="text-on-surface-variant">Marcação enviada para a lixeira.</span>
+        <button class="font-semibold text-on-surface hover:underline text-[11px] ml-2">Desfazer</button>
+      </div>
+
+      <!-- Lista de Marcações ordenada por página -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-3">
+
+        <!-- Marcação 1: Tópico (Pág. 3) -->
+        <article class="p-3.5 bg-surface-container-low rounded-2xl border border-outline-variant/80 hover:border-outline transition-all group shadow-xs">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-topico shrink-0 shadow-xs"></span>
+              <button class="text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:underline" title="Rolar para a página 3">
+                Página 3
+              </button>
+            </div>
+
+            <!-- Ações: Trocar categoria e Deletar -->
+            <div class="flex items-center gap-1">
+              <select aria-label="Categoria de pacotes de rede" class="text-[11px] bg-surface border border-outline-variant rounded-lg px-1.5 py-0.5 text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-on-surface cursor-pointer">
+                <option selected="">Tópico</option>
+                <option>Definição</option>
+                <option>Exemplo</option>
+                <option>Importante</option>
+              </select>
+
+              <button aria-label="Apagar marcação: pacotes de rede" class="p-1 text-on-surface-variant/60 hover:text-red-700 hover:bg-surface rounded-lg transition-colors" title="Apagar marcação">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-on-surface font-serif italic leading-relaxed line-clamp-3 bg-surface p-2.5 rounded-xl border border-outline-variant/40">
+            “...pedaços menores de dados conhecidos como pacotes de rede.”
+          </p>
+        </article>
+
+        <!-- Marcação 2: Definição (Pág. 3 - Ativa em foco) -->
+        <article class="p-3.5 bg-surface-container rounded-2xl border-2 border-cat-definicao/80 shadow-xs relative">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-definicao shrink-0 shadow-xs"></span>
+              <button class="text-xs font-bold text-on-surface hover:underline" title="Rolar para a página 3">
+                Página 3 • Em foco
+              </button>
+            </div>
+
+            <!-- Ações -->
+            <div class="flex items-center gap-1">
+              <select aria-label="Categoria de Comutação de pacotes" class="text-[11px] bg-surface border border-outline-variant rounded-lg px-1.5 py-0.5 text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-on-surface cursor-pointer">
+                <option>Tópico</option>
+                <option selected="">Definição</option>
+                <option>Exemplo</option>
+                <option>Importante</option>
+              </select>
+
+              <button aria-label="Apagar marcação: Comutação de pacotes" class="p-1 text-on-surface-variant/60 hover:text-red-700 hover:bg-surface rounded-lg transition-colors" title="Apagar marcação">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-on-surface font-serif italic leading-relaxed bg-surface p-2.5 rounded-xl border border-cat-definicao/40">
+            “A comutação de pacotes é a técnica de transmissão na qual os dados são divididos em pacotes formatados antes de serem enviados pela rede...”
+          </p>
+
+          <!-- Indicação de que virou nó de resumo e pode gerar flashcard -->
+          <div class="mt-2.5 flex items-center justify-between pt-2 border-t border-outline-variant/60 text-[11px]">
+            <span class="text-on-surface-variant flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-cat-definicao"></span>
+              Presente no Resumo
+            </span>
+            <a href="/documents/kurose-cap-1/flashcards" class="font-semibold text-on-surface hover:underline">
+              1 flashcard criado →
+            </a>
+          </div>
+        </article>
+
+        <!-- Marcação 3: Importante (Pág. 3) -->
+        <article class="p-3.5 bg-surface-container-low rounded-2xl border border-outline-variant/80 hover:border-outline transition-all shadow-xs">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-importante shrink-0 shadow-xs"></span>
+              <button class="text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:underline" title="Rolar para a página 3">
+                Página 3
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <select aria-label="Categoria de Perda de pacotes" class="text-[11px] bg-surface border border-outline-variant rounded-lg px-1.5 py-0.5 text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-on-surface cursor-pointer">
+                <option>Tópico</option>
+                <option>Definição</option>
+                <option>Exemplo</option>
+                <option selected="">Importante</option>
+              </select>
+
+              <button aria-label="Apagar marcação: Perda de pacotes" class="p-1 text-on-surface-variant/60 hover:text-red-700 hover:bg-surface rounded-lg transition-colors" title="Apagar marcação">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-on-surface font-serif italic leading-relaxed line-clamp-3 bg-surface p-2.5 rounded-xl border border-outline-variant/40">
+            “Perda de pacotes e fila em buffers de roteadores sob congestionamento severo.”
+          </p>
+        </article>
+
+        <!-- Marcação 4: Exemplo (Pág. 3) -->
+        <article class="p-3.5 bg-surface-container-low rounded-2xl border border-outline-variant/80 hover:border-outline transition-all shadow-xs">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cat-exemplo shrink-0 shadow-xs"></span>
+              <button class="text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:underline" title="Rolar para a página 3">
+                Página 3
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <select aria-label="Categoria de Exemplo Prático" class="text-[11px] bg-surface border border-outline-variant rounded-lg px-1.5 py-0.5 text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-on-surface cursor-pointer">
+                <option>Tópico</option>
+                <option>Definição</option>
+                <option selected="">Exemplo</option>
+                <option>Importante</option>
+              </select>
+
+              <button aria-label="Apagar marcação: Exemplo Prático" class="p-1 text-on-surface-variant/60 hover:text-red-700 hover:bg-surface rounded-lg transition-colors" title="Apagar marcação">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-on-surface font-serif italic leading-relaxed line-clamp-3 bg-surface p-2.5 rounded-xl border border-outline-variant/40">
+            “Um arquivo de 10 Megabits transmitido através de dois roteadores em enlaces de 5 Mbps sofrerá um atraso...”
+          </p>
+        </article>
+
+      </div>
+
+      <!-- Rodapé do painel lateral -->
+      <div class="p-3 border-t border-outline-variant bg-surface-container-low text-[11px] text-on-surface-variant text-center">
+        Clique em uma marcação para rolar até ela no PDF
+      </div>
+    </aside>
+
+  </div>
+
+
+
+
+
+</body></html>

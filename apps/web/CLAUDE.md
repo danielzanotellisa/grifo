@@ -80,6 +80,7 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - PDF rendering runs in a Web Worker; never enable eval or PDF JavaScript in the engine.
 - Highlight geometry is converted between screen and PDF points only at the engine boundary.
 - Keyboard first: category shortcuts 1–9, right-click menu on selections and highlights.
+- Look (ADR 0043, `docs/design/`): colors, radii and fonts are Tailwind theme variables in `src/app/globals.css` (`bg-surface`, `text-ink`, `border-hairline`, `font-serif`/`font-sans`/`font-mono`); never a hex value in a class. Fonts come from `next/font/google` in the root layout; icons are the inline SVGs of `src/components/icons.tsx`. The color of a category is user data: compute highlight and node tints from `category.color`, never from fixed classes.
 - No hard-coded UI strings: add a key to `messages/pt-BR.json` and read it with `getTranslations` (server) or `useTranslations` (client). Style with Tailwind utility classes (ADR 0041).
 - No `localStorage` for user data: IndexedDB only.
 - No Server Actions for domain mutations: every mutation goes through the sync push endpoint (ADR 0022).

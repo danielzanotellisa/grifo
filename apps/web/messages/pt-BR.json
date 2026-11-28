@@ -5,7 +5,8 @@
     "signOut": "Sair",
     "trash": "Lixeira",
     "categories": "Categorias",
-    "account": "Conta"
+    "account": "Conta",
+    "footer": "Grifo — Ambiente Editorial de Estudo"
   },
   "Auth": {
     "fields": {

@@ -1,6 +1,6 @@
 # 0041. UI styling with Tailwind CSS and texts with next-intl
 
-- Status: accepted
+- Status: accepted, amended by 0043
 - Date: 2026-11-27
 - Related: 0001, 0012, 0022
 
