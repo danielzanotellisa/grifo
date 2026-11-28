@@ -7,7 +7,7 @@ import { documents, storedFiles } from "./schema";
 export type RejectCode = "PDF_INVALID" | "PDF_ENCRYPTED" | "VALIDATION_FAILED";
 
 export type InspectResult =
-  | { ok: true; pageCount: number; riskFlags: RiskFlags }
+  | { ok: true; pageCount: number; riskFlags: RiskFlags; hasText: boolean }
   | { ok: false; code: "PDF_INVALID" | "PDF_ENCRYPTED" };
 
 /** The PDF parser, injected so the module never depends on it (the worker provides it, ADR 0037). */
@@ -31,7 +31,7 @@ export function createDocumentValidation(deps: {
     ownerId: string,
     documentId: string,
     outcome:
-      | { status: "READY"; pageCount: number; riskFlags: RiskFlags }
+      | { status: "READY"; pageCount: number; riskFlags: RiskFlags; hasText: boolean }
       | { status: "REJECTED"; rejectCode: RejectCode },
   ) =>
     withUser(db, ownerId, async (tx) => {
@@ -41,7 +41,12 @@ export function createDocumentValidation(deps: {
           status: outcome.status,
           updatedAt: new Date(),
           ...(outcome.status === "READY"
-            ? { pageCount: outcome.pageCount, riskFlags: outcome.riskFlags, rejectCode: null }
+            ? {
+                pageCount: outcome.pageCount,
+                riskFlags: outcome.riskFlags,
+                hasText: outcome.hasText,
+                rejectCode: null,
+              }
             : { rejectCode: outcome.rejectCode }),
         })
         .where(
@@ -91,7 +96,12 @@ export function createDocumentValidation(deps: {
           ownerId,
           documentId,
           result.ok
-            ? { status: "READY", pageCount: result.pageCount, riskFlags: result.riskFlags }
+            ? {
+                status: "READY",
+                pageCount: result.pageCount,
+                riskFlags: result.riskFlags,
+                hasText: result.hasText,
+              }
             : { status: "REJECTED", rejectCode: result.code },
         );
       } catch (error) {

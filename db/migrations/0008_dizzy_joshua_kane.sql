@@ -1,0 +1,1 @@
+ALTER TABLE "library"."documents" ADD COLUMN "has_text" boolean;

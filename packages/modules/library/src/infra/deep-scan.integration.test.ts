@@ -16,7 +16,7 @@ const uploads = createUploads({ db, storage });
 const validation = createDocumentValidation({
   db,
   storage,
-  inspect: async () => ({ ok: true, pageCount: 1, riskFlags: {} }),
+  inspect: async () => ({ ok: true, pageCount: 1, riskFlags: {}, hasText: true }),
 });
 
 beforeAll(() => ensureS3Buckets(config));

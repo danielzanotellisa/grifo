@@ -330,6 +330,14 @@ export function DocumentReader({ documentId, Surface }: { documentId: string; Su
       {surface.status === "loading" ? (
         <p className="px-4 py-2 text-sm text-neutral-500">{t("loading")}</p>
       ) : null}
+      {phase.doc.hasText === false ? (
+        <p
+          role="note"
+          className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          {t("noText")}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2">
         <CategoriesBar
           categories={categories}

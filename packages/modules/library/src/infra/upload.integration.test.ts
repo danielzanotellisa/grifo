@@ -259,7 +259,12 @@ describe("validating a document", () => {
     let calls = 0;
     const inspect: PdfInspector = async () => {
       calls++;
-      return { ok: true, pageCount: calls === 1 ? 7 : 99, riskFlags: { javascript: 1 } };
+      return {
+        ok: true,
+        pageCount: calls === 1 ? 7 : 99,
+        riskFlags: { javascript: 1 },
+        hasText: true,
+      };
     };
     const validation = createDocumentValidation({ db, storage, inspect });
 
@@ -329,7 +334,12 @@ describe("validating a document", () => {
 
   it("[document/upload#AC-11] records each status change in the change log", async () => {
     const { owner, documentId } = await validating();
-    const inspect: PdfInspector = async () => ({ ok: true, pageCount: 1, riskFlags: {} });
+    const inspect: PdfInspector = async () => ({
+      ok: true,
+      pageCount: 1,
+      riskFlags: {},
+      hasText: true,
+    });
 
     await createDocumentValidation({ db, storage, inspect }).run(owner, documentId, {
       lastAttempt: false,

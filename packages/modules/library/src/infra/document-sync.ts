@@ -68,6 +68,7 @@ export function createDocumentSyncHandler(deps: { events: EventBus }): SyncHandl
             title: row.title,
             status: row.status,
             pageCount: row.pageCount,
+            hasText: row.hasText,
             riskFlags: row.riskFlags,
             rejectCode: row.rejectCode,
           },

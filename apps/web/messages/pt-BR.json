@@ -132,7 +132,8 @@
       "loadFailed": "Não foi possível carregar os documentos."
     },
     "summary": "Resumo",
-    "flashcards": "Flashcards"
+    "flashcards": "Flashcards",
+    "noText": "Sem texto selecionável"
   },
   "Reader": {
     "loading": "Carregando documento…",
@@ -158,7 +159,8 @@
       "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
       "generic": "Algo deu errado. Tente de novo."
     },
-    "summary": "Resumo"
+    "summary": "Resumo",
+    "noText": "Este PDF é uma imagem escaneada e não tem texto selecionável, então não dá para marcar trechos."
   },
   "Highlights": {
     "panel": "Marcações",

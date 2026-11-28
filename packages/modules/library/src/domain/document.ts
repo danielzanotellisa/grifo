@@ -23,6 +23,7 @@ export type Document = {
   title: string;
   status: DocumentStatus;
   pageCount: number | null;
+  hasText: boolean | null; // null = not checked
   riskFlags: RiskFlags;
   createdAt: Date;
   updatedAt: Date;
