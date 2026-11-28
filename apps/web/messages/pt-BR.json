@@ -287,7 +287,9 @@
     },
     "create": "Criar flashcard",
     "createSubmit": "Criar",
-    "count": "{count, plural, one {# flashcard} other {# flashcards}}"
+    "count": "{count, plural, one {# flashcard} other {# flashcards}}",
+    "source": "Fonte: {subject} › {document}",
+    "sourcePage": "Fonte: {subject} › {document}, p. {page}"
   },
   "Exports": {
     "working": "Gerando…",

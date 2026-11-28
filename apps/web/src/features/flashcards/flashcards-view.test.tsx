@@ -286,3 +286,64 @@ describe("flashcards page: the export", () => {
     expect(screen.queryByRole("button", { name: "Exportar para Anki" })).toBeNull();
   });
 });
+
+describe("flashcards page: number and source", () => {
+  beforeEach(() => {
+    api.highlights = [
+      {
+        id: "h3",
+        documentId: "d1",
+        categoryId: "c2",
+        pageIndex: 2,
+        rects: [{ x1: 1, y1: 1, x2: 2, y2: 2 }],
+        quote: { exact: "Roteador", prefix: "", suffix: "" },
+        note: null,
+      },
+    ];
+    api.nodes = [
+      {
+        id: "n1",
+        documentId: "d1",
+        parentId: null,
+        position: "a0",
+        highlightId: "h3",
+        role: null,
+        text: null,
+      },
+      {
+        id: "n2",
+        documentId: "d1",
+        parentId: null,
+        position: "a1",
+        highlightId: null,
+        role: "DEFINITION",
+        text: "Ponte",
+      },
+    ];
+    api.flashcards = [
+      card("f1", "Roteador", "Encaminha", "d1", "n1"),
+      card("f2", "Ponte", "Liga redes", "d1", "n2"),
+      card("f3", "Órfão", "Sem nó", "d1", "gone"),
+    ];
+  });
+
+  it("[flashcard/screens#AC-10] numbers the cards and shows the source with the page of a highlight", async () => {
+    await open();
+
+    const [ponte, orfao, roteador] = cards();
+    expect(ponte!.textContent).toContain("#01");
+    expect(orfao!.textContent).toContain("#02");
+    expect(roteador!.textContent).toContain("#03");
+    expect(roteador!.textContent).toContain("Fonte: Redes › Aula 1, p. 3");
+  });
+
+  it("[flashcard/screens#AC-10] shows the source without a page for free text or a node that is gone", async () => {
+    await open();
+
+    const [ponte, orfao] = cards();
+    expect(ponte!.textContent).toContain("Fonte: Redes › Aula 1");
+    expect(ponte!.textContent).not.toContain(", p.");
+    expect(orfao!.textContent).toContain("Fonte: Redes › Aula 1");
+    expect(orfao!.textContent).not.toContain(", p.");
+  });
+});
