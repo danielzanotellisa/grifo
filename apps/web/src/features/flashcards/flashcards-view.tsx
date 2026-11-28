@@ -15,6 +15,8 @@ import { ExportButton } from "../exports/export-button";
 import { useFlashcardFailureMessage } from "./use-flashcard-failure-message";
 import { Icon } from "../../components/icons";
 import { Notice } from "../../components/notice";
+import { useUndoShortcut } from "../../components/use-undo-shortcut";
+import { restoreTrashItem } from "../subjects/subjects-client";
 import { bannerError, buttonPrimary, buttonSecondary, inputClass } from "../../components/styles";
 
 type Editing = { id: string; front: string; back: string };
@@ -28,6 +30,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [undoId, setUndoId] = useState<string | null>(null);
   const busy = useRef(false);
 
   async function refresh(): Promise<void> {
@@ -50,6 +53,7 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
     busy.current = true;
     setError(null);
     setNotice(null);
+    setUndoId(null);
     const result = await action();
     if (!result.ok) {
       const message = failureMessage(result);
@@ -71,8 +75,27 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
   }
 
   async function onDelete(id: string, front: string) {
-    if (await run(() => removeFlashcard(id))) setNotice(t("movedToTrash", { front }));
+    if (await run(() => removeFlashcard(id))) {
+      setNotice(t("movedToTrash", { front }));
+      setUndoId(id);
+    }
   }
+
+  /** Puts the last deleted flashcard back (`_cross-cutting/undo`). */
+  async function onUndo() {
+    if (!undoId || busy.current) return;
+    const id = undoId;
+    setNotice(null);
+    setUndoId(null);
+    const result = await restoreTrashItem(id);
+    if (!result.ok) {
+      const message = failureMessage(result);
+      if (message) setError(message);
+    }
+    await refresh();
+  }
+
+  useUndoShortcut(undoId ? () => void onUndo() : null);
 
   if (data === null) return <p className="text-ink-muted">{t("loading")}</p>;
   if (data.document === null) {
@@ -123,7 +146,11 @@ export function FlashcardsView({ documentId }: { documentId: string }) {
           {error}
         </p>
       ) : null}
-      {notice ? <Notice icon="trash">{notice}</Notice> : null}
+      {notice ? (
+        <Notice icon="trash" onUndo={undoId ? () => void onUndo() : undefined}>
+          {notice}
+        </Notice>
+      ) : null}
 
       {data.cards.length === 0 ? (
         <p className="font-serif text-lg italic text-ink-muted">{t("empty")}</p>
