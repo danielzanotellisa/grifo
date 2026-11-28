@@ -19,6 +19,9 @@ export async function AppShell({ email, children }: { email: string; children: R
           <Link href="/trash" className="ml-4 text-sm text-neutral-600 underline">
             {t("trash")}
           </Link>
+          <Link href="/account" className="ml-4 text-sm text-neutral-600 underline">
+            {t("account")}
+          </Link>
         </nav>
         <span className="text-sm text-neutral-600">{t("signedInAs", { email })}</span>
         <SignOutButton />

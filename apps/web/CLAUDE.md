@@ -86,3 +86,8 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 
 ## Categories (spec `category/screens`)
 - `/categories` (`features/categories/categories-view.tsx`) lists the live categories by position and creates (name, color, role, shortcut), edits, moves (↑ ↓, a new fractional `position` between the new neighbors) and deletes them; each change is one `upsert` or `delete` through `pushMutations`, then the list is pulled again. When a delete answers `CATEGORY_IN_USE` the row asks for the category to move the highlights to and sends `delete` with `moveHighlightsTo`. `use-category-failure-message.ts` maps the stable codes. The shell has a "Categorias" link.
+
+## Account screens (spec `user/account-screens`)
+- `/forgot-password` (`features/auth/forgot-password-form.tsx`) requests the reset link with `redirectTo: "/reset-password"` and always ends on the same message; `/reset-password?token=` (`reset-password-form.tsx`) sets the new password and goes to `/login?reset=1`; a missing token, an `error` query or `INVALID_TOKEN` shows the invalid-link message.
+- The sign-in form links to the request, shows the changed-password banner and, after `EMAIL_NOT_VERIFIED`, offers to resend the confirmation (`send-verification-email`). `/account` (`features/account/account-view.tsx`) shows the e-mail and deletes the account with `POST /api/account/delete`.
+- `use-account-error-message.ts` adds the invalid link, the network failure and, for the deletion, the wrong password to the messages of `use-error-message.ts`; the sign-in and sign-up errors keep their own hook.

@@ -8,6 +8,9 @@ const BY_LIBRARY_CODE: Record<string, Mapping> = {
   EMAIL_NOT_VERIFIED: { status: 403, code: "EMAIL_NOT_VERIFIED" },
   PASSWORD_TOO_SHORT: { status: 400, code: "PASSWORD_INVALID" },
   PASSWORD_TOO_LONG: { status: 400, code: "PASSWORD_INVALID" },
+  // Signing in to a deleted account fails when the session is refused (`user/lifecycle`): the answer must
+  // be the one of a wrong password, so nothing tells a deleted account from an unknown one.
+  FAILED_TO_CREATE_SESSION: { status: 401, code: "INVALID_CREDENTIALS" },
   INVALID_TOKEN: { status: 400, code: "INVALID_TOKEN" },
   INVALID_ORIGIN: { status: 403, code: "FORBIDDEN_ORIGIN" },
   MISSING_OR_NULL_ORIGIN: { status: 403, code: "FORBIDDEN_ORIGIN" },
