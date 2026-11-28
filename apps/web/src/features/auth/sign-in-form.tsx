@@ -4,17 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
-import { signIn } from "./auth-client";
+import { sendVerificationEmail, signIn } from "./auth-client";
 import { TextField } from "./text-field";
+import { useAccountErrorMessage } from "./use-account-error-message";
 import { useErrorMessage } from "./use-error-message";
 
-export function SignInForm({ verified }: { verified: boolean }) {
+export function SignInForm({ verified, reset = false }: { verified: boolean; reset?: boolean }) {
   const t = useTranslations("Auth");
   const errorMessage = useErrorMessage();
+  const resendErrorMessage = useAccountErrorMessage();
   const router = useRouter();
   const [values, setValues] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [unverified, setUnverified] = useState(false);
+  const [resent, setResent] = useState<string | null>(null);
   const sending = useRef(false);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -25,6 +29,8 @@ export function SignInForm({ verified }: { verified: boolean }) {
     sending.current = true;
     setPending(true);
     setError(null);
+    setUnverified(false);
+    setResent(null);
     const result = await signIn({ email: values.email.trim(), password: values.password });
     if (result.ok) {
       router.push("/");
@@ -34,8 +40,24 @@ export function SignInForm({ verified }: { verified: boolean }) {
     sending.current = false;
     setPending(false);
     setError(errorMessage(result));
+    setUnverified(result.code === "EMAIL_NOT_VERIFIED");
     setValues((v) => ({ ...v, password: "" }));
     passwordRef.current?.focus();
+  }
+
+  async function onResend() {
+    if (sending.current) return;
+    const address = values.email.trim();
+    sending.current = true;
+    setPending(true);
+    const result = await sendVerificationEmail(address);
+    sending.current = false;
+    setPending(false);
+    if (result.ok) {
+      setResent(address);
+      setError(null);
+      setUnverified(false);
+    } else setError(resendErrorMessage(result));
   }
 
   return (
@@ -44,6 +66,16 @@ export function SignInForm({ verified }: { verified: boolean }) {
       {verified ? (
         <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
           {t("signIn.verified")}
+        </p>
+      ) : null}
+      {reset ? (
+        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          {t("signIn.passwordChanged")}
+        </p>
+      ) : null}
+      {resent ? (
+        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          {t("signIn.resent", { email: resent })}
         </p>
       ) : null}
       <TextField
@@ -68,6 +100,16 @@ export function SignInForm({ verified }: { verified: boolean }) {
           {error}
         </p>
       ) : null}
+      {unverified ? (
+        <button
+          type="button"
+          onClick={() => void onResend()}
+          disabled={pending}
+          className="self-start text-sm underline disabled:opacity-60"
+        >
+          {t("signIn.resend")}
+        </button>
+      ) : null}
       <button
         type="submit"
         disabled={pending}
@@ -75,6 +117,9 @@ export function SignInForm({ verified }: { verified: boolean }) {
       >
         {pending ? t("signIn.pending") : t("signIn.submit")}
       </button>
+      <Link href="/forgot-password" className="text-sm underline">
+        {t("signIn.forgot")}
+      </Link>
       <p className="text-sm text-neutral-600">
         {t("signIn.noAccount")}{" "}
         <Link href="/signup" className="underline">

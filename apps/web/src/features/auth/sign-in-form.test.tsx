@@ -95,3 +95,52 @@ describe("sign-in form", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("sign-in form: password reset and confirmation e-mail", () => {
+  it("[user/account-screens#AC-3] links to the password request and says the password was changed", () => {
+    renderPt(<SignInForm verified={false} reset />);
+
+    expect(screen.getByText("Senha alterada. Entre com a nova senha.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Esqueci minha senha" }).getAttribute("href")).toBe(
+      "/forgot-password",
+    );
+  });
+
+  it("[user/account-screens#AC-3] shows no changed-password banner otherwise", () => {
+    renderPt(<SignInForm verified={false} />);
+
+    expect(screen.queryByText("Senha alterada. Entre com a nova senha.")).toBeNull();
+    expect(screen.getByRole("link", { name: "Esqueci minha senha" })).toBeTruthy();
+  });
+
+  it("[user/account-screens#AC-4] offers to resend the confirmation e-mail after EMAIL_NOT_VERIFIED and sends it", async () => {
+    fetchMock.mockResolvedValueOnce(problem(403, "EMAIL_NOT_VERIFIED"));
+    fetchMock.mockResolvedValueOnce(Response.json({ status: true }));
+    const user = userEvent.setup();
+    renderPt(<SignInForm verified={false} />);
+
+    await signIn(user);
+    await user.click(await screen.findByRole("button", { name: "Reenviar e-mail de confirmação" }));
+
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "Enviamos um novo link para ana@example.com.",
+    );
+    const [url, init] = fetchMock.mock.calls[1]!;
+    expect(url).toBe("/api/auth/send-verification-email");
+    expect(JSON.parse(init.body)).toEqual({
+      email: "ana@example.com",
+      callbackURL: "/login?verified=1",
+    });
+  });
+
+  it("[user/account-screens#AC-4] does not offer the resend for other errors", async () => {
+    fetchMock.mockResolvedValue(problem(401, "INVALID_CREDENTIALS"));
+    const user = userEvent.setup();
+    renderPt(<SignInForm verified={false} />);
+
+    await signIn(user);
+    await screen.findByRole("alert");
+
+    expect(screen.queryByRole("button", { name: "Reenviar e-mail de confirmação" })).toBeNull();
+  });
+});

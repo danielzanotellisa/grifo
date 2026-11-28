@@ -1,15 +1,21 @@
 import { MAILPIT_URL } from "./env";
 
-type Message = { ID: string; To: { Address: string }[] };
+type Message = { ID: string; Subject: string; To: { Address: string }[] };
 
 /** The first link of the mail Mailpit received for `address`; the worker sends it a moment after sign-up. */
-export async function mailLinkFor(address: string, timeoutMs = 30_000): Promise<string> {
+export async function mailLinkFor(
+  address: string,
+  timeoutMs = 30_000,
+  subject = "",
+): Promise<string> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const list = (await (await fetch(`${MAILPIT_URL}/api/v1/messages`)).json()) as {
       messages?: Message[];
     };
-    const message = list.messages?.find((m) => m.To.some((to) => to.Address === address));
+    const message = list.messages?.find(
+      (m) => m.To.some((to) => to.Address === address) && m.Subject.includes(subject),
+    );
     if (message) {
       const full = (await (await fetch(`${MAILPIT_URL}/api/v1/message/${message.ID}`)).json()) as {
         Text: string;
