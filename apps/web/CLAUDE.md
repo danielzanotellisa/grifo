@@ -83,3 +83,6 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 - No hard-coded UI strings: add a key to `messages/pt-BR.json` and read it with `getTranslations` (server) or `useTranslations` (client). Style with Tailwind utility classes (ADR 0041).
 - No `localStorage` for user data: IndexedDB only.
 - No Server Actions for domain mutations: every mutation goes through the sync push endpoint (ADR 0022).
+
+## Categories (spec `category/screens`)
+- `/categories` (`features/categories/categories-view.tsx`) lists the live categories by position and creates (name, color, role, shortcut), edits, moves (↑ ↓, a new fractional `position` between the new neighbors) and deletes them; each change is one `upsert` or `delete` through `pushMutations`, then the list is pulled again. When a delete answers `CATEGORY_IN_USE` the row asks for the category to move the highlights to and sends `delete` with `moveHighlightsTo`. `use-category-failure-message.ts` maps the stable codes. The shell has a "Categorias" link.

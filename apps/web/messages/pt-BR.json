@@ -3,7 +3,8 @@
     "title": "Grifo",
     "signedInAs": "Você entrou como {email}.",
     "signOut": "Sair",
-    "trash": "Lixeira"
+    "trash": "Lixeira",
+    "categories": "Categorias"
   },
   "Auth": {
     "fields": {
@@ -272,5 +273,53 @@
     },
     "summaryDocumentLabel": "Exportar resumo (PDF)",
     "summarySubjectLabel": "Exportar resumos (PDF)"
+  },
+  "Categories": {
+    "title": "Categorias",
+    "loading": "Carregando…",
+    "list": "Categorias",
+    "empty": "Você não tem categorias. Crie a primeira acima.",
+    "newName": "Nome da nova categoria",
+    "newColor": "Cor da nova categoria",
+    "newRole": "Papel da nova categoria",
+    "newShortcut": "Atalho da nova categoria",
+    "create": "Criar categoria",
+    "name": "Nome da categoria",
+    "color": "Cor da categoria",
+    "role": "Papel da categoria",
+    "shortcut": "Atalho da categoria",
+    "noShortcut": "Sem atalho",
+    "roles": {
+      "TOPIC": "Tópico",
+      "DEFINITION": "Definição",
+      "ITEM": "Item",
+      "IGNORE": "Ignorar"
+    },
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "moveUp": "Mover {name} para cima",
+    "moveDown": "Mover {name} para baixo",
+    "edit": "Editar {name}",
+    "editLabel": "Editar",
+    "delete": "Apagar {name}",
+    "deleteLabel": "Apagar",
+    "movedToTrash": "“{name}” foi para a lixeira.",
+    "moveTo": "Mover as marcações para",
+    "moveAndDelete": "Mover e apagar",
+    "errors": {
+      "nameInvalid": "O nome precisa ter de 1 a 40 caracteres.",
+      "colorInvalid": "Escolha uma cor válida.",
+      "nameTaken": "Já existe uma categoria com esse nome.",
+      "shortcutTaken": "Esse atalho já é de outra categoria.",
+      "invalid": "Essa categoria não é válida.",
+      "last": "A última categoria não pode ser apagada.",
+      "parentDeleted": "A categoria de destino não existe mais.",
+      "notFound": "Essa categoria não existe mais. Atualizamos a lista.",
+      "rateLimited": "Muitas tentativas. Tente de novo em {seconds, plural, one {# segundo} other {# segundos}}.",
+      "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
+      "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
+      "generic": "Algo deu errado. Tente de novo.",
+      "loadFailed": "Não foi possível carregar as categorias."
+    }
   }
 }

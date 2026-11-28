@@ -232,6 +232,7 @@ export class FakeApi {
     if (m.entity === "highlight") return { ...base, ...this.applyHighlight(m, id) };
     if (m.entity === "outlineNode") return { ...base, ...this.applyNode(m, id) };
     if (m.entity === "flashcard") return { ...base, ...this.applyFlashcard(m, id) };
+    if (m.entity === "category") return { ...base, ...this.applyCategory(m, id) };
     if (m.op === "upsert") {
       const name = String(m.data.name ?? "").trim();
       if (name.length < 1 || name.length > 120)
@@ -252,6 +253,52 @@ export class FakeApi {
       deletedAt: new Date().toISOString(),
     });
     return { ...base, status: "applied" };
+  }
+
+  /** The rules of the server for categories (`category` spec): name, color, uniqueness, and the delete guards. */
+  private applyCategory(m: FakeApi["pushes"][number], id: string) {
+    const rejected = (code: string) => ({ status: "rejected", code });
+    const index = this.categories.findIndex((c) => c.id === id);
+    if (m.op === "delete") {
+      if (index < 0) return rejected("NOT_FOUND");
+      const target = m.data.moveHighlightsTo as string | undefined;
+      const used = this.highlights.some((h) => h.categoryId === id);
+      if (used && !target) return rejected("CATEGORY_IN_USE");
+      if (this.categories.length === 1) return rejected("CATEGORY_LAST");
+      if (target) {
+        if (target === id) return rejected("CATEGORY_INVALID");
+        if (!this.categories.some((c) => c.id === target)) return rejected("PARENT_DELETED");
+        for (const h of this.highlights) if (h.categoryId === id) h.categoryId = target;
+      }
+      const [gone] = this.categories.splice(index, 1);
+      this.trash.unshift({
+        id,
+        entity: "category",
+        label: gone!.name,
+        deletedAt: new Date().toISOString(),
+      });
+      return { status: "applied" };
+    }
+    const name = String(m.data.name ?? "").trim();
+    if (name.length < 1 || name.length > 40) return rejected("CATEGORY_NAME_INVALID");
+    if (!/^#[0-9a-fA-F]{6}$/.test(String(m.data.color))) return rejected("COLOR_INVALID");
+    const others = this.categories.filter((c) => c.id !== id);
+    if (others.some((c) => c.name.toLowerCase() === name.toLowerCase()))
+      return rejected("CATEGORY_NAME_TAKEN");
+    const shortcut = (m.data.shortcut ?? null) as number | null;
+    if (shortcut !== null && others.some((c) => c.shortcut === shortcut))
+      return rejected("CATEGORY_SHORTCUT_TAKEN");
+    const next = {
+      id,
+      name,
+      color: String(m.data.color),
+      role: String(m.data.role),
+      shortcut,
+      position: String(m.data.position),
+    };
+    if (index >= 0) this.categories[index] = next;
+    else this.categories.push(next);
+    return { status: "applied" };
   }
 
   private applyDocument(m: FakeApi["pushes"][number], id: string) {

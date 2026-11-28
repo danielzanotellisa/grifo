@@ -13,7 +13,10 @@ export async function AppShell({ email, children }: { email: string; children: R
           {t("title")}
         </Link>
         <nav className="flex-1">
-          <Link href="/trash" className="text-sm text-neutral-600 underline">
+          <Link href="/categories" className="text-sm text-neutral-600 underline">
+            {t("categories")}
+          </Link>
+          <Link href="/trash" className="ml-4 text-sm text-neutral-600 underline">
             {t("trash")}
           </Link>
         </nav>
