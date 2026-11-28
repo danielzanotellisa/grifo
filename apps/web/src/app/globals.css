@@ -1,1 +1,62 @@
 @import "tailwindcss";
+
+/*
+ * The tokens of the "Grifo Editorial" design (docs/design/DESIGN.md, ADR 0043). Components use the
+ * names of the roles (`bg-surface`, `text-ink`, `border-hairline`), never a hex value. The color of
+ * a category is user data and is not a token.
+ */
+@theme {
+  --color-surface: #fef9f0;
+  --color-surface-low: #f8f3ea;
+  --color-surface-container: #f2ede4;
+  --color-surface-high: #ece8df;
+  --color-surface-dim: #ded9d1;
+  --color-paper: #ffffff;
+  --color-sunken: #eae3d6;
+
+  --color-ink: #2d2b28;
+  --color-ink-black: #1c1b19;
+  --color-ink-muted: #6e6961;
+  --color-ink-faint: #8a847b;
+
+  --color-hairline: #e3dcd1;
+  --color-divider: #d4cbc0;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #fdf0f0;
+  --color-on-error-container: #93000a;
+  --color-success: #3f9f63;
+  --color-success-container: #edf8f1;
+  --color-on-success-container: #1e5b36;
+  --color-warning-container: #fdf8e7;
+  --color-on-warning-container: #7a5b00;
+
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.5rem;
+
+  --shadow-popover: 0 4px 12px rgba(45, 43, 40, 0.08);
+  --shadow-hairline: 0 1px 3px rgba(45, 43, 40, 0.04);
+}
+
+@layer base {
+  body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-sunken);
+  }
+}

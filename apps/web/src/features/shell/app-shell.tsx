@@ -1,32 +1,49 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { Icon } from "../../components/icons";
 import { SignOutButton } from "../auth/sign-out-button";
 
-/** The frame of every page of a signed-in person: the brand, the trash, who they are and sign-out. */
+/** The frame of every page of a signed-in person: the brand, the trash and categories, who they are, the account and sign-out. */
 export async function AppShell({ email, children }: { email: string; children: ReactNode }) {
   const t = await getTranslations("Home");
+  const [before, after] = t("signedInAs", { email: "\u0000" }).split("\u0000");
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 p-6">
-      <header className="flex flex-wrap items-center gap-4 border-b border-neutral-200 pb-4">
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          {t("title")}
-        </Link>
-        <nav className="flex-1">
-          <Link href="/categories" className="text-sm text-neutral-600 underline">
-            {t("categories")}
+    <div className="flex min-h-screen flex-col">
+      <header className="border-b border-hairline">
+        <div className="mx-auto flex max-w-3xl items-center gap-5 px-6 py-3">
+          <Link href="/" className="font-serif text-xl font-semibold tracking-tight text-ink-black">
+            {t("title")}
           </Link>
-          <Link href="/trash" className="ml-4 text-sm text-neutral-600 underline">
-            {t("trash")}
+          <nav className="flex flex-1 items-center gap-4 whitespace-nowrap text-sm text-ink-muted">
+            <Link href="/categories" className="underline-offset-4 hover:text-ink hover:underline">
+              {t("categories")}
+            </Link>
+            <Link href="/trash" className="underline-offset-4 hover:text-ink hover:underline">
+              {t("trash")}
+            </Link>
+          </nav>
+          <span className="min-w-0 truncate text-sm text-ink-muted">
+            {before}
+            <strong className="font-medium text-ink">{email}</strong>
+            {after}
+          </span>
+          <SignOutButton />
+          <Link
+            href="/account"
+            aria-label={t("account")}
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-ink text-surface hover:bg-ink-black"
+          >
+            <Icon name="user" size={16} />
           </Link>
-          <Link href="/account" className="ml-4 text-sm text-neutral-600 underline">
-            {t("account")}
-          </Link>
-        </nav>
-        <span className="text-sm text-neutral-600">{t("signedInAs", { email })}</span>
-        <SignOutButton />
+        </div>
       </header>
-      <main>{children}</main>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">{children}</main>
+      <footer className="border-t border-hairline">
+        <p className="mx-auto max-w-3xl px-6 py-3 text-xs font-medium text-ink-muted">
+          {t("footer")}
+        </p>
+      </footer>
     </div>
   );
 }

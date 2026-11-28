@@ -25,7 +25,7 @@ export function SignOutButton() {
       type="button"
       onClick={onClick}
       disabled={pending}
-      className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-60"
+      className="shrink-0 text-sm font-medium text-ink underline-offset-4 hover:underline disabled:opacity-60"
     >
       {t("signOut")}
     </button>
