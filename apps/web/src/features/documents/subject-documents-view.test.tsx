@@ -603,3 +603,76 @@ describe("subject page: undoing a delete", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 });
+
+describe("subject page: drop, progress and cancel", () => {
+  const dropArea = () => screen.getByLabelText("Importar PDFs").closest("div")!;
+  const drop = (...files: File[]) => fireEvent.drop(dropArea(), { dataTransfer: { files } });
+
+  it("[document/import-ui#AC-1] imports dropped PDFs like chosen ones and refuses the rest with the same messages", async () => {
+    view();
+    await screen.findByText("Esta matéria ainda não tem documentos. Importe um PDF acima.");
+
+    drop(pdf("Aula.pdf"), pdf("notas.txt", "texto", "text/plain"));
+
+    await waitFor(() => expect(api.starts).toHaveLength(1));
+    expect((await screen.findByRole("alert")).textContent).toContain("“notas.txt” não é um PDF.");
+    await screen.findByText("Aula");
+    expect(api.puts).toHaveLength(1);
+  });
+
+  it("[document/import-ui#AC-1] ignores a drop while an import is running", async () => {
+    api.holdNextPut();
+    view();
+    const user = userEvent.setup();
+    await screen.findByText("Esta matéria ainda não tem documentos. Importe um PDF acima.");
+    await importFiles(user, pdf("Primeiro.pdf"));
+    await screen.findByRole("progressbar");
+
+    drop(pdf("Segundo.pdf"));
+    api.releasePut();
+
+    await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
+    expect(api.starts).toHaveLength(1);
+  });
+
+  it("[document/import-ui#AC-2] shows the share of the bytes sent while a file travels, and no bar for bytes the server has", async () => {
+    api.holdNextPut();
+    view();
+    const user = userEvent.setup();
+    await screen.findByText("Esta matéria ainda não tem documentos. Importe um PDF acima.");
+
+    await importFiles(user, pdf("Aula.pdf"));
+
+    const bar = await screen.findByRole("progressbar");
+    await waitFor(() => expect(bar.getAttribute("aria-valuenow")).toBe("50"));
+    expect(bar.getAttribute("aria-label")).toBe("50% enviado");
+    api.releasePut();
+    await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
+
+    api.storedHashes.add(sha256("%PDF-1.4 repetido"));
+    await importFiles(user, pdf("Repetido.pdf", "%PDF-1.4 repetido"));
+    await waitFor(() => expect(api.starts).toHaveLength(2));
+    expect(api.puts).toHaveLength(1);
+    expect(screen.queryByRole("progressbar")).toBeNull();
+  });
+
+  it("[document/import-ui#AC-3] stops the transfer and the files after it, says so and keeps the incomplete document", async () => {
+    api.holdNextPut();
+    view();
+    const user = userEvent.setup();
+    await screen.findByText("Esta matéria ainda não tem documentos. Importe um PDF acima.");
+
+    await importFiles(user, pdf("Primeiro.pdf"), pdf("Segundo.pdf", "%PDF-1.4 outro"));
+    await screen.findByRole("progressbar");
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Envio de “Primeiro.pdf” cancelado.",
+    );
+    expect(api.starts).toHaveLength(1);
+    expect(api.confirms).toEqual([]);
+    expect(await screen.findByText("Envio incompleto")).toBeTruthy();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    api.releasePut();
+  });
+});

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type DragEvent,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
@@ -52,6 +53,10 @@ export function SubjectDocumentsView({
   const [problems, setProblems] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [undoId, setUndoId] = useState<string | null>(null);
+
+  const [progress, setProgress] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const abort = useRef<AbortController | null>(null);
   const [importing, setImporting] = useState<Importing | null>(null);
   const [sending, setSending] = useState<ReadonlySet<string>>(new Set());
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
@@ -91,6 +96,18 @@ export function SubjectDocumentsView({
   async function onChoose(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
+    await importFiles(files);
+  }
+
+  function onDrop(event: DragEvent) {
+    event.preventDefault();
+    setDragging(false);
+    if (importing !== null) return;
+    void importFiles(Array.from(event.dataTransfer.files));
+  }
+
+  /** The import of the chosen or dropped files, one after the other (`document/screens`, `document/import-ui`). */
+  async function importFiles(files: File[]) {
     if (busy.current || files.length === 0) return;
     busy.current = true;
     setNotice(null);
@@ -106,11 +123,24 @@ export function SubjectDocumentsView({
         continue;
       }
       setImporting({ current: index + 1, total: files.length, name: file.name });
-      const result = await importPdf(subjectId, file, (id) => {
-        setSending((current) => new Set(current).add(id));
-        void refresh(true);
-      });
+      const controller = new AbortController();
+      abort.current = controller;
+      setProgress(null);
+      const result = await importPdf(
+        subjectId,
+        file,
+        (id) => {
+          setSending((current) => new Set(current).add(id));
+          void refresh(true);
+        },
+        { onProgress: setProgress, signal: controller.signal },
+      );
       setSending(new Set());
+      if (!result.ok && result.code === "UPLOAD_CANCELLED") {
+        found.push(t("errors.cancelled", { name: file.name }));
+        await refresh(true);
+        break; // the files after it are not sent either
+      }
       if (!result.ok) {
         const message = failureMessage(result, file.name);
         if (message) found.push(message);
@@ -121,6 +151,8 @@ export function SubjectDocumentsView({
 
     setProblems(found);
     setImporting(null);
+    setProgress(null);
+    abort.current = null;
     busy.current = false;
   }
 
@@ -269,7 +301,15 @@ export function SubjectDocumentsView({
         />
       </div>
 
-      <div className={`${cardClass} flex flex-col gap-3 border-dashed p-5`}>
+      <div
+        onDragOver={(event) => {
+          event.preventDefault();
+          if (importing === null) setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        className={`${cardClass} flex flex-col gap-3 border-dashed p-5 ${dragging ? "border-ink bg-surface-container" : ""}`}
+      >
         <label
           htmlFor="import-pdfs"
           className="flex items-center gap-2 font-serif text-lg text-ink-black"
@@ -287,10 +327,32 @@ export function SubjectDocumentsView({
           className="text-sm text-ink file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-ink file:px-4 file:py-2 file:text-sm file:font-medium file:text-surface disabled:opacity-60"
         />
         <p className="text-sm text-ink-muted">{t("importHint")}</p>
+        {dragging ? <p className="text-sm font-medium text-ink">{t("dropHint")}</p> : null}
         {importing ? (
-          <p role="status" className="text-sm text-ink">
-            {t("importing", importing)}
-          </p>
+          <div className="flex flex-col gap-2">
+            <p role="status" className="text-sm text-ink">
+              {t("importing", importing)}
+            </p>
+            {progress !== null ? (
+              <div
+                role="progressbar"
+                aria-label={t("progress", { percent: progress })}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container"
+              >
+                <div className="h-full bg-ink" style={{ width: `${progress}%` }} />
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => abort.current?.abort()}
+              className={`${buttonSecondary} h-8 self-start px-3`}
+            >
+              {t("cancel")}
+            </button>
+          </div>
         ) : null}
       </div>
 

@@ -98,3 +98,6 @@ Next.js app: the React UI (reader, outline editor, flashcards) and the HTTP API 
 
 ## Undo (spec `_cross-cutting/undo`)
 - A delete's notice is `components/notice.tsx` with `onUndo`: the button "Desfazer" and Ctrl+Z / Cmd+Z (`components/use-undo-shortcut.ts`, off inside a text field) restore the deleted item by its id with `restoreTrashItem` (`POST /api/trash/{id}/restore`) and load the screen again. Each screen keeps the `undoId` of its last delete and clears it when another change starts.
+
+## Import: drop, progress and cancel (spec `document/import-ui`)
+- The import area of the subject page accepts dropped PDFs (the same path as the file input, `importFiles`). `importPdf` makes the `PUT` with `XMLHttpRequest` (`putWithProgress`) to report progress and to abort it; the component tests install `test/fake-xhr.ts`, which answers through the fake API. A cancelled transfer has the code `UPLOAD_CANCELLED`: the document stays `UPLOADED` ("Envio incompleto") and the files after it are not sent.

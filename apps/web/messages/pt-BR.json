@@ -160,12 +160,15 @@
       "rateLimitedNoTime": "Muitas tentativas. Tente de novo em instantes.",
       "network": "Sem conexão com o servidor. Verifique sua rede e tente de novo.",
       "generic": "Algo deu errado. Tente de novo.",
-      "loadFailed": "Não foi possível carregar os documentos."
+      "loadFailed": "Não foi possível carregar os documentos.",
+      "cancelled": "Envio de “{name}” cancelado."
     },
     "summary": "Resumo",
     "flashcards": "Flashcards",
     "noText": "Sem texto selecionável",
-    "count": "{count, plural, =0 {Nenhum documento} one {# documento} other {# documentos}}"
+    "count": "{count, plural, =0 {Nenhum documento} one {# documento} other {# documentos}}",
+    "dropHint": "Solte os PDFs aqui",
+    "progress": "{percent}% enviado"
   },
   "Reader": {
     "loading": "Carregando documento…",
